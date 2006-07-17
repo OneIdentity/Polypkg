@@ -158,7 +158,7 @@ pp_mode_from_ls () {
 	?r-[xs]??????) umode=5;;
 	?rw[-X]??????) umode=6;;
 	?rw[xs]??????) umode=7;;
-	*) error "bad user mode $1";;
+	*) pp_error "bad user mode $1";;
    esac
 
    case "$1" in
@@ -170,7 +170,7 @@ pp_mode_from_ls () {
 	????r-[xs]???) gmode=5;;
 	????rw[-X]???) gmode=6;;
 	????rw[xs]???) gmode=7;;
-	*) error "bad group mode $1";;
+	*) pp_error "bad group mode $1";;
    esac
 
    case "$1" in
@@ -182,7 +182,7 @@ pp_mode_from_ls () {
 	???????r-[xt]) omode=5;;
 	???????rw[-T]) omode=6;;
 	???????rw[xt]) omode=7;;
-	*) error "bad other mode $1";;
+	*) pp_error "bad other mode $1";;
    esac
 
    case "$1" in
@@ -194,7 +194,7 @@ pp_mode_from_ls () {
 	???[Ss]??[-x]??[tT]) smode=5;;
 	???[Ss]??[Ss]??[-x]) smode=6;;
 	???[Ss]??[Ss]??[tT]) smode=7;;
-	*) error "bad set-id mode $1";;
+	*) pp_error "bad set-id mode $1";;
    esac
 
    echo "$smode$umode$gmode$omode"

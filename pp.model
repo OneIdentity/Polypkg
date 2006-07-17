@@ -46,10 +46,13 @@ pp_load_service_vars () {
 #       type path mode owner group flags [target]
 #    flags contains the letter v if the file is volatile
 pp_files_expand () {
-    typeset _p _mode _group _owner _flags _path _optional _has_target 
+    typeset _p _mode _group _owner _flags _path _optional _has_target _tree
     typeset _path _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
 
     test $# -eq 0 && return
+
+    pp_debug "pp_files_expand: $*"
+
     case "$1" in 
 	"#"*) return;;                                  # a comment?
 	/*) _p="$1";;
@@ -97,8 +100,29 @@ pp_files_expand () {
 
     test $# -eq 0 || pp_error "$_p: too many arguments"
 
+    #-- treat /** and /**/ endings specially
+    case "$_p" in
+        *"/**") _p=${_p%"/**"}; tree="**";;
+        *)      tree="";
+    esac
+
     #-- expand the path using the shell glob
+    pp_debug "expanding .$_p ..."
     (cd ${pp_destdir} && $pp_expand_path ".$_p") > $pp_wrkdir/tmp.files.exp
+
+    #-- expand path/** by following recursively
+    case "$tree" in
+        "") : ;;
+        "**")
+            pp_debug "expanding /** tree ..."
+            while read _path; do
+                _path="${_path#.}"
+                pp_find_recurse "$pp_destdir${_path%/}"
+            done < $pp_wrkdir/tmp.files.exp > $pp_wrkdir/tmp.files.exp2
+            mv $pp_wrkdir/tmp.files.exp2 $pp_wrkdir/tmp.files.exp
+            ;;
+    esac
+
     while read _path; do
 	_path="${_path#.}"
 	_file="${pp_destdir}${_path}"

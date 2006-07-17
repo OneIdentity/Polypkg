@@ -72,18 +72,19 @@ pp_rpm_label () {
 
 #@ pp_rpm_writefiles() < %files: Write body of a %files section in RPM form
 pp_rpm_writefiles () {
+    typeset _l t m o g f p st
     while read t m o g f p st; do
-        line="$p"
-	test $t = d && line = "%dir $line/"
+        _l="$p"
+	test $t = d && _l="%dir ${_l%/}/"
         if test x"$m" = x"-"; then
             case "$t" in
                 d) m=755;;
                 f) m=644;;
             esac
         fi
-	line="%attr($m,$o,$g) $line"
-	case $f in *v*) line="%config $line";; esac
-	echo "$line"
+	_l="%attr($m,$o,$g) $_l"
+	case $f in *v*) _l="%config $_l";; esac
+	echo "$_l"
     done
     echo
 }

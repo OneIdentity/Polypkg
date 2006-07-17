@@ -5,6 +5,8 @@
 # The glob format is @(word|word|word) instead of {word,word,word}.
 #
 
+pp_expand_path=
+
 #@ pp_expand_test_usr_bin(): returns true if input is /usr and /bin
 pp_expand_test_usr_bin () {
 	awk '$1 == "/usr" || $2 == "/usr" {usr++} 

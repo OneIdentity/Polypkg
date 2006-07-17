@@ -165,8 +165,10 @@ pp_frontend () {
      pp_incr pp_lineno
 
      pp_debug "line $pp_lineno: $line"
-
+     set -f
      set -- $line
+     set +f
+     #pp_debug "line $pp_lineno: $*"
 
      case "$line" in %*)
         case "$1" in 
