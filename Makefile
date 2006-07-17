@@ -33,7 +33,7 @@ clean:
 	rm -f pp pp-stripped tags
 	cd example && $(MAKE) clean
 
-test: pp
+check: pp
 	@ex=0; for t in tests/t-*; do \
 	    tests/driver $$t || ex=1; \
 	done; exit $$ex

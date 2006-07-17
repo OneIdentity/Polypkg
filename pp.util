@@ -270,6 +270,15 @@ pp_add_file_if_missing () {
     return 0
 }
 
+#@ pp_add_transient_file(path): notify of creation of a transient file
+pp_add_transient_file () {
+    test -f "$pp_destdir$1" && pp_die "$pp_destdir$1: exists"
+    pp_create_dir_if_missing "${1%/*}"
+    pp_debug "transient file $1"
+    echo "$1" >> $pp_wrkdir/all.files
+    pp_remove_later "$1"
+}
+
 #@ pp_remove_later(path): adds file for deletion during cleanup
 #  the file is prepended to $pp_wrkdir/pp_cleanup
 pp_remove_later () {

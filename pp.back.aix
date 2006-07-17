@@ -15,11 +15,14 @@ pp_backend_aix_init () {
 	test -n "$pp_destdir" = x"" ||
 	   pp_error "AIX backend requires the '--destdir' option"
 
-	pp_aix_arch_p=`uname -p`
+	pp_aix_arch_p=`uname -p 2>/dev/null`
 	case "$pp_aix_arch_p"  in
-	   "")      pp_die "can't get processor type from uname -p";;
+	   "")      pp_debug "can't get processor type from uname -p"
+                    pp_aix_arch_p=powerpc
+                    pp_aix_arch=R;;  # guess (lsattr -l proc0 ??)
 	   powerpc) pp_aix_arch=R;;
-	   *)       pp_aix_arch=I;;  # XXX? verify
+	   *)       pp_aix_arch_p=intel
+                    pp_aix_arch=I;;  # XXX? verify
 	esac
 	pp_aix_bosboot=		# components that need bosboot
 	pp_aix_lang=en_US
@@ -51,7 +54,7 @@ pp_aix_copy_root () {
     typeset t m o g f p st
     while read t m o g f p st; do
 	test -d "$pp_destdir$1$p" ||
-	pp_verbose   mkdir -p `dirname "$pp_destdir$1$p"`
+	pp_add_transient_file "$1$p"
 	pp_verbose   ln "$pp_destdir$p" "$pp_destdir$1$p" || 
 		pp_error "can't link $p into $1"
     done
@@ -133,7 +136,7 @@ pp_aix_inventory () {
       owner=$3 group=$4 size=$5
       if test x"$m" = x"-"; then m="$defm"; fi
       if test x"$o" = x"-"; then o="root"; fi
-      if test x"$g" = x"-"; then g="root"; fi
+      if test x"$g" = x"-"; then g="system"; fi
       echo " owner = $o"
       echo " group = $g"
 
@@ -173,14 +176,13 @@ pp_aix_inventory () {
 pp_aix_depend ()
 {
     if test -s "$1"; then
-       warn "aix dependencies not implemented"
+       pp_warn "aix dependencies not implemented"
     fi
 }
 
 #@ pp_aix_add_service(service): adds to %post/%preun files service setup
 # Adds code into package that implements the service
 pp_aix_add_service () {
-	set -x
 	typeset svc cmd_cmd cmd_arg f
 	svc="$1"
 
@@ -227,7 +229,7 @@ pp_aix_add_service () {
         #-- add command text to create/remove the service
 	cat <<-. >> $pp_wrkdir/%post.run
            # install service '$svc'
-           mkssys -s $1 -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args}
+           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args}
 .
 
         #-- add code to start the service on reboot
@@ -262,10 +264,8 @@ pp_backend_aix () {
         typeset user_wrkdir root_wrkdir
         typeset user_files root_files
 
-	set -x
-
 	instuser="/usr/lpp/$name"
-	instroot="$instuser/instroot"
+	instroot="$instuser/inst_root"
 
 	# Here is the component mapping:
 	#  run -> $name.rte ('Run time environment')
@@ -275,14 +275,7 @@ pp_backend_aix () {
 
 	test `echo "$summary" | wc -c ` -gt 40 && pp_error "\$summary too long"
 
-        test -d $pp_destdir/usr/lpp &&
-            pp_warn "deleting $pp_destdir/usr/lpp"
-	pp_verbose  rm -rf   $pp_destdir/usr/lpp 
-        test -d $pp_destdir/lpp_name &&
-            pp_warn "deleting $pp_destdir/lpp_name"
-	pp_verbose  rm -f    $pp_destdir/lpp_name
-
-	pp_verbose  mkdir -p $pp_destdir$instroot
+        pp_add_transient_file /lpp_name
 
 	user_wrkdir=$pp_wrkdir/u
 	root_wrkdir=$pp_wrkdir/r
@@ -319,7 +312,7 @@ if $pp_debug; then
     cat $root_files
 fi >&2
 
-	    bosboot=N; contains_any "$pp_aix_bosboot" $cmp && bosboot=b
+	    bosboot=N; pp_contains_any "$pp_aix_bosboot" $cmp && bosboot=b
 
 	    echo $name.$ex $version 1 $bosboot $content \
 	    	    $pp_aix_lang $summary $briefex
@@ -343,9 +336,6 @@ if $pp_debug; then
     echo "$cmp ROOT $name.$ex.al:"
     cat $root_wrkdir/$name.$ex.al
 fi >&2
-
-	    check_files_exist < $user_files
-	    check_files_exist < $root_files
 
 	    pp_aix_inventory $name.$ex < $user_files \
                                        > $user_wrkdir/$name.$ex.inventory
@@ -395,12 +385,14 @@ fi >&2
 	(cd $user_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
 		pp_error "ar error"
 	if test -s $user_wrkdir/liblpp.a; then
+           pp_add_transient_file $instuser/liblpp.a
 	   pp_verbose cp $user_wrkdir/liblpp.a $pp_destdir$instuser/liblpp.a || 
 		pp_error "cannot create user liblpp.a"
 	fi
 	(cd $root_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
 		pp_error "ar error"
 	if test -s $root_wrkdir/liblpp.a; then
+           pp_add_transient_file $instroot/liblpp.a
 	   pp_verbose cp $root_wrkdir/liblpp.a $pp_destdir$instroot/liblpp.a || 
 		pp_error "cannot create root liblpp.a"
 	fi
@@ -439,7 +431,6 @@ pp_backend_aix_names () {
 
 #@ pp_backend_aix_install(): installs generated files
 pp_backend_aix_install () {
-	set -x
 	names="`pp_backend_aix_names`"
 	fsets=`for f in $names; do
 	   pp_verbose ${SUDO} installp -L -d $pp_wrkdir/$f | awk -F: '{print $2}'

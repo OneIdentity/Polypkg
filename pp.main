@@ -5,6 +5,7 @@ pp_copyright="(c) 2006, Quest Software, Inc. All rights reserved."
 
 pp_opt_debug=false
 pp_opt_destdir="$DESTDIR"
+pp_opt_install=false
 pp_opt_list=false
 pp_opt_no_clean=false
 pp_opt_no_package=false
