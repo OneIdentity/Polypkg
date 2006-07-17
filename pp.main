@@ -1,6 +1,6 @@
 # Polypkg main
 
-pp_version=1.0
+pp_version="1.0.0.$pp_revision"
 pp_copyright="(c) 2006, Quest Software, Inc. All rights reserved."
 
 pp_opt_debug=false

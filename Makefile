@@ -13,6 +13,7 @@ build-example: pp
 pp: $(PP_SRCS)
 	rm -f $@
 	(echo '#!/bin/sh';                \
+	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
 	 echo 'd=`dirname $$0`';          \
 	 for p in $(PP_SRCS); do          \
 	    echo '. "$$d/'$$p'" &&';        \
@@ -24,6 +25,7 @@ pp: $(PP_SRCS)
 pp-stripped: $(PP_SRCS)
 	(echo '#!/bin/sh';                \
 	 echo '# (c) 2006 Quest Software, Inc. All rights reserved'; \
+	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
 	 echo 'pp_main $${1+"$$@"}';	\
 	 ) > $@
@@ -44,3 +46,6 @@ tags:
 	    sed -n -e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)[ 	]*(\))[ 	]*{.*,\2	'$$f'	/^\1/,p' \
 		-e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)=\).*,\2	'$$f'	/^\1/,p' $$f; \
 	done |sort > $@
+
+install: pp-stripped
+	cp -f pp-stripped /data/rc/pub/rc/polypkg/pp
