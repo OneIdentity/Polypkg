@@ -1,0 +1,218 @@
+#
+# solaris backend
+# http://docs.sun.com/app/docs/doc/802-1932
+# 
+# the pkgmk tool input:
+#    prototype (required) -pkgproto(1M) or prototype(4)
+#    pkginfo (required)   -pkginfo(4)
+#    compver (opt info)
+#    depend (opt info)
+#    space (opt info)
+#    copyright (opt info)
+#    request (optional script) (mode 0644 and no #!)
+#    checkinstall (could be used because vas dependencies broken)
+# names must be [A-Za-z][-+A-Za-z0-9]{,8} and not (install|new|all)
+#
+# The component name is used for the class name
+# 
+# pkginfo should have 
+#    PKG=foobar
+#    NAME=the foo bad system
+#    CATEGORY=system
+#    ARCH=sparc
+#    VERSION=foo release 2.0
+#    CLASSES=none
+# prototype lines are
+#    [part] ftype class pathname[=srcpath] [mode owner group]
+# directories should be 755 root sys 
+# binaries should be 555 root bin
+# directories expected to exist should be ? ? ? (three question marks)
+#
+#
+# Idea: create a "compressed" class that is installed using gzip?
+# 
+#
+
+pp_platforms="$pp_platforms solaris"
+
+#@ pp_backend_solaris_detect(): return true if this platform uses solaris pkgs
+pp_backend_solaris_detect () {
+	test x"$1" = x"SunOS"
+}
+
+#@ pp_backend_solaris_init(): initialise the solaris vars
+pp_backend_solaris_init () {
+	pp_solaris_arch=`uname -p`
+	pp_solaris_category=application
+	pp_solaris_rstates=	#"s S 1 2 3"
+	pp_solaris_istates=	#"s S 1 2 3"
+	pp_solaris_vendor="Quest Software, Inc."
+	pp_solaris_copyright=
+	pp_solaris_name=
+	pp_solaris_desc=
+
+}
+
+#@ pp_solaris_request(output): Generate a request script for all components
+pp_solaris_request () {
+    typeset _cmp
+        
+    #-- The common part of the request script contains the ask() function
+    #   and resets the CLASSES list to empty
+    cat <<'.'
+	trap 'exit 3' 15
+	ask () {
+	   ans=`ckyorn -d $2 \
+                -p "Install $3 from this package"` \
+            || exit $?
+	   case "$ans" in y*|Y*) CLASSES="$CLASSES $1";; esac
+	}
+	CLASSES=
+.
+    #-- each of our components adds itself to the CLASSES list
+    for _cmp in $pp_components; do
+      case "$_cmp" in
+            run) echo 'CLASSES="$CLASSES run"';;
+            doc) echo 'ask doc y "documentation"';;
+            dev) echo 'ask dev y "development files"';;
+            dbg) echo 'ask dbg n "diagnostic files"';;
+      esac
+    done
+    #-- finally, the request script writes the CLASSES var to its output
+    cat <<'.'
+	echo "CLASSES=$CLASSES" > $1
+.
+}
+
+#@ pp_solaris_procedure(component, post|pre): add per-component scripts
+pp_solaris_procedure () {
+    cat <<"."
+
+        #-- $2 for $1 component of $name
+        case " \$CLASSES " in *" $1 "*)
+.
+    cat
+    cat <<"."
+        ;; esac
+.
+}
+
+#@ pp_solaris_proto(class) < %files: generate prototype file
+pp_solaris_proto () {
+	while read t m o g p f st; do
+	  if test x"$o" = x"-"; then 
+            o="bin"
+          fi
+	  if test x"$g" = x"-"; then 
+            g="bin"
+          fi
+	  case "$t" in
+	    f) test x"$m" = x"-" && m=444
+	       case "$f" in 
+		*v*) echo "v $1 $p=$DESTDIR$p $m $o $g";;
+		*)   echo "f $1 $p=$DESTDIR$p $m $o $g";;
+	       esac
+               ;;
+	    d) test x"$m" = x"-" && m=555
+	       echo "d $1 $p $m $o $g"
+               ;;
+	    s) test x"$m" = x"-" && m=777
+               test x"$m" == 777 ||
+                  pp_warn "$p: invalid mode $m for symlink"
+	       echo "s $1 $p=$st $m $o $g"
+               ;;
+	  esac
+	done
+}
+
+#-- Reads output files from the frontend and generates the single output
+#   package file under $pp_wrkdir/
+pp_backend_solaris () {
+        typeset _cmp
+
+	prototype=$pp_wrkdir/prototype
+	: > $prototype
+
+	pkginfo=$pp_wrkdir/pkginfo
+	: > $pkginfo
+	echo "i pkginfo=$pkginfo" >> $prototype
+
+        #-- generate the package info file
+	echo "ARCH=$pp_solaris_arch" >> $pkginfo
+	echo "VERSION=$version" >> $pkginfo
+	echo "PKG=${pp_solaris_name:-$name}" >> $pkginfo
+	echo "CLASSES=$pp_components" >> $pkginfo
+	echo "BASEDIR=/" >> $pkginfo
+	echo "NAME=$name $version" >> $pkginfo
+	echo "CATEGORY=$pp_solaris_category" >> $pkginfo
+
+	desc="${pp_solaris_desc:-$description}"
+	test -n "$desc" &&
+	  echo "DESC=$desc" >> $pkginfo
+
+	test -n "$pp_solaris_rstates" &&
+	  echo "RSTATES=$pp_solaris_rstates" >> $pkginfo
+	test -n "$pp_solaris_istates" &&
+	  echo "ISTATES=$pp_solaris_istates" >> $pkginfo
+	test -n "$pp_solaris_vendor" &&
+	  echo "VENDOR=$pp_solaris_vendor" >> $pkginfo
+
+	if test -n "${pp_solaris_copyright:-$copyright}"; then
+	    echo "${pp_solaris_copyright:-$copyright}" > $pp_wrkdir/copyright
+	    echo "i copyright=$pp_wrkdir/copyright" >> $prototype
+	fi
+
+        #-- create the prototype file which lists the files to install
+	for _cmp in $pp_components; do
+	  pp_solaris_proto $_cmp < $pp_wrkdir/%files.$_cmp
+	done >> $prototype
+
+        #-- scripts to run before and after install
+        : > $pp_wrkdir/postinstall
+        : > $pp_wrkdir/preremove
+	for _cmp in $pp_components; do
+          #-- add the postinstall scripts in definition order
+	  if test -s $pp_wrkdir/%post.$_cmp; then
+		pp_solaris_procedure $_cmp postinst < $pp_wrkdir/%post.$_cmp \
+			>> $pp_wrkdir/postinstall
+          fi
+	  if test -s $pp_wrkdir/%preun.$_cmp; then
+                #-- add the preremove rules in reverse definition order
+                mv $pp_wrkdir/preremove.OLD
+		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp \
+			> $pp_wrkdir/preremove
+                cat $pp_wrkdir/preremove.OLD >> $pp_wrkdir/preremove
+                rm $pp_wrkdir/preremove.OLD
+          fi
+	done
+        test -s $pp_wrkdir/preremove && 
+            echo "i $f=$pp_wrkdir/preremove" >> $prototype
+        test -s $pp_wrkdir/postinstall && 
+            echo "i $f=$pp_wrkdir/postinstall" >> $prototype
+
+        #-- TODO %services
+
+	mkdir $pp_wrkdir/pkg
+
+	pkgmk -a $pp_solaris_arch -d $pp_wrkdir/pkg \
+	      -f $prototype || { error "pkgmk failed"; return; }
+        pkgtrans -s $pp_wrkdir/pkg \
+		$pp_wrkdir/`pp_backend_solaris_names` \
+                ${pp_solaris_name:-$name} \
+		|| { error "pkgtrans failed"; return; }
+}
+
+#@ pp_backend_solaris_cleanup(): cleanup
+pp_backend_solaris_cleanup () {
+	:
+}
+
+#@ pp_backend_solaris_names(): print the name of the package files created
+pp_backend_solaris_names () {
+	echo ${pp_solaris_name:-$name}-$version.$pp_solaris_arch.pkg
+}
+
+#-- (re-)installs the newly created package
+pp_backend_solaris_install () {
+	: # FOO
+}

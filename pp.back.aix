@@ -1,0 +1,459 @@
+#
+# AIX backend
+# http://publib.boulder.ibm.com/infocenter/pseries/topic/com.ibm.aix.doc/aixprggd/genprogc/pkging_sw4_install.htm
+#
+
+pp_platforms="$pp_platforms aix"
+
+#@ pp_backend_aix_detect(): return true if current platform does AIX packaging
+pp_backend_aix_detect () {
+	test x"$1" = x"AIX"
+}
+
+#@ pp_backend_aix_init(): initialise the 
+pp_backend_aix_init () {
+	test -n "$pp_destdir" = x"" ||
+	   pp_error "AIX backend requires the '--destdir' option"
+
+	pp_aix_arch_p=`uname -p`
+	case "$pp_aix_arch_p"  in
+	   "")      pp_die "can't get processor type from uname -p";;
+	   powerpc) pp_aix_arch=R;;
+	   *)       pp_aix_arch=I;;  # XXX? verify
+	esac
+	pp_aix_bosboot=		# components that need bosboot
+	pp_aix_lang=en_US
+	pp_aix_copyright="$pp_copyright"
+	pp_aix_mkuser_args=
+	pp_aix_mkgroup_args=
+        pp_aix_start_services_after_install=false
+        pp_aix_init_services_after_install=true
+}
+
+
+#@ pp_aix_select(-user|-root) < file-list:
+#   Selects out the %files lines that are in /usr or /opt (-user) 
+#   or otherwise (-root).
+pp_aix_select () {
+	case "$1" in
+	    -user) op="~";;
+	    -root) op="!~";;
+	    *) pp_die "pp_aix_select: bad argument";;
+	esac
+	pp_debug awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
+	awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
+}
+
+#@ pp_aix_copy_root($root) < root-file-list:
+#   Copies (links) the files from $pp_destdir into $pp_destdir$root, creating 
+#   directories as needed. This is used prior to running the BFF backup. 
+pp_aix_copy_root () {
+    typeset t m o g f p st
+    while read t m o g f p st; do
+	test -d "$pp_destdir$1$p" ||
+	pp_verbose   mkdir -p `dirname "$pp_destdir$1$p"`
+	pp_verbose   ln "$pp_destdir$p" "$pp_destdir$1$p" || 
+		pp_error "can't link $p into $1"
+    done
+}
+
+#@ pp_aix_size() < %files.*: generate the blocksize sums of directories
+#   The directories are derived from a scan of a %files component, then
+#   du and awk are used to add up the total block sizes of files
+#   e.g. the lines
+#	f 644 root root - /usr/bin/ls 
+#	f 644 root root - /usr/bin/mv
+#	f 644 root root - /usr/lib/libc.a 
+#   could turn into
+#	/usr/bin 61
+#	/usr/lib 115
+#   if the sum size in blocks of ls and mv is 61, and libc.a is 115 blocks.
+#   note that directories themselves are ignored
+
+pp_aix_size () {
+    typeset prefix t m o g f p st
+
+    prefix="$1"
+    while read t m o g f p st; do
+      case "$t" in f) du -a "$pp_destdir$p";; esac
+    done | sed -e 's!/[^/]*$!!' | sort +1 |
+    awk '{ if ($2 != d) 
+           { if (sz) print d,sz; 
+             d=$2; sz=0 }
+           sz += $1; }
+         END { if (sz) print d,sz }' |
+    sed -n -e "s!^$pp_destdir!$prefix!p"
+}
+
+#@ pp_aix_list([prefix]): prints all the entries relative to .
+pp_aix_list () {
+    awk '{ print "." pfx $6; }' pfx="$1"
+}
+
+#@ pp_aix_make_liblpp(outputdir/liblpp.a workarea/*)
+pp_aix_make_liblpp () {
+    typeset out dn fl f
+
+    out="$1"; shift
+    dn=`dirname "$2"`
+    fl=
+    for f
+    do
+	case "$f" in "$dn/"*) fl="$fl `basename $f`" ;; 
+		     *) pp_die "liblpp name $f not in $dn/";; esac
+    done
+    (cd "$dn" && pp_verbose  ar -c -g -r "$out" $fl) || pp_error "ar error"
+}
+
+#@ pp_aix_make_script(output-script) < script content
+pp_aix_make_script () {
+    rm -f "$1"
+    echo "#!/bin/sh" > "$1"
+    cat >> "$1"
+    chmod +x "$1"
+}
+
+#@ pp_aix_inventory(fileset) < %files.xxx
+#   Writes inventory stanzas on stdout
+pp_aix_inventory () {
+    typeset fileset t m o g f p st type
+
+    fileset="$1"
+    while read t m o g f p st; do
+      case "$p" in *:*) pp_error "path $p contains colon";; esac
+      echo "$p:"
+      case "$t" in
+	f)   type=FILE;      defm=644 ;;
+	s)   type=SYMLINK;   defm=777 ;;
+	d)   type=DIRECTORY; defm=755 ;;
+      esac
+      echo " type = $type"
+      echo " class = inventory,apply,$fileset"
+      set -- `/bin/ls -ld "$pp_destdir$p" 2>/dev/null`
+      owner=$3 group=$4 size=$5
+      if test x"$m" = x"-"; then m="$defm"; fi
+      if test x"$o" = x"-"; then o="root"; fi
+      if test x"$g" = x"-"; then g="root"; fi
+      echo " owner = $o"
+      echo " group = $g"
+
+      case "$m" in ????)
+	m=`echo $m|sed -e 's/^1/TCB,/' \
+		       -e 's/^[23]/TCB,SGID/' \
+		       -e 's/^[45]/TCB,SUID/' \
+		       -e 's/^[67]/TCB,SUID,SGID/'`;;  # vtx bit ignored
+      esac
+      echo " mode = $m"
+      case "$t" in
+	f) if test ! -f "$pp_destdir$p"; then
+		pp_error "$p: missing file"
+	   fi
+	   case "$flags" in
+	    *v*)
+	      echo " size = VOLATILE"
+	      echo " checksum = VOLATILE"
+	      ;;
+	    *)
+	      if test -r "$pp_destdir$p"; then
+	        echo " size = $size"
+                pp_verbose  sum -r < "$pp_destdir$p" | 
+	      	  sed -e 's/.*/ checksum = "&"/'
+	      fi
+	      ;;
+	   esac;;
+	s) 
+	   echo " target = $st"
+	   ;;
+      esac
+    done
+}
+
+#@ pp_aix_depend foo.%depend
+#    writes to stdout dependency entries
+pp_aix_depend ()
+{
+    if test -s "$1"; then
+       warn "aix dependencies not implemented"
+    fi
+}
+
+#@ pp_aix_add_service(service): adds to %post/%preun files service setup
+# Adds code into package that implements the service
+pp_aix_add_service () {
+	set -x
+	typeset svc cmd_cmd cmd_arg f
+	svc="$1"
+
+	pp_load_service_vars $svc
+
+	set -- $cmd
+	cmd_cmd="$1"; shift
+	cmd_arg="$*";
+	
+	case "$stop_signal" in
+		HUP) stop_signal=1;;
+		INT) stop_signal=2;;
+		QUIT) stop_signal=3;;
+		KILL) stop_signal=9;;
+		TERM) stop_signal=15;;
+		USR1) stop_signal=30;;
+		USR2) stop_signal=31;;
+		"") 
+		  pp_error "%service $svc: stop_signal not set";;
+		[a-zA-Z]*) 
+		  pp_error "%service $svc: bad stop_signal ($stop_signal)";;
+	esac
+
+	test -z "$pidfile" || pp_error "aix requires empty pidfile (non daemon)"
+
+	pp_add_component run
+	if test "$user" = "root"; then
+	    uid=0
+	else
+	    cat <<-. >> $pp_wrkdir/%post.run
+
+		# create user/group '$user'
+		lsgroup $user >/dev/null ||
+		  mkgroup -A ${pp_aix_mkgroup_args} $user
+		lsuser $user >/dev/null ||
+		  mkuser login=false rlogin=false account_locked=true \
+			home=/nohome.$user pgrp=$user \
+			${pp_aix_mkuser_args} $user
+.
+	    uid="\"\`/usr/bin/id -u $user\`\""
+	fi
+
+
+        #-- add command text to create/remove the service
+	cat <<-. >> $pp_wrkdir/%post.run
+           # install service '$svc'
+           mkssys -s $1 -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args}
+.
+
+        #-- add code to start the service on reboot
+        ${pp_aix_init_services_after_install} &&
+          cat <<-. >> $pp_wrkdir/%post.run
+            # start service '$svc' on reboot
+            mkitab "$svc:2:once:/usr/bin/startsrc -s $svc >/dev/console 2>&1"
+.
+
+	${pp_aix_start_services_after_install} && 
+          cat <<-. >> $pp_wrkdir/%post.run
+            # start service '$svc' automatically after install
+            startsrc -s $svc
+.
+
+	f=$pp_wrkdir/%preun.run 
+	test -r $f && mv $f $f.OLD
+        : > $f
+
+        ${pp_aix_init_services_after_install} &&
+           cat <<-. >> $f
+            # stop starting service '$svc' at boot
+	    rmitab $svc
+.
+	cat <<-. >> $f
+	    # stop service '$svc'
+	    stopsrc -s $svc >/dev/null 2>&1
+	    # uninstall service '$svc' from SRC
+	    rmssys -s $svc
+.
+	test -r $f.OLD && cat <$f.OLD >>$f && rm $f.OLD
+}
+
+#@ pp_backend_aix(): generate an installable AIX package
+pp_backend_aix () {
+        typeset briefex instuser instroot svc cmp
+        typeset user_wrkdir root_wrkdir
+        typeset user_files root_files
+
+	set -x
+
+	instuser="/usr/lpp/$name"
+	instroot="$instuser/instroot"
+
+	# Here is the component mapping:
+	#  run -> $name.rte ('Run time environment')
+	#  doc -> $name.doc (non-standard)
+	#  dev -> $name.adt ('Application developer toolkit')
+	#  dbg -> $name.diag ('Diagnostics')
+
+	test `echo "$summary" | wc -c ` -gt 40 && pp_error "\$summary too long"
+
+        test -d $pp_destdir/usr/lpp &&
+            pp_warn "deleting $pp_destdir/usr/lpp"
+	pp_verbose  rm -rf   $pp_destdir/usr/lpp 
+        test -d $pp_destdir/lpp_name &&
+            pp_warn "deleting $pp_destdir/lpp_name"
+	pp_verbose  rm -f    $pp_destdir/lpp_name
+
+	pp_verbose  mkdir -p $pp_destdir$instroot
+
+	user_wrkdir=$pp_wrkdir/u
+	root_wrkdir=$pp_wrkdir/r
+	pp_verbose  rm -rf $user_wrkdir $root_wrkdir
+	pp_verbose  mkdir -p $user_wrkdir $root_wrkdir
+
+	for svc in $pp_services .; do
+	    test . = "$svc" && continue
+            pp_aix_add_service $svc
+	done
+
+        {
+	  echo "4 $pp_aix_arch I $name {" 
+
+	  for cmp in $pp_components; do
+	    case "$cmp" in 
+		run) ex=rte  briefex="runtime";;
+		doc) ex=doc  briefex="documentation";;
+		dev) ex=adt  briefex="developer toolkit";;
+		dbg) ex=diag briefex="diagnostics";;
+	    esac
+
+	    user_files=$pp_wrkdir/%files.$cmp.u
+	    root_files=$pp_wrkdir/%files.$cmp.r
+
+	    pp_aix_select -user < $pp_wrkdir/%files.$cmp > $user_files
+	    pp_aix_select -root < $pp_wrkdir/%files.$cmp > $root_files
+	    content=U; test -s $root_files && content=B
+
+if $pp_debug; then
+    echo "$cmp USER %files:"
+    cat $user_files
+    echo "$cmp ROOT %files:"
+    cat $root_files
+fi >&2
+
+	    bosboot=N; contains_any "$pp_aix_bosboot" $cmp && bosboot=b
+
+	    echo $name.$ex $version 1 $bosboot $content \
+	    	    $pp_aix_lang $summary $briefex
+	    echo "["
+
+	    pp_aix_depend $pp_wrkdir/%depend.$cmp 
+
+	    echo "%"
+
+	    # generate per-directory size information
+	    pp_aix_size < $user_files
+	    pp_aix_size $instroot < $root_files
+
+	    pp_aix_list            < $user_files  > $user_wrkdir/$name.$ex.al
+	    pp_aix_list $instroot  < $root_files >> $user_wrkdir/$name.$ex.al
+	    pp_aix_list            < $root_files  > $root_wrkdir/$name.$ex.al
+
+if $pp_debug; then
+    echo "$cmp USER $name.$ex.al:"
+    cat $user_wrkdir/$name.$ex.al 
+    echo "$cmp ROOT $name.$ex.al:"
+    cat $root_wrkdir/$name.$ex.al
+fi >&2
+
+	    check_files_exist < $user_files
+	    check_files_exist < $root_files
+
+	    pp_aix_inventory $name.$ex < $user_files \
+                                       > $user_wrkdir/$name.$ex.inventory
+	    pp_aix_inventory $name.$ex < $root_files \
+                                       > $root_wrkdir/$name.$ex.inventory
+
+if $pp_debug; then
+    pp_debug "$cmp USER $name.$ex.inventory:"
+    cat $user_wrkdir/$name.$ex.inventory 
+    pp_debug "$cmp ROOT $name.$ex.inventory:"
+    cat $root_wrkdir/$name.$ex.inventory
+fi >&2
+
+	    if test x"" != x"$pp_aix_copyright"; then
+	        echo "$pp_aix_copyright" > $user_wrkdir/$name.$ex.copyright
+	        echo "$pp_aix_copyright" > $root_wrkdir/$name.$ex.copyright
+	    fi
+
+	    #-- assume that post/pre uninstall scripts only make
+	    #   sense when installed in a root context
+
+	    if test -r $pp_wrkdir/%post.$cmp; then
+		pp_aix_make_script $root_wrkdir/$name.$ex.post_i \
+			< $pp_wrkdir/%post.$cmp
+	    fi
+
+	    if test -r $pp_wrkdir/%preun.$cmp; then
+		pp_aix_make_script $root_wrkdir/$name.$ex.unpost_i \
+			< $pp_wrkdir/%preun.$cmp
+	    fi
+
+	    # remove empty files
+	    for f in $user_wrkdir/$name.$ex.* $root_wrkdir/$name.$ex.*; do
+	      test -s "$f" || rm -f "$f"
+	    done
+
+	    # copy/link the root files so we can do an easy backup later
+	    pp_aix_copy_root $instroot < $root_files
+
+	    echo "%"
+	    echo "]"
+	  done
+	  echo "}"
+	} > $pp_destdir/lpp_name
+
+        #-- copy the liblpp.a files under destdir for packaging
+	(cd $user_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
+		pp_error "ar error"
+	if test -s $user_wrkdir/liblpp.a; then
+	   pp_verbose cp $user_wrkdir/liblpp.a $pp_destdir$instuser/liblpp.a || 
+		pp_error "cannot create user liblpp.a"
+	fi
+	(cd $root_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
+		pp_error "ar error"
+	if test -s $root_wrkdir/liblpp.a; then
+	   pp_verbose cp $root_wrkdir/liblpp.a $pp_destdir$instroot/liblpp.a || 
+		pp_error "cannot create root liblpp.a"
+	fi
+
+if $pp_debug; then
+    echo "/lpp_name :"
+    cat $pp_destdir/lpp_name
+fi >&2
+
+        { echo ./lpp_name
+	  echo .$instuser/liblpp.a
+	  echo .$instroot/liblpp.a
+	  cat $user_wrkdir/$name.*.al   # includes the relocated root files!
+	} > $pp_wrkdir/bff.list
+        
+	. $pp_wrkdir/%fixup
+
+        pp_debug "creating: $pp_wrkdir/`pp_backend_aix_names`"
+
+	(cd $pp_destdir && pp_verbose  backup -i -q -p -f -) \
+          < $pp_wrkdir/bff.list \
+	  > $pp_wrkdir/`pp_backend_aix_names` || pp_error "backup failed"
+}
+
+#@ pp_backend_aix_cleanup(): removes leftover files
+pp_backend_aix_cleanup () {
+	pp_verbose rm -rf $pp_destdir/usr/lpp $pp_destdir/lpp_name
+}
+
+#@ pp_backend_aix_names(): print the name of the AIX package
+#-- prints the output package name without the $pp_wrkdir prefix.
+#   the name always starts with $name-$version
+pp_backend_aix_names () {
+	echo $name-$version-$pp_aix_arch_p.bff
+}
+
+#@ pp_backend_aix_install(): installs generated files
+pp_backend_aix_install () {
+	set -x
+	names="`pp_backend_aix_names`"
+	fsets=`for f in $names; do
+	   pp_verbose ${SUDO} installp -L -d $pp_wrkdir/$f | awk -F: '{print $2}'
+	done | sort -u`
+	pp_debug "removing filesets: $fsets"
+	pp_verbose ${SUDO} installp -u -V0 $fsets 
+	for f in $names; do
+	    pp_debug installp -acX -V0 -d $f all || 
+	    pp_verbose ${SUDO} installp -acX -V0 -d $pp_wrkdir/$f all || 
+		pp_error "$f: failed to install"
+	done
+}

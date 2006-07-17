@@ -1,0 +1,15 @@
+#!/bin/sh
+
+name ifelse
+desc %if/%else works
+
+pp_front_end <<-.
+	%set
+	%if 1
+        touch $TMPDIR/ok
+	%else
+        touch $TMPDIR/not-ok
+	%endif
+.
+
+test -r $TMPDIR/ok -a ! -r $TMPDIR/not-ok && pass

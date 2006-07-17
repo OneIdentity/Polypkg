@@ -1,0 +1,54 @@
+#
+# {}-expansion is a tricky problem. Not all shells seem to be the same,
+# but this is such a useful thing to have. It turns out that some korn
+# shells have something similar available when bourne shells don't.
+# The glob format is @(word|word|word) instead of {word,word,word}.
+#
+
+#@ pp_expand_test_usr_bin(): returns true if input is /usr and /bin
+pp_expand_test_usr_bin () {
+	awk '$1 == "/usr" || $2 == "/usr" {usr++} 
+	     $1 == "/bin" || $2 == "/bin" {bin++} 
+	     END { exit (usr == 1 && bin == 1 ? 0 : 1) }'
+}
+
+#@ pp_set_expand_converter_or_reexec(arg...): sets $pp_expand_path
+pp_set_expand_converter_or_reexec () {
+    test -d /usr -a -d /bin || 
+	pp_die "missing /usr or /bin"
+    echo /usr /bin | pp_expand_test_usr_bin || pp_die "pp_expand_test_usr_bin?"
+    if (eval "echo /{usr,bin}" | pp_expand_test_usr_bin) 2>/dev/null; then
+	pp_expand_path=pp_expand_path_brace
+    elif (eval "echo /@(usr|bin)" | pp_expand_test_usr_bin) 2>/dev/null; then
+	pp_expand_path=pp_expand_path_at
+    else
+	test x"$pp_expand_rexec" != x"true" ||
+	    pp_die "problem finding shell that can do brace expansion"
+	for shell in ksh ksh93 bash; do
+	    if ($shell -c 'echo /{usr,bin}' | 
+			pp_expand_test_usr_bin) 2>/dev/null || 
+	       ($shell -c 'echo /@(usr|bin)' |
+			pp_expand_test_usr_bin) 2>/dev/null
+	    then
+		pp_expand_rexec=true exec $shell "$0" ${1+"$@"}
+	    fi
+	done
+	pp_die "cannot find a shell that does brace expansion"
+    fi
+}
+
+#@ pp_expand_path_brace(path): writes all expansions of path to stdout
+pp_expand_path_brace () {
+	typeset f
+	eval "for f in $1; do echo \"\$f\"; done|sort -u"
+}
+
+#@ pp_expand_path_at(path): writes all expansions of path to stdout
+#   works by translating {word,word} into @(word|word) then evaluating
+#   FIXME: this function will break if there are commas, braces or escapes
+pp_expand_path_at () {
+	typeset f
+	eval "for f in `
+	    echo "$1" | sed -e 's/{/@(/g' -e 's/}/)/g' -e 's/,/|/g'
+		`; do echo \"\$f\"; done|sort -u"
+}

@@ -1,0 +1,230 @@
+#
+# misc utilities
+#
+
+#@ $pp_errors: true if pp_error() has been called
+pp_errors=false
+
+#@ $pp_components: whitespace-delimited list of components seen in %files
+pp_components=
+#@ $pp_services: whitespace-delimited list of %service seen
+pp_services=
+
+#-- define some colour strings
+#@   $pp_col_redfg: terminal string to change foreground colour to red
+#@   $pp_col_bluefg: terminal string to change foreground colour to blue
+#@   $pp_col_reset: terminal string to reset colours to default
+if test -t; then
+   pp_col_redfg=`tput setf 4` 2>/dev/null
+   pp_col_bluefg=`tput setf 1` 2>/dev/null
+   pp_col_reset=`tput op` 2>/dev/null
+else
+   pp_col_redfg=
+   pp_col_bluefg=
+   pp_col_reset=
+fi
+
+#@ pp__warn(type,msg): prints a warning message including $pp_lineno if nonnull
+pp__warn () {
+	if test x"" = x"$pp_lineno"; then
+	    echo "$1 $2" >&2
+	else
+	    echo "$1 line $pp_lineno: $2" >&2
+	fi
+}
+
+#@ pp_warn(msg): prints a warning message
+pp_warn () {
+	pp__warn "${pp_col_redfg}[warning]${pp_col_reset}" "$*"
+}
+
+# pp_error(msg): prints an error message and sets $pp_errors to 'true'
+pp_error () {
+	pp__warn "${pp_col_redfg}[error]${pp_col_reset}" "$*"
+	pp_errors=true
+}
+
+#@ pp_die(msg): prints an error message and dies with exit code 1
+pp_die () {
+	pp_error "$@"
+	exit 1
+}
+
+#@ pp_die_if_errors(msg): dies with an error if previous errors had occurred
+pp_die_if_errors () {
+	$pp_errors && pp_die ${1+"$@"}
+}
+
+#@ pp_debug(msg): writes a message only if the --debug option was given
+pp_debug () { 
+	$pp_opt_debug && echo "${pp_col_bluefg}[debug]${pp_col_reset} $*" >&2
+}
+
+#@ pp_verbose(msg): writes a message only if the --verbose option was given
+pp_verbose () {
+	$pp_opt_verbose && echo "${pp_col_bluefg}$*${pp_col_reset}" >&2
+	"$@";
+}
+
+#@ pp_substitute(): expands %{} and %() in standard input stream
+#     - substitutes each %{var} with shell variable $var
+#     - substitutes each %(cmd) with the output of `cmd`
+#     - otherwise passes characters unchanged.
+#     - assumes input does not contain ^U ^V ow ^W characters
+pp_substitute () { 
+  sed -e 's,%(\([^)]*\)),\n`\1`\n,g' \
+      -e 's,%{\([^}]*\)},\n${\1}\n,g' \
+      -e 's,$,,' |
+  sed -e '/^[^]/s/["$`\\]/\\&/g' \
+      -e 's/^//' \
+      -e '1s/^/echo "/' \
+      -e '$s,$,",' \
+      -e 's,,"echo ",g' |
+  tr -d '\012' |
+  tr '' '\012'
+  echo
+}
+
+#@ pp_incr(var): increements variable $var by one
+pp_incr () {
+    eval "$1=\`expr \$$1 + 1\`"
+}
+
+#@ pp_decr(var): decrements variable $var by one
+pp_decr () {
+    eval "$1=\`expr \$$1 - 1\`"
+}
+
+#@ pp_check_var_is_defined(): check the variable is set and/or non-empty
+#   Otherwise, generates an error, and sets the variable to "undefined"
+pp_check_var_is_defined () {
+    if eval test -z "\"\$$1\""; then 
+	pp_error "\$$1: not set"
+	eval "$1=undefined"
+    fi
+}
+
+#@ pp_contains(list word): true if list contains word. list is space-delimited
+pp_contains () {
+    case " $1 " in
+       *" $2 "*) return 0;;
+       *) return 1;;
+    esac
+}
+
+#@ pp_contains_all(list word...): true if all words are found in the list
+pp_contains_all () {
+    typeset _s _c
+    _l="$1"; shift
+    for _w
+    do
+	pp_contains "$_l" "$_w" || return 1
+    done
+    return 0
+}
+
+#@ pp_contains_any(list word...): true if any word is found in the list
+pp_contains_any () {
+    typeset _s _c
+    _l="$1"; shift
+    for _w
+    do
+	pp_contains "$_l" "$_w" && return 0
+    done
+    return 1
+}
+
+#@ pp_add_to_list(list word): adds word into $list, if not there already
+pp_add_to_list () {
+    if eval test -z \"\$$1\"; then
+	eval $1='"$2"'
+    elif ! eval pp_contains '"$'$1'"' '"$2"'; then
+	eval $1='"$'$1' $2"'
+    fi
+}
+	
+
+#@ pp_mode_from_ls(str): converts an ls mode pattern into an octal mode number
+#   e.g. "-rw-rw-r--" becomes "664"
+pp_mode_from_ls () {
+   typeset umode gmode omode smode
+
+   case "$1" in
+	?--[-X]??????) umode=0;;
+	?--[xs]??????) umode=1;;
+	?-w[-X]??????) umode=2;;
+	?-w[xs]??????) umode=3;;
+	?r-[-X]??????) umode=4;;
+	?r-[xs]??????) umode=5;;
+	?rw[-X]??????) umode=6;;
+	?rw[xs]??????) umode=7;;
+	*) error "bad user mode $1";;
+   esac
+
+   case "$1" in
+	????--[-S]???) gmode=0;;
+	????--[xs]???) gmode=1;;
+	????-w[-S]???) gmode=2;;
+	????-w[xs]???) gmode=3;;
+	????r-[-X]???) gmode=4;;
+	????r-[xs]???) gmode=5;;
+	????rw[-X]???) gmode=6;;
+	????rw[xs]???) gmode=7;;
+	*) error "bad group mode $1";;
+   esac
+
+   case "$1" in
+	???????--[-T]) omode=0;;
+	???????--[xt]) omode=1;;
+	???????-w[-T]) omode=2;;
+	???????-w[xt]) omode=3;;
+	???????r-[-T]) omode=4;;
+	???????r-[xt]) omode=5;;
+	???????rw[-T]) omode=6;;
+	???????rw[xt]) omode=7;;
+	*) error "bad other mode $1";;
+   esac
+
+   case "$1" in
+	???[-x]??[-x]??[-x]) smode=;;
+	???[-x]??[-x]??[tT]) smode=1;;
+	???[-x]??[Ss]??[-x]) smode=2;;
+	???[-x]??[Ss]??[tT]) smode=3;;
+	???[Ss]??[-x]??[-x]) smode=4;;
+	???[Ss]??[-x]??[tT]) smode=5;;
+	???[Ss]??[Ss]??[-x]) smode=6;;
+	???[Ss]??[Ss]??[tT]) smode=7;;
+	*) error "bad set-id mode $1";;
+   esac
+
+   echo "$smode$umode$gmode$omode"
+}
+
+#-- checks for the existence of files in a files list
+pp_check_files_exist () {
+    typeset t m o g p f st
+    while read t m o g p f st; do
+	case "$t" in
+	  f) 
+		if test ! -f "$DESTDIR$p"; then
+		    error "$p: missing file"
+		elif test -h "$DESTDIR$p" -o -d "$DESTDIR$p"; then
+		    error "$p: not a plain file"
+		fi
+		test -r "$DESTDIR$p" || warn "$p: cannot read file"
+		;;
+	  s)
+		if test -h "$DESTDIR$p"; then
+		    error "$p: not a symlink"
+		    continue;
+		fi
+		if readlink $DESTDIR$p | grep "^$DESTDIR">/dev/null; then
+		    warn "$p: symlink is relative to \$DESTDIR"
+	        fi
+		;;
+	  d)
+		test -d "$DESTDIR$p" || error "$p: not a directory"
+		;;
+	esac
+    done
+}

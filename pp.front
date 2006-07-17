@@ -1,0 +1,268 @@
+#
+# Polypkg frontend - reads a polypkg file and split it up into the various 
+# section files that get read by the backend(s).
+#
+# The output files from frontend() are:
+#
+#   %files.run  - required runtime files
+#   %files.doc  - optional documentation files
+#   %files.dbg  - optional debugging files
+#   %files.dev  - optional developer files
+#
+#   Lines in %files.* consist only of:
+#	[d|f] path mode owner group [v|-]
+#	s     path mode owner group [v|-] target
+#
+#   %post.run   - post-install script (run component)
+#   %post.doc   - post-install script (doc component)
+#   %post.dbg   - post-install script (dbg component)
+#   %post.dev   - post-install script (dev component)
+#   %preun.run  - pre-uninstall script (run component)
+#   %preun.doc  - pre-uninstall script (doc component)
+#   %preun.dbg  - pre-uninstall script (dbg component)
+#   %preun.dev  - pre-uninstall script (dev component)
+#
+#   %service.$svc - service variables
+#
+#   %depend     - common package dependencies (one per line)
+#   %depend.run - run component dependencies
+#   %depend.doc - doc component dependencies
+#   %depend.dbg - dbg component dependencies
+#   %depend.dev - dev component dependencies
+#
+# Internal file output:
+#
+#   frontend.tmp - result of [platform] prefix removal
+#
+# Each backend should examine these files and construct the right
+# output package.
+#
+# The frontend also sets the variable $components to be the list of
+# file components defined
+#
+# Each of the %files.* files contains entries of the form
+#    f mode owner group flags file-path 
+#    d mode owner group flags directory-path 
+#    s mode owner group flags symlink-path    symlink-target
+#
+# The mode/owner/group may be the special symbol '-' which means
+# that the platform should choose an appropriate preference based on the
+# path (this is usually the 'root' or 'bin' user/group or mode 755 or 644.
+#
+# If the symlink-target is omitted, then a readlink is performed and
+# any $pre_destdir prefix is removed.
+#
+# The flags is either - or a sequence of letters. The letters mean:
+#     v  - the file is volatile, and expected to change content during use
+#
+
+pp_if_true=0
+pp_if_false=0
+
+#@ pp_frontend_init(): Set variables to their default values
+pp_frontend_init () {
+    : nothing
+}
+
+# frontend_if
+#   Handles %if/%else/%endif logic
+#   The '%if' arguments can be by any one of:
+#       - 1, true, 0, false => explicit true or false
+#       - [platform-list] => true if $pp_platform is in the list
+#       - [!platform-list] => false if $pp_platform is in the list
+#       - test-expr => given to the shell's test command
+#   The variables $pp_if_false and $pp_if_true are counters for if nesting.
+#   If $pp_if_false is non-zero then processing should be suppressed.
+frontend_if () {
+    typeset ifcmd
+    ifcmd="$1";
+    shift
+    case "$ifcmd" in
+	%if) if test 0 = $pp_if_false; then
+		case "$*" in 
+		    true|1) pp_incr pp_if_true;;
+		    false|0) pp_incr pp_if_false;;
+
+                    "[!$pp_platform]"| \
+                     "[!"*",$pp_platform]"| \
+                     "[!$pp_platform,"*"]"| \
+                     "[!"*",$pp_platform,"*"]") pp_incr pp_if_false;;
+                    "[!"*"]") pp_incr pp_if_true;;
+                    "[$pp_platform]"| \
+                     "["*",$pp_platform]"| \
+                     "[$pp_platform,"*"]"| \
+                     "["*",$pp_platform,"*"]") pp_incr pp_if_true;;
+                    "["*"]") pp_incr pp_if_false;;
+
+		    *) if eval test "$@"; then pp_incr pp_if_true
+				     else pp_incr pp_if_false; fi;;
+		esac
+	     else
+		pp_incr pp_if_false
+	     fi;;
+	%else)  test $# = 0 || warn "ignoring argument to %else"
+		if test $pp_if_false -gt 1; then
+		  : no change
+		elif test $pp_if_false = 1; then
+		  pp_incr pp_if_true
+		  pp_decr pp_if_false
+		elif test $pp_if_true = 0; then
+		  pp_die "unmatched %else"
+		else
+		  pp_incr pp_if_false
+		  pp_decr pp_if_true
+		fi;;
+	%endif) test $# = 0 || warn "ignoring argument to %endif"
+		if test $pp_if_false -gt 0; then
+		  pp_decr pp_if_false
+		elif test $pp_if_true -gt 0; then
+		  pp_decr pp_if_true
+		else
+		  pp_die "unmatched %endif"
+		fi;;
+	*) pp_die "frontend_if: unknown cmd $ifcmd";;
+    esac
+}
+
+
+#@ pp_frontend()
+#   Processes a polypkg script on stdin. The output is
+#   a collection of output files named %*
+#   This function recognises section tags (eg %preun, %set, etc)
+#   and directs subsequent lines to the right output file.
+#   This function also
+#   - process [platform]/[!platform] tags on lines (eg [AIX])
+#   - removes comment lines
+#   - detects %set, %post, %preun etc sections
+#   - handles %if/%else/%endif logic
+pp_frontend () {
+  typeset section newsection sed_word sed_ws line
+
+  section='%_initial'
+  newsection='%_initial'
+  sed_word="[a-zA-Z_][a-zA-Z_0-9]*"
+  sed_ws="[	]"
+
+  pp_lineno=0
+
+  sed  -e "/^#/d" \
+       -e "/^\\[!\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]/s/.*//" \
+       -e "s/^\\[\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]$sed_ws*//" \
+       -e "s/^\\[!\\($sed_word,\\)*$sed_word\\]$sed_ws*//" \
+       -e "/^\\[\\($sed_word,\\)*$sed_word\\]/s/.*//" \
+       -e "s/^%[ 	]*/%/" \
+     > $pp_wrkdir/frontend.tmp
+
+  #-- add an ignore section at the end to force section completion
+  echo '%ignore' >> $pp_wrkdir/frontend.tmp
+  echo  >> $pp_wrkdir/frontend.tmp
+
+  exec 0<$pp_wrkdir/frontend.tmp
+  : > $pp_wrkdir/tmp
+  : > $pp_wrkdir/%fixup
+  while read line; do
+     #-- Convert leading double-% to single-%, or switch sections
+     pp_incr pp_lineno
+
+     pp_debug "line $pp_lineno: $line"
+
+     set -- $line
+
+     case "$line" in %*)
+        case "$1" in 
+	   %if|%else|%endif) 
+                pp_debug "processing if directive $1"
+	   	frontend_if ${1+"$@"}
+		continue;;
+	esac
+	test 0 -ne $pp_if_false && continue	# ignore lines %if'd out
+
+        case "$1" in 
+	  %set|%fixup|%ignore)
+             pp_debug "processing new section $1"
+	     test $# -eq 1 || pp_error "no arguments needed for $1"
+	     newsection="$1"
+	     continue;;
+	  %post|%preun|%files|%depend) 
+             pp_debug "processing new component section $1 ${2:-run}"
+	     test $# -le 2 || pp_error "bad argument count to $1"
+	     pp_add_component "${2:-run}"
+	     newsection="$1.${2:-run}"
+	     continue;;
+	  %service)
+             pp_debug "processing new service section $1 $2"
+	     test $# -eq 2 || pp_error "bad argument count to $1"
+	     newsection="$1.$2"
+	     pp_add_service "$2"
+	     continue;;
+	  %%*) 
+             pp_debug "removing leading %"
+	     line="${line#%}"
+	     ;;
+	  %*) 
+	     pp_error "unknown section $1"
+	     newsection='%ignore'
+	     continue;;
+	esac;;
+     esac
+
+     test 0 != $pp_if_false && continue	# ignore lines %if'd out
+
+     pp_debug "section=$section newsection=$newsection"
+
+     #-- finish processing a previous section
+     test x"$newsection" != x"$section" && case "$section" in
+     	%ignore|%_initial) 
+                pp_debug "leaving ignored section $section"
+		: ignore  # guaranteed to be the last section
+		;;
+	%set)
+                pp_debug "leaving %set: sourcing $pp_wrkdir/tmp"
+                $pp_opt_debug && cat $pp_wrkdir/tmp >&2
+		. $pp_wrkdir/tmp
+		: > $pp_wrkdir/tmp
+		;;
+	%preun.*|%post.*|%depend.*|%service.*|%fixup)
+                pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
+                $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
+		pp_substitute < $pp_wrkdir/tmp > $pp_wrkdir/tmp.sh
+                . $pp_wrkdir/tmp.sh >> $pp_wrkdir/$section ||
+                    pp_error "shell error in $section"
+		rm -f $pp_wrkdir/tmp.sh
+		: > $pp_wrkdir/tmp
+		;;
+     esac
+     section="$newsection"
+
+     #-- process some lines in-place
+     case "$section" in
+	%_initial)	
+		case "$line" in "") continue;; esac # ignore non-section blanks
+		pp_die "Ignoring text before % section introducer";;
+	%set|%preun.*|%post.*|%depend.*|%service.*|%fixup)
+                pp_debug "appending line to \$pp_wrkdir/tmp"
+		echo "$line" >> $pp_wrkdir/tmp
+		;;
+	%files.*)
+		test $# -eq 0 && continue;
+		pp_files_expand "$@" >> $pp_wrkdir/$section
+		;;
+     esac
+  done 
+  exec <&-
+
+  if test $pp_if_true != 0 -o $pp_if_false != 0; then
+	pp_die "missing %endif at end of file"
+  fi
+
+  pp_lineno=
+
+  pp_debug " name        = $name"
+  pp_debug " version     = $version"
+  pp_debug " summary     = $summary"
+  pp_debug " description = $description"
+  pp_debug " copyright   = $copyright"
+  pp_debug ""
+  pp_debug "\$pp_components: $pp_components"
+  pp_debug "\$pp_services:   $pp_services"
+}

@@ -1,0 +1,178 @@
+
+#@ pp_have_component(component): return true if component was defined
+pp_have_component () {
+	pp_contains "$pp_components" "$1"
+}
+
+#@ pp_have_all_components(component...): return true if all components defined
+pp_have_all_components () {
+	pp_contains_all "$pp_components" ${1+"$@"}
+}
+
+#@ pp_add_component(component): adds component to $pp_components
+pp_add_component () {
+	pp_add_to_list 'pp_components' "$1"
+}
+
+#@ pp_add_service(service): adds service to $pp_services
+pp_add_service () {
+	pp_add_to_list 'pp_services' "$1"
+}
+
+#@ pp_service_init_vars(): initialises user service variables
+pp_service_init_vars () {
+	cmd=
+	pidfile=
+	stop_signal=15		# SIGTERM
+	user=root
+}
+
+#@ pp_service_check_vars(service): error if required user variables are unset
+pp_service_check_vars () {
+	test -n "$cmd" ||
+		pp_error "%service $1: cmd not defined"
+	
+}
+
+#@ pp_load_service_vars(svc): source a file for service definitions
+pp_load_service_vars () {
+	pp_service_init_vars
+	. "$pp_wrkdir/%service.$1" 
+	pp_service_check_vars "$1"
+}
+
+#@ pp_files_expand(path [m] [[u]:[g]] [f] [t]): expand to a file path
+#    writes multiple lines of the form
+#       type path mode owner group flags [target]
+#    flags contains the letter v if the file is volatile
+pp_files_expand () {
+    typeset _p _mode _group _owner _flags _path _optional _has_target 
+    typeset _path _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
+
+    test $# -eq 0 && return
+    case "$1" in 
+	"#"*) return;;                                  # a comment?
+	/*) _p="$1";;
+	*) _p="/$1"; pp_warn "$1: missing leading /";;  # ensure leading /
+    esac
+    shift;
+
+    #-- sanity checks
+    case "$_p" in
+	*/../*|*/..) pp_error "$_p: invalid .. in path";;
+	*/./*|*/.)   pp_warn  "$_p: invalid component . in path";;
+	*//*)        pp_warn  "$_p: redundant / in path";;
+    esac
+
+    #-- the mode must be an octal number of at least three digits
+    _mode="="
+    case "$1" in
+	*:*) :;;
+	[01234567][01234567][01234567]*) _mode="$1"; shift;;
+    esac
+
+    #-- the owner:group field may have optional parts
+    case "$1" in
+	*:*) _group=${1#*:}; _owner=${1%:*}; shift;;
+	*)   _group=-;       _owner=-;;
+    esac
+
+    #-- process the flags argument
+    _flags=
+    _optional=false
+    _has_target=false
+    if test $# -gt 0; then
+	case ",$flags," in *,volatile,*) _flags="${_flags}v";; esac
+	case ",$flags," in *,optional,*) _optional=true;; esac
+	case ",$flags," in *,symlink,*) _has_target=true;; esac
+	shift
+    fi
+
+    #-- process the target argument
+    if $_has_target; then
+	test $# -ne 0 || pp_error "$_p: missing target"
+	_target="$1"
+	shift
+    fi
+
+    test $# -eq 0 || pp_error "$_p: too many arguments"
+
+    #-- expand the path using the shell glob
+    (cd ${pp_destdir} && $pp_expand_path ".$_p") > $pp_wrkdir/tmp.files.exp
+    while read _path; do
+	_path="${_path#.}"
+	_file="${pp_destdir}${_path}"
+	_tgt=
+	_m="$_mode"
+	_o="$_owner" 
+	_g="$_group"
+	_f="$_flags"
+
+	#-- set the type based on the real file's type
+	if $_has_target && test -h "$_file"; then
+	   _type=s
+	   if test x"$_target" != x"="; then
+	       _tgt="$_target"
+	   else
+	       _tgt=`readlink "$_file"`
+	   fi
+	   _m=777
+	elif test -d "$_file"; then
+	   #-- display a warning if the user forgot the trailing /
+	   case "$_path" in 
+		*/) :;; 
+		*) pp_warn "$_path (matching $_file): adding trailing /"
+		   _path="$_path/";;
+	   esac
+	   _type=d
+	   $_has_target && pp_error "$_file: not a symlink"
+	elif test -f "$_file"; then
+	   case "$_path" in
+		*/) pp_warn "$_path (matching $_file): removing trailing /"
+		    _path="${_path%/}"
+		    ;;
+	   esac
+	   _type=f
+	   $_has_target && pp_error "$_file: not a symlink"
+	else
+	   $_optional && continue
+	   pp_error "$_file: missing"
+	   _type=f
+	fi
+
+	#-- convert '=' into mode/owner/group from ls
+	case ":$_m:$_o:$_g:" in *:=:*)
+	    /bin/ls -l1d "$_file" > $pp_wrkdir/ls.tmp ||
+                pp_error "cannot read $_file"
+	    read _lm _ll _lo _lg _ls _lx < $pp_wrkdir/ls.tmp
+	    test x"$_m" = x"=" && _m=`pp_mode_from_ls "$_lm"`
+	    test x"$_o" = x"=" && _o="$_lo"
+	    test x"$_g" = x"=" && _g="$_lg"
+	    ;;
+	esac
+	
+	test -n "$_f" || _f=-
+	
+	#-- sanity checks
+	test -n "$_type" || pp_die "_type empty"
+	test -n "$_path" || pp_die "_path empty"
+	test -n "$_m" || pp_die "_m empty"
+	test -n "$_o" || pp_die "_o empty"
+	test -n "$_g" || pp_die "_g empty"
+
+	pp_debug "$_type $_m $_o $_g $_f $_path" $_tgt
+	echo "$_type $_m $_o $_g $_f $_path" $_tgt
+        echo "$_path" >> $pp_wrkdir/all.files
+    done < $pp_wrkdir/tmp.files.exp
+}
+
+#@ pp_files_check_duplicates(): raise an error on duplicate files
+pp_files_check_duplicates () {
+    typeset _path
+    if test -s $pp_wrkdir/all.files; then
+        sort < $pp_wrkdir/all.files | uniq -d > $pp_wrkdir/duplicate.files
+        while read _path; do
+            pp_warn "$_path: file declared more than once"
+        done <$pp_wrkdir/duplicate.files
+    fi
+}

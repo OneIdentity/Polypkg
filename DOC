@@ -1,0 +1,379 @@
+
+PolyPackage  - a distributable cross-platform packaging system
+
+This document describes the generic packaging interface.
+
+Features
+
+- redistributable for source packages
+- assumes simple common case
+- based on Bourne Shell; embeddable shell
+- provides signal-based native 'service' integration
+- uses notion of 'components' (runtime, debugging, development, doc)
+
+Examples
+
+1. Simple binary tool package
+
+  	%set
+	name="hello"
+	description="Hello, world"
+
+	%files run
+	/usr/bin/*
+
+2. Service example
+
+	%set
+	name="hellod"
+	description="Hello, world service"
+
+	%files run
+	/usr/libexec/*
+
+	%service hellod
+
+3. Library example
+
+	%set
+	name="libhello"
+	description="Hello, world library"
+
+	%files run
+	/usr/lib/libhello.%so
+
+	%files dev
+	/usr/lib/libhello.a
+	/usr/include/hello.h
+
+4. Diagnostic example
+
+	%set
+	name="hello"
+	description="Hello tool"
+
+	%files run
+	/usr/bin/hello
+
+	%files dbg
+	/usr/bin/hello-dump
+
+Invocation
+
+        pp [options] [input-file]
+
+	   -d --debug                  -- write copious info to stderr
+	      --destdir=path           -- defaults to $DESTDIR
+	   -i --install                -- install after packaging
+	   -l --list                   -- write package filenames to stdout
+	      --no-clean               -- don't remove files in wrkdir
+	      --no-package             -- do everything but create packages
+	      --only-front             -- only perform front-end actions
+	   -p --platform=platform      -- defaults to local platform
+	      --wrkdir=path            -- defaults to $TMPDIR or /tmp
+	   -v --verbose                -- write info to stderr
+	      --version                -- write version and exit
+
+	   input-file               -- defaults to '-', meaning stdin
+
+Platforms
+
+    PolyPackage determines the platform type by invoking 'uname -s'.
+
+    PolyPackage is a shell script that runs on most versions of the 
+    Bourne or Korn shell. For file globbing on Solaris, ksh must be 
+    used instead of sh.  The following tests are used to determine if 
+    the current shell is sufficient or if another shell should 
+    be executed to run the pp script.
+
+	echo /{usr,bin}                  - {}-mode, no re-execute
+	echo /@(usr|bin)                 - @()-mode, no re-execute
+	ksh -c 'echo /{usr,bin}'         - re-execute
+	ksh -c 'echo /@(usr|bin)'        - re-execute
+	bash -c 'echo /{usr,bin}'        - re-execute
+	bash -c 'echo /@(usr|bin)'       - re-execute
+
+Sections
+
+    Sections are introduced by %-directives. A line that starts with '%%'
+    will be treated as if it were a literal line and the first '%' will 
+    be removed.
+
+    	%% this line will not be interpreted as a %-directive
+
+Conditionals
+
+    The special %-directives %if, %else and %endif are processed
+    before sections. The argument to %if and %else is given to the
+    shell's "test" builtin. 
+
+    		%if $name = "foo"
+		   some lines
+		%endif
+
+    If the argument to the %if directive starts with '[' then it
+    is interpreted as a comma separated list of platform names
+
+                %if [aix,linux]
+                    some lines
+                %endif
+                
+                %if [!hpux]
+                    some lines
+                %endif
+
+    If a line begins with a '[' then it is treated as a platform
+    conditional as well.
+
+                %files run
+                /etc/foo
+                [aix] /etc/aix/bar
+                [!aix] /etc/bar
+
+    There is no %elif. Use nested %if instead.
+
+The %set section
+
+	The %set section directive causes successive lines to 
+	be interpreted as literal shell code. The section body is stored
+	in a text file and then sourced with the '.' operator at the 
+	end of the section.
+
+		%set
+		  name="foo"
+		  version="1.0"
+
+	Variables expected to be declared in this section are:
+
+		name		- simple identifier name of the package
+		version		- version identifier: must start with
+				  a digit, and consist of only digits and
+				  periods. At most three periods are
+				  permitted.
+		summary		- summary of package, limit 40 characters
+				  [defaults to "no summary"]
+		description	- A paragraph describing the package.
+				  Can be placed in quotes where newlines 
+				  will be replaced by spaces.
+				  [defaults to "No description"]
+		copyright	- copyright message, limit 40 characters
+				  [default is "(c) YYYY, Quest Software..."]
+
+    Output of a %set section:
+
+    	Each %set section generates a temporary file, whose contents
+	are sourced by the driver shell script at the end of seeing the
+	section. The temporary file is then immediately deleted. The
+	variables are then available to the rest of the script. Variable
+	names starting with $pp_ are private to polypackage.
+
+The %files sections
+
+	The files comprising the various components of the package
+	are listed in the %files sections.
+
+	The %files section directive must be followed by one of the
+	four standard component names: run dev doc dbg. If the component
+	is missing, 'run' is assumed.
+
+	    %files [component]
+
+	The section body ignores blank lines and lines starting with '#'.
+	Whitespace at the beginning of lines is ignored. The format
+	of body lines is as follows:
+
+	    path-glob [octal-mode] [[owner]:[group]] [flags] [target]
+
+	'Path-glob' is an absolute pathname which may contain the wildcard
+	and pattern metacharacters *,?,[,],{,}. 
+
+	  Impl note: {,}-patterns may be converted into /@(|)-patterns
+
+	If the path-glob ends with %so then it is replaced with
+	platform's native shared library suffix pattern. 
+	On HP-UX this is .sl*, and on other platforms it is .so*.
+	For AIX, .a is used.
+
+		/usr/lib/libfoo.%so
+
+	Source files matching the path-glob must exist in a directory 
+	rooted under $DESTDIR unless the 'optional' flag is supplied.
+	If the path-glob refers to a directory, it *must* end with a
+	trailing slash.
+
+	The octal-mode argument must start with a digit or be
+	the special word '=' meaning to use the mode of the 
+	source file.
+
+	The owner:group argument must contain a ':'. Either or both
+	of the owner or group paths are optional, or can be specified
+	as '=' meaning to use the mode of the source file.
+
+	The defaults for unspecified mode, owner and group depend on the
+	platform, path prefix, and the file type.  Generally, if the 
+	path is a directory, the default mode will be 755. For normal 
+	files the default mode is generally 644.
+
+	If the source file is a symlink, then the package will include
+	a symlink. If the target of the source symlink begins with $DESTDIR,
+	then it is stripped. If a target is specified in flags, then
+	the source file is ignored. Symlink modes are ignored.
+
+	'Flags' is a comma-delimited list of flags. Valid flags are:
+		volatile	- uninstall will ignore changes in the file
+		optional	- ignore if the path-glob matches nothing
+		symlink		- a symlink target follows
+
+    Output of %files sections:
+
+	The result of processing all the %files sections is a collection
+	of 'expanded' per-component %files lists, called "%files.run", etc.
+	Each line of these files is of the form
+
+		[d|f] mode owner group flags path
+		s     mode owner group flags path target
+
+	Where d,f,s indicate directory, file or symbolic link. 
+	The v field indicates volatility, or '-' for a placeholder.
+	The mode of symbolic links is ignored but written as 777.
+
+	The %fixup stage may be used to edit the %files components.
+
+The %post and %preun sections
+
+	The %post and %preun sections define shell scripts that
+	are executed after file components are installed, and before
+	file components are uninstalled.
+
+		%post [component]
+		%preun [component]
+
+	The body of these sections is treated as shell script, but
+	%{} and %() expansion takes place. The shell script body is
+	appended to any previous %post/%preun scripts for that component.
+
+    Output of %post or %preun sections
+
+    	The result of processing these sections are files such as
+	"%post.run" or "%preun.dbg". The platform-specific code ensures
+	that these scripts are invoked at the right times during
+	installation.
+
+The %service section
+
+	A %service section consists of the directive %service followed
+	by a simple service identifier. If omitted, the simple name of the
+	package is used.
+	
+		%service [name]
+
+	The body of a %service section consists of shell text. It is
+	expected to set some simple shell variables, and is effectively
+	treated much like a %set section. 
+
+	The service sections assume the common case of a daemon process
+	started at boot time and controlled by native platform service
+	management tools.
+
+	A service is assumed to be started as invocation of an executable
+	file with some arguments.  Two flavours of service are assumed
+
+	    the program forks, becomes a daemon, the parent writes
+	      the child's PID to a well-known path and exits true.
+
+	    the program does not fork or become a daemon. No PID file
+	      is written.
+
+	The first style is selected by providing a 'pidfile' variable,
+	where the second style is selected by setting the pidfile variable
+	to the empty string (the default for each %service section).
+
+	Platform-independent variables expected to be set are:
+
+		cmd		Shell command to execute
+		pidfile		Path to the file containing the PID as
+				the first word on the first line.
+		stop_signal	Signal number that gracefully stops 
+				the process [default 15]
+		user		User to run the service as [default root]
+
+	Other platform-specific variables may be provided in this
+	section and are treated differently.
+	
+   Output of a %service section:
+
+   	The result of processing a %service section is to create or
+	append to a file called %service.name, where 'name' is the 
+	name given to the service. The file will contains the shell
+	text. The shell text is sourced and then platform-specific
+	changes are made to the other output files before %fixup
+	
+The %depend section
+
+	The dependency section lists the names of packages that
+	a component will depend on. The %depend directive is followed
+	by a component name ('run' is assumed if it is omitted).
+
+	    %depend [component]
+
+	The body of a depend section consists of names and 
+	minimum version numbers of (other PolyPackage) packages.
+	Blank lines, or lines start starting with '#' are ignored.
+	The lines can contain shell variable expansion.
+
+		name version
+
+	Lines starting with a the special symbol "+" indicate 
+	platform-specific dependency information.
+
+    Output of a %depend section
+
+    	The result of processing all the %depend sections results
+	in file called %depend.run etc which contain lines of either
+	of the forms
+
+		name version
+		+ text
+
+	Multiple %depend sections for a component are concatenated
+	together. Lines beginning with # and blank lines are removed.
+	Whitespace at the beginning of lines is ignored.
+
+	Note that some %depend.* files are created regardless of whether 
+	a %depend section has been specified for them or not. If the 
+	components doc, dbg and dev have been named in a %files 
+	section, then the following %depend sections declarations are 
+	implied:
+
+		%depend doc
+		  $name $version
+
+		%depend dbg
+		  $name $version
+
+		%depend dev
+		  $name $version
+
+
+The %fixup section
+
+	The fixup section body contains shell text that is run
+	immediately before the platform packaging tools are executed.
+
+	The %fixup directive is not followed by any identifier.
+	This is really only intended as a last-resort place to hold 
+	any horrible hackery required.
+
+    Output of a %fixup section
+
+    	The bodies of fixup sections are concatenated together
+	into a temporary file.
+
+The %pp section
+
+	This optional section has no body. It specifies a version of
+	the PolyPackage API that the script was written to use. This 
+	document descibes version 1.0.
+
+		%pp 1.0
+

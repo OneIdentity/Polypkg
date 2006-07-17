@@ -1,0 +1,26 @@
+#!/bin/sh
+
+name ifelse4
+desc nested complex %if and %else
+
+pp_front_end <<-.
+	%set
+	%if 0
+	 %if 1
+	  touch $TMPDIR/bad1
+	 %else
+	  touch $TMPDIR/bad2
+	 %endif
+	 touch $TMPDIR/bad3
+	%else
+	 touch $TMPDIR/good1
+	%endif
+	touch $TMPDIR/good2
+.
+
+test -r $TMPDIR/good1 -a \
+     -r $TMPDIR/good2 -a \
+     ! -r $TMPDIR/bad1 -a \
+     ! -r $TMPDIR/bad2 -a \
+     ! -r $TMPDIR/bad3  && pass
+

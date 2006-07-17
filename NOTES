@@ -1,0 +1,142 @@
+
+The idea of polypkg is to supply a common packaging script that can
+be converted into packaging commands on various different platforms.
+
+The style is to provide reasonable defaults for everything, but allow
+platform-specific overrides/explicits at every place.
+
+Platforms
+---------
+The package systems we're interested in are
+
+	rpm	(Red Hat Linux)
+	bff	(AIX)
+	pkg	(Solaris)
+	sw	(HP-UX)
+
+Package components
+------------------
+From what I can see, the common components of packages on each platform are:
+
+	- run ('usr', runtime binaries; bulk of package) [mandatory]
+	    + ('root', configuration files, system modules, init linkage)
+	- doc (man pages, readmes)
+	- dev (developer libraries, header files)
+
+  Dependency tree:
+	run
+	 +cfg
+	 +doc
+	 +dev
+
+(Source is a single multi-platform tar.gz; use autoconf & include pp.)
+
+Of course the components need not be separated like this.
+On RPM these map into %{name}, %{name}-doc, %{name}-dev, etc
+On AIX these are filesets .rte, .adt etc, and split root/usr
+
+Server packages
+---------------
+Server packages are special and all too common. Platforms usually have
+a mechanism to manage services started at boot, usually modelled on
+SysV's init scripts. I want polypkg to have template scripts for
+each platform that just work. We'll make the assumption that services
+are simple non-forking processes, started with arguments, that don't write
+a PID file and are controlled with signals.
+
+A special section "%service $name" will add start/stop init scripts for the
+service. the section contains these assignents
+
+	svc_cmd:	single program followed by args
+	svc_daemon:	'yes' if the cmd background; 'no' if it doesn't [dflt]
+	svc_pid:	pid file written, or empty if none [dflt]
+	svc_stopsig:	signal used to stop the server ([dlt] TERM)
+	svc_user:	user to run service as ([dflt] root)
+
+if $svc_pid is empty, it gets set internally to a platform-agreeable path, 
+and code will be added to capture the PID of the command at startup. 
+$svc_daemon must be 'no' in this case.
+
+if $svc_user is not root, then the user is created at post-install
+
+SuSE/Red Hat is a good example where polypkg can detect at runtime
+what kind of init script to install. (LSB or insserv)
+
+Package descriptions
+--------------------
+Most packages have some human-readable descriptions. We'll try to form
+the union of information that each native packaging system has,
+and default as much as possible.
+
+	short name		$name
+	brief summary		$brief
+	long description	$description
+	vendor name		$vendor
+	packager name		$packager
+	maintainer email	$maintainer
+	home page url		$url
+	category
+
+Version numbering
+-----------------
+Version numbering is usually fairly flexible, but the lowest common
+denominator is four integers, period-delimited, <major.minor.micro.build>.
+
+For RPM, the 'release' field should always be '1'.
+
+
+Package file lists
+------------------
+Packages generally consist of a file tree that is overlaid onto
+the target host's root file system.
+
+pp shall NOT support relocatable installs
+
+All files are assumed to be installed already relative to $DESTDIR.
+
+Mostly, what's important in a file list is
+	- the files (of course)
+	- directories to create if they're not there already (shared dirs!)
+	- permissions and ownership
+	- which files are 'volatile' (expected to change)
+
+Wildcards can be used in the file list.  This lets the packager tool
+determine the files for you at packaging time, but leads to the risk
+of adding files you don't want packaged. 
+
+Package post-install and pre-remove scripts
+-------------------------------------------
+
+These are scripts run just after install, or just before uninstall
+
+
+Style
+-----
+I like lines that start with a special, unusual character.  Let's use '%'.
+Single line comments starting with '#'.
+Something that is easy to be processed by shell scripts. Especially
+with the shell's 'eval' operator.
+
+Allow shell vars to be set for the %set section. These override settings
+later.
+
+Lines that apply to one packaging system only should be prefixed with
+[foo]. Or [!foo], or [foo,bar] or [!foo,bar]
+
+%post[-install] and %pre[-remove] sections can be followed by
+a list of packaging systems. They get merged together in the order specified.
+Actually, Allow all sections get merged together like that.
+
+Source tarballs
+---------------
+I think source tarballs will have this kind of directory structure:
+
+	<name>-<version>/
+	  +-- dist/          - distribution sources, patches, polypkg script
+	  +-- Makefile       - toplevel makefile (targets: build, package)
+	  +-- plat.<plat>.mk - platform-specific makefile fragments
+	  +-- <name>.pp      - packaging script
+	  +-- NEWS           - summary of changes updated for major releases
+	  +-- ChangeLog      - detailed log messages from source repository
+	  +-- pp             - distributable polypkg script
+

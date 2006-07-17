@@ -1,0 +1,196 @@
+# Polypkg main
+
+pp_version=1.0
+pp_copyright="(c) 2006, Quest Software, Inc. All rights reserved."
+
+pp_opt_debug=false
+pp_opt_destdir="$DESTDIR"
+pp_opt_list=false
+pp_opt_no_clean=false
+pp_opt_no_package=false
+pp_opt_platform=
+pp_opt_wrkdir="${TMPDIR:-/var/tmp}/pp.work.$$"
+pp_opt_verbose=false
+pp_opt_version=false
+pp_opt_input="-"
+
+#@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
+pp_main_cleanup () {
+	pp_debug "main_cleanup"
+	if ! $pp_opt_no_clean -a x"$pp_platform" != x"unknown"; then
+	    pp_backend_${pp_platform}_cleanup
+	    $pp_errors && pp_die "Errors during cleanup"
+	    pp_debug "removing $pp_wrkdir"
+	    rm -rf "$pp_wrkdir"
+	fi
+}
+
+#@ pp_parseopts(args...): sets the $pp_opt_* variables from cmd line args
+#    exits on incorrect usage
+pp_parseopts () {
+	while test $# -gt 0; do
+
+	  # convert -[dilv] to --long-options
+	  case "$1" in
+	    --?*=?*) n=`echo "$1" | sed -ne 's/^--\([^=]*\)=.*/\1/p'`
+	           a=`echo "$1" | sed -ne 's/^--[^=]*=\(.*\)/\1/p'`
+		   shift
+		   set -- "--$n" "$a" ${1+"$@"};;
+	    --?*) : ;;
+
+	    -d)  shift; set -- "--debug" ${1+"$@"};;
+	    -d*) a=`echo "$1" | sed -ne 's/^-.//'` 
+		 shift; set -- "--debug" ${1+"$@"};;
+
+	    -i)  shift; set -- "--install" ${1+"$@"};;
+	    -i*) a=`echo "$1" | sed -ne 's/^-.//'` 
+		 shift; set -- "--install" ${1+"$@"};;
+
+	    -l)  shift; set -- "--list" ${1+"$@"};;
+	    -l*) a=`echo "$1" | sed -ne 's/^-.//'` 
+		 shift; set -- "--list" ${1+"$@"};;
+
+	    -p) shift; set -- "--platform" ${1+"$@"};;
+	    -p*) a=`echo "$1" | sed -ne 's/^-.//'`
+		 shift; set -- "--platform" "$a" ${1+"$@"};;
+
+	    -v)  shift; set -- "--verbose" ${1+"$@"};;
+	    -v*) a=`echo "$1" | sed -ne 's/^-.//'` 
+		 shift; set -- "--verbose" ${1+"$@"};;
+	    -\?)  shift; set -- "--help" ${1+"$@"};;
+	    -\?*) a=`echo "$1" | sed -ne 's/^-.//'` 
+		 shift; set -- "--help" ${1+"$@"};;
+	  esac
+
+	  case "$1" in
+	    --destdir|--platform|--wrkdir)
+		test $# -ge 2 || pp_error "missing arguments to $1";;
+	  esac
+
+	  case "$1" in
+	    --) 				       shift;break;;
+	    --debug)           pp_opt_debug=true;      shift;;
+	    --destdir)         pp_opt_destdir="$2";    shift;shift;;
+	    --install)         pp_opt_install=true;    shift;;
+	    --list)            pp_opt_list=true;       shift;;
+	    --no-clean)        pp_opt_no_clean=true;   shift;;
+	    --no-package)      pp_opt_no_package=true; shift;;
+	    --platform)        pp_opt_platform="$2";   shift;shift;;
+	    --wrkdir)          pp_opt_wrkdir="$2";     shift;shift;;
+	    --verbose)         pp_opt_verbose=true;    shift;;
+	    --version)         pp_opt_version=true;    shift;;
+	    --help)            pp_errors=true;         shift;;
+	    -*) pp_error "unknown option $1"; shift;;
+	    *) break;;
+	  esac
+
+	done
+
+	pp_opt_input=-
+	if test $# -gt 0; then
+	    pp_opt_input="$1"
+	    shift
+	fi
+
+	test $# -gt 0 && pp_errors=true
+
+	if $pp_errors; then 
+	    cat <<. >&2
+polypkg $pp_version $pp_copyright
+usage: $0 [options] [input.pp] >&2
+    -d --debug                  -- write copious info to stderr
+       --destdir=path           -- defaults to $DESTDIR
+    -? --help                   -- display this information
+    -i --install                -- install after packaging
+    -l --list                   -- write package filenames to stdout
+       --no-clean               -- don't remove temporary files
+       --no-package             -- do everything but create packages
+       --only-front             -- only perform front-end actions
+    -p --platform=platform      -- defaults to local platform
+       --wrkdir=path            -- defaults to subdirectory of $TMPDIR or /tmp
+    -v --verbose                -- write info to stderr
+       --version                -- display version and quit
+.
+	    exit 1
+	fi
+}
+
+#@ pp_package(): drives the front-end, middle and backend 
+pp_package () {
+	# initialise the front and back ends
+	pp_frontend_init
+	pp_backend_init
+
+	# run the front-end to generate the intermediate files
+	pp_debug "calling frontend on $pp_opt_input"
+	case "$pp_opt_input" in 
+	    -) pp_frontend;;
+	    *) pp_frontend <"$pp_opt_input";;
+	esac
+
+	# some sanity checks after front-end processing
+        if test x"$pp_platform" != x"null"; then
+	    pp_debug "sanity checks"
+	    test -n "$pp_components" || pp_error "No components?"
+	    pp_check_var_is_defined  "name"
+	    pp_check_var_is_defined  "version"
+            pp_files_check_duplicates
+	    pp_die_if_errors "Errors during sanity checks"
+        fi
+
+	# run the back-end to generate the package
+	pp_debug "calling backend"
+	pp_backend
+	pp_die_if_errors "Errors during backend processing"
+
+	# copy the resulting package files to .
+	for f in `pp_backend_names` -; do
+           test x"$f" = x"-" && continue
+	   pp_debug "copying: $f"
+	   cp $pp_wrkdir/$f . || pp_error "$f: missing package"
+	done
+	pp_die_if_errors "Errors during package copying"
+}
+
+#@ pp_install() install all the components
+pp_install () {
+	typeset _cpt
+
+	for _cpt in $pp_components; do
+	    pp_debug "installing $_cpt"
+	    pp_backend_install $_cpt
+	done
+	pp_die_if_errors "Errors during package install"
+}
+
+#@ pp_main(): main driver function
+pp_main () {
+
+	pp_set_expand_converter_or_reexec ${1+"$@"}
+	pp_parseopts ${1+"$@"}
+
+        if $pp_opt_version; then
+            #-- print version and exit 
+            echo "polypkg $pp_version"
+            exit 0
+        fi
+
+	pp_set_platform
+
+	trap 'pp_main_cleanup' 0
+
+	pp_wrkdir="$pp_opt_wrkdir"
+	pp_debug "pp_wrkdir = $pp_wrkdir"
+
+	pp_destdir="$pp_opt_destdir"
+	pp_debug "pp_destdir = $pp_destdir"
+
+	rm -rf "$pp_wrkdir"
+        mkdir -p "$pp_wrkdir"
+
+	pp_package
+	$pp_opt_install && pp_install
+
+	exit 0
+}
+

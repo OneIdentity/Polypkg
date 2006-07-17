@@ -1,0 +1,36 @@
+# null backend
+
+pp_platforms="$pp_platforms null"
+
+#@ pp_backend_null_detect(uname_s): return true if matches uname on null
+pp_backend_null_detect () {
+    ! :
+}
+
+#@ pp_backend_null_init(): initialises platform variables for null 
+pp_backend_null_init () {
+    :
+}
+
+
+#@ pp_backend_null(): processes output files to generate a package files
+pp_backend_null () {
+    :
+}
+
+#@ pp_backend_null_cleanup(): removes any files created outside $pp_wrkdir
+pp_backend_null_cleanup () {
+    :
+}
+
+#@ pp_backend_null_names(): prints the paths to package files
+#    each path should start with $name-$version
+#    the package must be relative to the $pp_wrkdir directory
+pp_backend_null_names () {
+    :
+}
+
+#@ pp_backend_null_install(component): installs package containing the cpt
+pp_backend_null_install () {
+    :
+}

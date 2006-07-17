@@ -1,0 +1,305 @@
+# http://www.novell.com/coolsolutions/feature/11256.html
+
+#@ pp_backend_rpm_init_svc(): initialises rpm backend variables
+pp_backend_rpm_init_svc () {
+    pp_rpm_default_start_runlevels=         # should be "3 4 5"??
+    pp_rpm_default_svc_description="No description"
+}
+
+#@ pp_rpm_service_install_common(svc): emit common code for service install
+pp_rpm_service_install_common () {
+    cat <<-'.'
+
+        _pp_install_service () {
+            typeset svc level
+            svc="$1"
+            if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
+            then
+                # LSB-style install
+                /usr/lib/lsb/install_initd /etc/init.d/$svc
+            elif [ -x /sbin/chkconfig ]; then
+                # Red Hat/chkconfig-style install
+                /sbin/chkconfig --add $svc
+            else
+                # manual install
+                set -- `sed -n -e 's/^# Default-Start://p' /etc/init.d/$svc`
+                for level
+                do ln -sf /etc/init.d/$svc /etc/rc.d/rc$level.d/S90$svc; done
+                set -- `sed -n -e 's/^# Default-Stop://p' /etc/init.d/$svc`
+                for level
+                do ln -sf /etc/init.d/$svc /etc/rc.d/rc$level.d/K10$svc; done
+            fi
+        }
+.
+}
+
+#@ pp_rpm_service_remove_common(svc): emit common code for service removal
+pp_rpm_service_remove_common () {
+    cat <<-'.'
+
+        _pp_remove_service () {
+            typeset svc
+            svc="$1"
+            /etc/init.d/$svc stop >/dev/null 2>&1
+            if [ -x /usr/lib/lsb/remove_initd -a ! -r /etc/redhat-release ]
+            then
+                /usr/lib/lsb/remove_initd /etc/init.d/$svc
+            elif [ -x /sbin/chkconfig ]; then
+                /sbin/chkconfig --del $svc
+            else
+                rm -f /etc/rc.d/rc?.d/[SK]??$svc
+            fi
+        }
+.
+}
+
+
+#@ pp_rpm_service_install(svc): emit code to install/start a service
+pp_rpm_service_install () {
+    pp_rpm_service_init_script $1   # create init script if it doesn't exist
+    echo "_pp_install_service $1"
+}
+
+#@ pp_rpm_service_remove(svc): emit code to stop/remove a service
+pp_rpm_service_remove () {
+    echo "_pp_remove_service $1"
+}
+
+
+#@ pp_rpm_add_file_if_missing($path): add a file if it is missing
+#   returns false if the file already exists; otherwise adds
+#   adds an entry to the %files.run list. If the path is in a missing
+#   directory, that directory is also created under $pp_destdir.
+pp_rpm_add_file_if_missing () {
+    typeset dir
+    #-- check that the file isn't already declared in run
+    if test -s $pp_wrkdir/%files.run; then
+      awk "\$6 == \"$1\" {exit 1}" < $pp_wrkdir/%files.run || return 1  
+    fi
+
+    dir=`dirname $1`
+    if test ! -d $pp_destdir$dir; then
+        mkdir -p $pp_destdir$dir
+        pp_rpm_cleanup_later $dir
+    fi
+    echo "f 755 - - - $1" >> $pp_wrkdir/%files.run
+    return 0
+}
+
+#@ pp_rpm_init_service_vars(): initialise rpm-specific service variables
+#    pp-provided vars are cmd, pidfile, stop_signal and user
+pp_rpm_init_service_vars () {
+
+    reload_signal=
+    start_runlevels=${pp_rpm_default_start_runlevels}   # == lsb default-start
+    stop_runlevels="0 1 2 6"                            # == lsb default-stop
+    svc_description="${pp_rpm_default_svc_description}" # == lsb short descr
+    svc_process=
+
+    lsb_required_start='$local_fs $network'
+    lsb_should_start=
+    lsb_required_stop=
+    lsb_description=
+
+    start_priority=50
+    stop_priority=50
+}
+
+#@ pp_rpm_service_make_init_script(svc): generates a service init script 
+#   Assumes %service variables have been set before invocation
+#   Does nothing if an /etc/init.d/$svc script exists already.
+#   Otherwise creates an /etc/init.d/$svc script that should work
+#   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
+#   broken on Red Hat, chkconfig is tried first.
+pp_rpm_service_make_init_script () {
+    typeset svc=$1 
+    typeset script=/etc/init.d/$svc
+    typeset out=$pp_destdir$script
+    typeset _process _cmd _rpmlevels
+
+    pp_rpm_add_file_if_missing $script || return 0
+    pp_rpm_cleanup_later $script
+
+    #-- start out as an empty shell script
+    cat <<-"." >$out
+	#!/bin/sh
+.
+
+    #-- determine the process name from $cmd unless $svc_process is given
+    set -- $cmd
+    _process=${svc_process:-"$1"}
+
+    #-- construct a start command that builds a pid file if needed
+    _cmd="$cmd";
+    if test -z "$pidfile"; then
+        pidfile=/var/run/$svc.pid
+        _cmd="$cmd & echo \$! > \$pidfile"
+    fi
+    if test "$user" != "root"; then
+        _cmd="su $user -c exec $_cmd";
+    fi
+
+    #-- generate the Red Hat chkconfig headers
+    _rpmlevels=`echo $start_runlevels | tr -d ' '`
+    cat <<-. >>$out
+	# chkconfig: ${_rpmlevels:--} ${start_priority} ${stop_priority}
+	# description: ${svc_description}
+	# processname: ${_process}
+.
+
+    #-- generate the LSB init info
+    cat <<-. >>$out
+	### BEGIN INIT INFO
+	# Provides: $svc
+	# Required-Start: $lsb_required_start
+	# Should-Start: $lsb_should_start
+	# Required-Stop: $lsb_required_stop
+	# Default-Start: $start_runlevels
+	# Default-Stop: $stop_runlevels
+	# Short-Description: $svc_description
+	### END INIT INFO
+	# Generated by PolyPackage $pp_version
+	# ${copyright}
+
+.
+
+    if test x"${svc_description}" = x"${pp_rpm_default_svc_description}"; then
+        svc_description=
+    fi
+
+    #-- write service-specific definitions
+    cat <<. >>$out
+	#-- definitions specific to service ${svc}
+	svc_name="${svc_description:-$svc service}"
+	user="${user}"
+	pidfile="${pidfile}"
+	stop_signal="${stop_signal}"
+	reload_signal="${reload_signal}"
+	pp_exec_cmd () { $_cmd; }
+.
+
+    #-- write the generic part of the init script
+    cat <<'.' >>$out
+
+        #-- use system message logging, if available
+        if [ -f /lib/lsb/init-functions -a ! -r /etc/release-redhat ]; then
+            . /lib/lsb/init-functions
+            pp_success_msg () { log_success_msg "$@"; }
+            pp_failure_msg () { log_failure_msg "$@"; }
+            pp_warning_msg () { log_warning_msg "$@"; }
+        elif [ -f /etc/init.d/functions ]; then
+            . /etc/init.d/functions
+            pp_success_msg () { success "$@"; }
+            pp_failure_msg () { failure "$@"; }
+            pp_warning_msg () { warning "$@"; }
+        else
+            pp_success_msg () { echo "$@" OK; }
+            pp_failure_msg () { echo "$@" FAIL; }
+            pp_warning_msg () { echo "$@" WARNING; }
+        fi
+
+        #-- prints a status message
+        pp_msg () { echo -n "$*: "; }
+
+        #-- prints usage message
+        pp_usage () {
+            echo "usage: $0 {start|stop|status|restart|reload|condrestart|try-restart|force-reload}" >&2
+            return 2
+        }
+
+        #-- reloads the service, if possible
+        #   returns 0=success 1=failure 3=unimplemented
+        pp_reload () {
+            test -n "$reload_signal" || return 3 # unimplemented
+            pp_msg "Reloading ${svc_name}"
+            if pp_signal -${reload_signal}; then
+                pp_success_msg
+                return 0
+            else
+                pp_failure_msg "not running"
+                return 1
+            fi
+        }
+
+        #-- delivers signal $1 to the pidfile
+        #   returns 0=success 1=failure
+        pp_signal () {
+            if test -r "$pidfile"; then
+                read pid < $pidfile
+                kill "$@" "$pid"
+            else
+                return 1
+            fi
+        }
+
+        #-- prints information about the service status
+        #   returns 0=running 1=crashed 3=stopped
+        pp_status () {
+            pp_msg "Checking for ${svc_name}"
+            if pp_signal -0; then
+                pp_success_msg "running"
+                return 0
+            elif test -r "$pidfile"; then
+                pp_failure_msg "not running (crashed)"
+                return 1
+            else
+                pp_failure_msg "not running"
+                return 3
+            fi
+        }
+
+        #-- starts the service
+        #   returns 0=success 1=failure
+        pp_start () {
+            pp_msg "Starting ${svc_name}"
+            if pp_status >/dev/null; then
+                pp_warning_msg "already started"
+                return 0
+            elif pp_exec_cmd; then
+                pp_success_msg
+                return 0
+            else
+                pp_failure_msg "cannot start"
+                return 1
+            fi
+        }
+
+        #-- stops the service
+        #   returns 0=success (always)
+        pp_stop () {
+            pp_msg "Stopping ${svc_name}"
+            if pp_signal -${stop_signal}; then
+                pp_success_msg
+            else
+                pp_success_msg "already stopped"
+            fi
+            rm -f "$pidfile"
+            return 0
+        }
+
+        #-- stops and starts the service
+        pp_restart () {
+            pp_stop
+            pp_start
+        }
+
+        case "$1" in
+            start)          pp_start;;
+            stop)           pp_stop;;
+            restart)        pp_restart;;
+            status)         pp_status;;
+            try-restart|condrestart)    
+                            if pp_status >/dev/null; then
+                                    pp_restart
+                            fi;;
+            reload)         pp_reload;;
+            force-reload)   if pp_status >/dev/null; then
+                                    pp_reload
+                            else
+                                    pp_restart
+                            fi;;
+            *)              pp_usage;;
+        esac
+.
+    chmod 755 $out
+}

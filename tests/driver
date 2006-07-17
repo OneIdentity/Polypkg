@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Test driver
+#
+
+PP=./pp
+TMPDIR=/tmp/pp.test
+
+NAME="**UNDEFINED** $1"
+DESC="**UNDEFINED**"
+
+name () { NAME="$*"; }
+desc () { DESC="$*"; }
+
+pass () { echo "PASS $NAME: $DESC"; exit 0; }
+fail () { echo "FAIL $NAME: $DESC"; exit 1; }
+skip () { echo "skip $NAME: $DESC"; exit 0; }
+
+#-- invokes the front-end only of pp
+pp_front_end () {
+    $PP --platform=null \
+        --wrkdir=$TMPDIR ${1+"$@"} \
+        ${DEBUG:+--debug} \
+        --no-clean \
+    || fail
+}
+
+rm -rf $TMPDIR
+
+. "$1"
+fail

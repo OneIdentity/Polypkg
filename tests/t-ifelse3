@@ -1,0 +1,25 @@
+#!/bin/sh
+
+name ifelse3
+desc nested %if and %else
+
+pp_front_end <<-.
+	%set
+	%if 1
+	%if 1
+	touch $TMPDIR/good1
+	%else
+	touch $TMPDIR/bad1
+	%endif
+	touch $TMPDIR/good2
+	%else
+	touch $TMPDIR/bad2
+	%endif
+	touch $TMPDIR/good3
+.
+
+test -r $TMPDIR/good1 -a \
+     -r $TMPDIR/good2 -a \
+     -r $TMPDIR/good3 -a \
+     ! -r $TMPDIR/bad1 -a \
+     ! -r $TMPDIR/bad2  && pass

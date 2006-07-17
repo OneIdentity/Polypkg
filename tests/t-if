@@ -1,0 +1,13 @@
+#! /bin/sh
+
+name if
+desc Tests the %if directive
+
+pp_front_end <<-.
+	%if 1
+	%set
+	touch $TMPDIR/ok
+	%endif
+.
+
+test -r $TMPDIR/ok && pass 

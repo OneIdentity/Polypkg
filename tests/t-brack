@@ -1,0 +1,44 @@
+#!/bin/sh
+
+name brackets
+desc 'test [platform] and %if [platform] notation works'
+
+pp_front_end <<-.
+	%set
+	touch $TMPDIR/ok1
+	[null] touch $TMPDIR/ok2
+	[!null] touch $TMPDIR/bad1
+	[foo,null] touch $TMPDIR/ok3
+	[foo,null,bar] touch $TMPDIR/ok4
+	[null,bar] touch $TMPDIR/ok5
+	[null,null,null] touch $TMPDIR/ok6
+	[!foo,null] touch $TMPDIR/bad2
+	[!foo,null,bar] touch $TMPDIR/bad3
+	[!null,bar] touch $TMPDIR/bad4
+	[!null,null,null] touch $TMPDIR/bad5
+
+        %if [null]
+        touch $TMPDIR/ok7
+        %endif
+
+        %if [foo,null]
+        touch $TMPDIR/ok8
+        %endif
+
+        %if [!null]
+        touch $TMPDIR/bad6
+        %endif
+
+        %if [!foo,null]
+        touch $TMPDIR/bad7
+        %endif
+.
+
+for f in ok1 ok2 ok3 ok4 ok5 ok6 ok7 ok8; do
+    test -r $TMPDIR/$f  || fail
+done
+for f in $TMPDIR/bad*; do
+    test -r $f && fail
+done
+
+pass

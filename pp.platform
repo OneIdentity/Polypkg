@@ -1,0 +1,28 @@
+
+#@ $pp_platform: set to the platform identifier (eg, "aix", "linux" etc.)
+pp_platform=
+
+#@ pp_set_platform(): sets the $pp_platform variable
+#   If --platform is provided, use that and check in the $pp_platforms list
+#   Otherwise probe each backend to see if it recognises `uname -s`
+#   Uses the $pp_platforms global variable.
+pp_set_platform () {
+    if test -n "$pp_opt_platform"; then
+	pp_contains "$pp_platforms" "$pp_opt_platform" ||
+		pp_die "$pp_opt_platform: unknown platform"
+	pp_platform="$pp_opt_platform"
+	pp_debug "forcing platform $pp_platform"
+    else
+	uname_s=`uname -s 2>/dev/null`
+	pp_platform=
+	for p in $pp_platforms; do
+	    if eval pp_backend_${p}_detect "$uname_s"; then
+		pp_platform="$p"
+		pp_debug "selecting platform $pp_platform"
+		break;
+	    fi
+	done
+	test -z "$pp_platform" && 
+		pp_die "cannot detect platform (supported: $pp_platforms)"
+    fi
+}

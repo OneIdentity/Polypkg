@@ -1,0 +1,49 @@
+#
+# Backend API
+#
+# Each backend for a platform <P> should provide these functions
+#
+#  pp_backend_P_init    - Initialises variables that the %set may replace
+#  pp_backend_P         - Reads the output files from the frontend and generate
+#                         the single output package file in $pp_wrkdir
+#  pp_backend_P_names   - Prints the output package names, without the 
+#                         $pp_wrkdir prefix. The names should start with 
+#                         "$name-$version"
+#  pp_backend_P_cleanup - Removes leftover temporary files, and may be
+#		          called without pp_backend_P_init/pp_backend_P 
+#                         being invoked.
+#  pp_backend_P_detect  - returns true if running on the given platform.
+#                         First arguement is output of 'uname -s'
+#  pp_backend_P_install - Installs/upgrades the recently package built
+#
+# A backend should also add itself to the $pp_platforms variable
+#  
+# Variable assumptions the platform functions may make are
+#
+#	$name
+#	$version
+#	$summary
+#	$description
+#	$copyright
+#
+# Backends for platform P can use private variables of the form $pp_P_*
+# and document user-provided variables of the form $P_* where P is the
+# platform name (eg aix or linux)
+#
+
+#-- defaults
+name=
+version=
+summary="no summary"
+description="No description"
+copyright="(c) 2006 Quest Software, Inc. All rights reserved"
+
+#@ pp_backend_init():    call the current platform backend's initialiser
+#@ pp_backend():         call the current platform backend's processor
+#@ pp_backend_names():   print the current platform backend's package names
+#@ pp_backend_cleanup(): call the current platform backend's cleanup
+#@ pp_backend_install(): call the current platform backend's installer
+#-- these functions are so similar, we generate them
+for _sufx in _init '' _names _cleanup _install; do
+ eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \${1+\"\$@\"}; }"
+done
