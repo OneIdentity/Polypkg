@@ -242,8 +242,9 @@ $pp_opt_debug && cat $specfile
 
 	HOME=$pp_wrkdir \
         rpmbuild -v -bb \
-		--buildroot "$pp_destdir/" \
-                --target=${pp_rpm_arch} \
+		--buildroot="$pp_destdir/" \
+                --target="${pp_rpm_arch}" \
+                --define='_unpackaged_files_terminate_build 0' \
 		$specfile || 
             pp_error "Problem creating RPM packages"
 
