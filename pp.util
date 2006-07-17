@@ -200,31 +200,99 @@ pp_mode_from_ls () {
    echo "$smode$umode$gmode$omode"
 }
 
-#-- checks for the existence of files in a files list
-pp_check_files_exist () {
-    typeset t m o g p f st
-    while read t m o g p f st; do
-	case "$t" in
-	  f) 
-		if test ! -f "$DESTDIR$p"; then
-		    error "$p: missing file"
-		elif test -h "$DESTDIR$p" -o -d "$DESTDIR$p"; then
-		    error "$p: not a plain file"
-		fi
-		test -r "$DESTDIR$p" || warn "$p: cannot read file"
-		;;
-	  s)
-		if test -h "$DESTDIR$p"; then
-		    error "$p: not a symlink"
-		    continue;
-		fi
-		if readlink $DESTDIR$p | grep "^$DESTDIR">/dev/null; then
-		    warn "$p: symlink is relative to \$DESTDIR"
-	        fi
-		;;
-	  d)
-		test -d "$DESTDIR$p" || error "$p: not a directory"
-		;;
-	esac
-    done
+#@ pp_find_recurse($pp_destdir/dir): recursive find (don't follow symlinks)
+pp_find_recurse () {
+  pp_debug "find: ${1#$pp_destdir}/"
+  for f in "$1"/.* "$1"/*; do
+    case "$f" in */.|*/..) continue;; esac  # should never happen!
+    if test -d "$f" -o -f "$f" -o -h "$f"; then
+        if test -d "$f" -a ! -h "$f"; then
+            echo "${f#$pp_destdir}/"
+            pp_find_recurse "$f"
+        else
+            echo "${f#$pp_destdir}"
+        fi
+    fi
+  done
+}
+
+#@ pp_prepend(file) <text: prepend text to the beginning of the file
+#   if file does not exist, it is created
+pp_prepend () {
+    #test -t && pp_warn "pp_prepend: stdin is a tty?"
+    if test -f $1; then
+        pp_debug "prepending to $1"
+        mv $1 $1._prepend
+        cat - $1._prepend >$1
+        rm -f $1._prepend
+    else
+        pp_debug "prepend: creating $1"
+        cat >$1
+    fi
+}
+
+#@ pp_create_dir_if_missing(path,mode): add directory if missing
+#   - cleans up afterwards
+pp_create_dir_if_missing () {
+    case "$1" in
+        */) pp_error "pp_create_dir_if_missing: trailing / forbidden";;
+	"") return 0;;
+	*)  if test ! -d "$pp_destdir$1"; then
+                pp_debug "fabricating directory $1/"
+		pp_create_dir_if_missing "${1%/*}"
+		mkdir "$pp_destdir$1" && 
+                echo "$1/" >> $pp_wrkdir/all.files
+		pp_remove_later "$1" &&
+		chmod ${2-755} "$pp_destdir$1" 
+	    fi;;
+    esac
+}
+
+#@ pp_add_file_if_missing(path,cpt,mode): add file to component only if missing
+#   returns false if the file already exists; otherwise adds
+#   adds an entry to the %files.$cpt list. If the path is in a missing
+#   directory, that directory is also created under $pp_destdir.
+#   This is usually used for system scripts. The mode defaults to 755
+#   and the component defaults to run. The file is scheduled for removal
+#   after packaing is complete.
+pp_add_file_if_missing () {
+    typeset dir
+    #-- check that the file isn't already declared in the component
+    if test -s $pp_wrkdir/%files.${2:-run}; then
+      awk "\$6 == \"$1\" {exit 1}" < $pp_wrkdir/%files.${2:-run} || return 1  
+    fi
+                
+    pp_create_dir_if_missing "${1%/*}"
+    pp_debug "fabricating file $1"
+    echo "f ${3:-755} - - - $1" >> $pp_wrkdir/%files.${2:-run}
+    echo "$1" >> $pp_wrkdir/all.files
+    pp_remove_later "$1"
+    return 0
+}
+
+#@ pp_remove_later(path): adds file for deletion during cleanup
+#  the file is prepended to $pp_wrkdir/pp_cleanup
+pp_remove_later () {
+   {
+	echo "$1"
+	test -s $pp_wrkdir/pp_cleanup && cat $pp_wrkdir/pp_cleanup
+   } > $pp_wrkdir/pp_cleanup.new
+   mv $pp_wrkdir/pp_cleanup.new $pp_wrkdir/pp_cleanup
+}
+
+#@ pp_remove_later_now(): removes all files registered with pp_remove_later
+pp_remove_later_now () {
+    typeset f
+    if test -s $pp_wrkdir/pp_cleanup; then
+        pp_debug "pp_remove_later_now"
+        while read f; do
+            pp_debug "removing $pp_destdir$f"
+	    if test -d $pp_destdir$f; then 
+		rmdir $pp_destdir$f
+	    else
+		rm $pp_destdir$f
+	    fi
+        done < $pp_wrkdir/pp_cleanup
+        rm $pp_wrkdir/pp_cleanup
+    fi
 }

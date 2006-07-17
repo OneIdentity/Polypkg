@@ -243,22 +243,17 @@ pp_aix_add_service () {
             startsrc -s $svc
 .
 
-	f=$pp_wrkdir/%preun.run 
-	test -r $f && mv $f $f.OLD
-        : > $f
-
         ${pp_aix_init_services_after_install} &&
-           cat <<-. >> $f
+           pp_prepend $pp_wrkdir/%preun.run <<-.
             # stop starting service '$svc' at boot
 	    rmitab $svc
 .
-	cat <<-. >> $f
+	pp_prepend $pp_wrkdir/%preun.run <<-.
 	    # stop service '$svc'
 	    stopsrc -s $svc >/dev/null 2>&1
 	    # uninstall service '$svc' from SRC
 	    rmssys -s $svc
 .
-	test -r $f.OLD && cat <$f.OLD >>$f && rm $f.OLD
 }
 
 #@ pp_backend_aix(): generate an installable AIX package

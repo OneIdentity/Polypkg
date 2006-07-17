@@ -35,16 +35,17 @@ pp_backend_rpm_init () {
     pp_rpm_dbg_provides=
     pp_rpm_doc_provides=
 
-    pp_rpm_detect_arch
+    pp_rpm_dbg_pkgname=debug
+    pp_rpm_dev_pkgname=devel
+    pp_rpm_doc_pkgname=doc
 
-    #-- initialise service-specific variables
-    pp_backend_rpm_init_svc
+    pp_rpm_detect_arch
 }
 
 #@ pp_rpm_detect_arch(): sets $pp_rpm_arch to current RPM architecture
 pp_rpm_detect_arch () {
     #-- Build a dummy spec file so we can query properties with rpm -q
-    cat <<-"." >$pp_wrkdir/dummy.spec
+    cat <<-. >$pp_wrkdir/dummy.spec
 	Name: dummy
 	Version: 1
 	Release: 1
@@ -91,32 +92,11 @@ pp_rpm_writefiles () {
 pp_rpm_subname () {
     case "$1" in
         run) : ;;
-        dbg) echo "${2}debug";;
-        dev) echo "${2}devel";;
-        doc) echo "${2}doc";;
+        dbg) echo "${2}${pp_rpm_dbg_pkgname}";;
+        dev) echo "${2}${pp_rpm_dev_pkgname}";;
+        doc) echo "${2}${pp_rpm_doc_pkgname}";;
         *)   pp_error "unknown component '$1'";
     esac
-}
-
-#@ pp_rpm_cleanup_later(file): schedule future removal of $pp_destdir/file
-pp_rpm_cleanup_later () {
-    #-- insert the file at the beginning of the cleanup list
-    {
-      echo "$1"; 
-      test -s $pp_wrkdir/cleanup && cat $pp_wrkdir/cleanup; 
-    } > $pp_wrkdir/cleanup.NEW
-    mv $pp_wrkdir/cleanup.NEW $pp_wrkdir/cleanup
-}
-
-#@ pp_backend_rpm_cleanup(): removes any leftover files
-pp_backend_rpm_cleanup () {
-    typeset f
-    if test -s $pp_wrkdir/cleanup; then
-        while read f; do
-            pp_debug "removing $pp_destdir$f"
-            rm -rf "$pp_destdir$f"
-        done < $pp_wrkdir/cleanup
-    fi
 }
 
 #@ pp_backend_rpm(): generate RPMs for the package
@@ -192,8 +172,8 @@ pp_backend_rpm () {
 
 		cat <<-.
 
-		    %description $cmp
-		    $_desc
+			%description $_subname
+			$_desc
 .
 	done >>$specfile
 
@@ -205,10 +185,7 @@ pp_backend_rpm () {
             pp_rpm_service_remove_common >> $pp_wrkdir/%preun.run
 
             #-- record the uninstall commands in reverse order
-            preun=$pp_wrkdir/svc.preun
-            : >$preun
             for svc in $pp_services; do
-                pp_rpm_init_service_vars    # initialise RPM-specific vars
                 pp_load_service_vars $svc
 
                 pp_rpm_service_make_init_script $svc
@@ -216,13 +193,10 @@ pp_backend_rpm () {
                 #-- append %post code to install the svc
                 pp_rpm_service_install $svc >> $pp_wrkdir/%post.run
 
-                #-- preprned %preun code to uninstall svc
-                : >> $pp_wrkdir/%preun.run
-                mv $preun $preun.OLD
-                { pp_rpm_service_remove $svc; cat $preun.OLD; } >> $preun
-                rm -f $preun.OLD
+                #-- prepend %preun code to uninstall svc
+                # (use files in case vars are modified)
+                pp_rpm_service_remove $svc | pp_prepend $pp_wrkdir/%preun.run 
             done
-            cat $preun >> $pp_wrkdir/%preun.run
         fi
 
 	#-- Write the RPM %file sections
@@ -288,7 +262,10 @@ pp_backend_rpm_names () {
     done
 }
 
-#-- (re-)installs the newly created package
+pp_backend_rpm_cleanup () {
+    :
+}
+
 pp_backend_rpm_install () {
 	:
 }

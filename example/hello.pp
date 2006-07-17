@@ -22,3 +22,5 @@
   /usr/sbin/hellod
   /etc/hello.conf  644 volatile
 
+%files dev
+  /usr/bin/hello-config

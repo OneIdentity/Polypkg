@@ -82,9 +82,9 @@ pp_files_expand () {
     _optional=false
     _has_target=false
     if test $# -gt 0; then
-	case ",$flags," in *,volatile,*) _flags="${_flags}v";; esac
-	case ",$flags," in *,optional,*) _optional=true;; esac
-	case ",$flags," in *,symlink,*) _has_target=true;; esac
+	case ",$1," in *,volatile,*) _flags="${_flags}v";; esac
+	case ",$1," in *,optional,*) _optional=true;; esac
+	case ",$1," in *,symlink,*) _has_target=true;; esac
 	shift
     fi
 
@@ -174,5 +174,29 @@ pp_files_check_duplicates () {
         while read _path; do
             pp_warn "$_path: file declared more than once"
         done <$pp_wrkdir/duplicate.files
+    fi
+}
+
+#@ pp_files_check_coverage(): raise an error if files aren't listed
+#  compares the list of files under pp_destdir with the list of
+#  all files inside %files sections. Only generates warnings (for now.)
+pp_files_check_coverage () {
+    pp_find_recurse "$pp_destdir" | sort > $pp_wrkdir/coverage.avail
+    if test -s $pp_wrkdir/all.files; then
+        sort -u < $pp_wrkdir/all.files
+    else
+        :
+    fi > $pp_wrkdir/coverage.used
+    join -v1 $pp_wrkdir/coverage.avail $pp_wrkdir/coverage.used \
+        > $pp_wrkdir/coverage.not-packaged
+    if test -s $pp_wrkdir/coverage.not-packaged; then
+        pp_warn "The following files/directories were found but not packaged:"
+        sed -e 's,^,    ,' <  $pp_wrkdir/coverage.not-packaged >&2
+    fi
+    join -v2 $pp_wrkdir/coverage.avail $pp_wrkdir/coverage.used \
+        > $pp_wrkdir/coverage.not-avail
+    if test -s $pp_wrkdir/coverage.not-avail; then
+        pp_warn "The following files/directories were named but not found:"
+        sed -e 's,^,    ,' <  $pp_wrkdir/coverage.not-avail >&2
     fi
 }

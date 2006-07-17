@@ -28,12 +28,15 @@ install: hello hello.conf
 	mkdir -p $(DESTDIR)$(sbindir)
 	cp hellod.sh $(DESTDIR)$(sbindir)/hellod
 	chmod 755 $(DESTDIR)$(sbindir)/hellod
+	cp hello-config.sh $(DESTDIR)$(bindir)/hello-config
+	chmod 755 $(DESTDIR)$(bindir)/hello-config
 
 clean:
 	rm -rf $(DESTDIR)
 inst-clean:
 	rm -f $(DESTDIR)$(sysconfdir)/hello.conf \
 	      $(DESTDIR)$(bindir)/hello \
+	      $(DESTDIR)$(bindir)/hello-config \
 	      $(DESTDIR)$(sbindir)/hellod
 	-rmdir $(DESTDIR)$(sbindir)
 	-rmdir $(DESTDIR)$(bindir)

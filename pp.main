@@ -17,6 +17,7 @@ pp_opt_input="-"
 #@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
 pp_main_cleanup () {
 	pp_debug "main_cleanup"
+        pp_remove_later_now
 	if ! $pp_opt_no_clean -a x"$pp_platform" != x"unknown"; then
 	    pp_backend_${pp_platform}_cleanup
 	    $pp_errors && pp_die "Errors during cleanup"
@@ -135,6 +136,7 @@ pp_package () {
 	    pp_check_var_is_defined  "name"
 	    pp_check_var_is_defined  "version"
             pp_files_check_duplicates
+            pp_files_check_coverage
 	    pp_die_if_errors "Errors during sanity checks"
         fi
 

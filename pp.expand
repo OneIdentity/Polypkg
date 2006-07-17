@@ -9,7 +9,7 @@
 pp_expand_test_usr_bin () {
 	awk '$1 == "/usr" || $2 == "/usr" {usr++} 
 	     $1 == "/bin" || $2 == "/bin" {bin++} 
-	     END { exit (usr == 1 && bin == 1 ? 0 : 1) }'
+	     END { if (usr == 1 && bin == 1) exit(0); else exit(1); }'
 }
 
 #@ pp_set_expand_converter_or_reexec(arg...): sets $pp_expand_path
@@ -30,6 +30,7 @@ pp_set_expand_converter_or_reexec () {
 	       ($shell -c 'echo /@(usr|bin)' |
 			pp_expand_test_usr_bin) 2>/dev/null
 	    then
+                pp_debug "switching to shell $shell"
 		pp_expand_rexec=true exec $shell "$0" ${1+"$@"}
 	    fi
 	done

@@ -14,6 +14,7 @@
 #                         being invoked.
 #  pp_backend_P_detect  - returns true if running on the given platform.
 #                         First arguement is output of 'uname -s'
+#  pp_backend_P_init_svc_vars - Initialise per-service variables
 #  pp_backend_P_install - Installs/upgrades the recently package built
 #
 # A backend should also add itself to the $pp_platforms variable
@@ -42,8 +43,9 @@ copyright="(c) 2006 Quest Software, Inc. All rights reserved"
 #@ pp_backend():         call the current platform backend's processor
 #@ pp_backend_names():   print the current platform backend's package names
 #@ pp_backend_cleanup(): call the current platform backend's cleanup
+#@ pp_backend_init_svc_vars(): call the current platform backend's svc var init
 #@ pp_backend_install(): call the current platform backend's installer
 #-- these functions are so similar, we generate them
-for _sufx in _init '' _names _cleanup _install; do
+for _sufx in _init '' _names _cleanup _install _init_svc_vars; do
  eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \${1+\"\$@\"}; }"
 done

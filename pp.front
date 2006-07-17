@@ -136,7 +136,7 @@ frontend_if () {
 #   - detects %set, %post, %preun etc sections
 #   - handles %if/%else/%endif logic
 pp_frontend () {
-  typeset section newsection sed_word sed_ws line
+  typeset section newsection sed_word sed_ws line cpt
 
   section='%_initial'
   newsection='%_initial'
@@ -186,8 +186,13 @@ pp_frontend () {
 	  %post|%preun|%files|%depend) 
              pp_debug "processing new component section $1 ${2:-run}"
 	     test $# -le 2 || pp_error "bad argument count to $1"
-	     pp_add_component "${2:-run}"
-	     newsection="$1.${2:-run}"
+             cpt="${2:-run}"
+             case "$cpt" in 
+                run|dbg|doc|dev) pp_add_component "$cpt";;
+                x-*) :;;    # useful for discarding stuff
+                *) pp_error "unknown component: $1 $cpt";;
+             esac
+	     newsection="$1.$cpt"
 	     continue;;
 	  %service)
              pp_debug "processing new service section $1 $2"

@@ -1,7 +1,7 @@
 # http://www.novell.com/coolsolutions/feature/11256.html
 
-#@ pp_backend_rpm_init_svc(): initialises rpm backend variables
-pp_backend_rpm_init_svc () {
+#@ pp_backend_rpm_init_svc_vars(): initialises rpm backend variables
+pp_backend_rpm_init_svc_vars () {
     pp_rpm_default_start_runlevels=         # should be "3 4 5"??
     pp_rpm_default_svc_description="No description"
 }
@@ -56,7 +56,8 @@ pp_rpm_service_remove_common () {
 
 #@ pp_rpm_service_install(svc): emit code to install/start a service
 pp_rpm_service_install () {
-    pp_rpm_service_init_script $1   # create init script if it doesn't exist
+    pp_rpm_service_make_init_script $1 >/dev/null ||
+        pp_error "could not create init script for service $1"
     echo "_pp_install_service $1"
 }
 
@@ -65,26 +66,6 @@ pp_rpm_service_remove () {
     echo "_pp_remove_service $1"
 }
 
-
-#@ pp_rpm_add_file_if_missing($path): add a file if it is missing
-#   returns false if the file already exists; otherwise adds
-#   adds an entry to the %files.run list. If the path is in a missing
-#   directory, that directory is also created under $pp_destdir.
-pp_rpm_add_file_if_missing () {
-    typeset dir
-    #-- check that the file isn't already declared in run
-    if test -s $pp_wrkdir/%files.run; then
-      awk "\$6 == \"$1\" {exit 1}" < $pp_wrkdir/%files.run || return 1  
-    fi
-
-    dir=`dirname $1`
-    if test ! -d $pp_destdir$dir; then
-        mkdir -p $pp_destdir$dir
-        pp_rpm_cleanup_later $dir
-    fi
-    echo "f 755 - - - $1" >> $pp_wrkdir/%files.run
-    return 0
-}
 
 #@ pp_rpm_init_service_vars(): initialise rpm-specific service variables
 #    pp-provided vars are cmd, pidfile, stop_signal and user
@@ -102,7 +83,7 @@ pp_rpm_init_service_vars () {
     lsb_description=
 
     start_priority=50
-    stop_priority=50
+    stop_priority=50            #-- stop_priority = 100 - start_priority
 }
 
 #@ pp_rpm_service_make_init_script(svc): generates a service init script 
@@ -117,11 +98,10 @@ pp_rpm_service_make_init_script () {
     typeset out=$pp_destdir$script
     typeset _process _cmd _rpmlevels
 
-    pp_rpm_add_file_if_missing $script || return 0
-    pp_rpm_cleanup_later $script
+    pp_add_file_if_missing $script run 755 || return 0
 
     #-- start out as an empty shell script
-    cat <<-"." >$out
+    cat <<-'.' >$out
 	#!/bin/sh
 .
 
@@ -145,6 +125,7 @@ pp_rpm_service_make_init_script () {
 	# chkconfig: ${_rpmlevels:--} ${start_priority} ${stop_priority}
 	# description: ${svc_description}
 	# processname: ${_process}
+	# pidfile: ${pidfile}
 .
 
     #-- generate the LSB init info
@@ -184,18 +165,18 @@ pp_rpm_service_make_init_script () {
         #-- use system message logging, if available
         if [ -f /lib/lsb/init-functions -a ! -r /etc/release-redhat ]; then
             . /lib/lsb/init-functions
-            pp_success_msg () { log_success_msg "$@"; }
-            pp_failure_msg () { log_failure_msg "$@"; }
-            pp_warning_msg () { log_warning_msg "$@"; }
+            pp_success_msg () { log_success_msg ${1+"$@"}; }
+            pp_failure_msg () { log_failure_msg ${1+"$@"}; }
+            pp_warning_msg () { log_warning_msg ${1+"$@"}; }
         elif [ -f /etc/init.d/functions ]; then
             . /etc/init.d/functions
-            pp_success_msg () { success "$@"; }
-            pp_failure_msg () { failure "$@"; }
-            pp_warning_msg () { warning "$@"; }
+            pp_success_msg () { echo -n "$*"; success ${1+"$@"}; echo; }
+            pp_failure_msg () { echo -n "$*"; failure ${1+"$@"}; echo; }
+            pp_warning_msg () { echo -n "$*"; warning ${1+"$@"}; echo; }
         else
-            pp_success_msg () { echo "$@" OK; }
-            pp_failure_msg () { echo "$@" FAIL; }
-            pp_warning_msg () { echo "$@" WARNING; }
+            pp_success_msg () { echo ${1+"$@":} OK; }
+            pp_failure_msg () { echo ${1+"$@":} FAIL; }
+            pp_warning_msg () { echo ${1+"$@":} WARNING; }
         fi
 
         #-- prints a status message

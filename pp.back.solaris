@@ -44,62 +44,97 @@ pp_backend_solaris_detect () {
 pp_backend_solaris_init () {
 	pp_solaris_arch=`uname -p`
 	pp_solaris_category=application
-	pp_solaris_rstates=	#"s S 1 2 3"
-	pp_solaris_istates=	#"s S 1 2 3"
+	pp_solaris_istates="s S 1 2 3"	# run-states when install is ok
+	pp_solaris_rstates="s S 1 2 3"	# run-states when remove is ok
 	pp_solaris_vendor="Quest Software, Inc."
 	pp_solaris_copyright=
 	pp_solaris_name=
 	pp_solaris_desc=
 
+        pp_solaris_init_svc
 }
 
 #@ pp_solaris_request(output): Generate a request script for all components
 pp_solaris_request () {
-    typeset _cmp
+    typeset _cmp _svc
         
     #-- The common part of the request script contains the ask() function
     #   and resets the CLASSES list to empty
     cat <<'.'
 	trap 'exit 3' 15
 	ask () {
-	   ans=`ckyorn -d $2 \
-                -p "Install $3 from this package"` \
+	   ans=`ckyorn -d "$1" \
+                -p "Do you want to $2"` \
             || exit $?
-	   case "$ans" in y*|Y*) CLASSES="$CLASSES $1";; esac
+	   case "$ans" in y*|Y*) return 0;; *) return 1;; esac
 	}
 	CLASSES=
 .
     #-- each of our components adds itself to the CLASSES list
     for _cmp in $pp_components; do
       case "$_cmp" in
-            run) echo 'CLASSES="$CLASSES run"';;
-            doc) echo 'ask doc y "documentation"';;
-            dev) echo 'ask dev y "development files"';;
-            dbg) echo 'ask dbg n "diagnostic files"';;
+            run) :;;
+            doc) echo 'ask y "install the documentation files" &&';;
+            dev) echo 'ask y "install the development files" &&';;
+            dbg) echo 'ask n "install the diagnostic files" &&';;
       esac
+      echo '    CLASSES="$CLASSES '$_cmp'"'
     done
-    #-- finally, the request script writes the CLASSES var to its output
+
+    #-- the request script writes the CLASSES var to its output
     cat <<'.'
 	echo "CLASSES=$CLASSES" > $1
 .
+
+    if test -n "$pp_services"; then
+        echo 'SERVICES='
+        for _svc in $pp_services; do
+            echo 'ask n "install '$_svc' service" &&'
+            echo '    SERVICES="$SERVICES '$_svc'"'
+        done
+        echo 'echo "SERVICES=$SERVICES" >> $1'
+    fi
+
 }
 
 #@ pp_solaris_procedure(component, post|pre): add per-component scripts
 pp_solaris_procedure () {
-    cat <<"."
+    cat <<.
 
         #-- $2 for $1 component of $name
         case " \$CLASSES " in *" $1 "*)
 .
     cat
-    cat <<"."
+    cat <<.
         ;; esac
 .
 }
 
-#@ pp_solaris_proto(class) < %files: generate prototype file
+#@ pp_solaris_depend(): generate depend(4) output
+pp_solaris_depend () {
+    typeset _name _vers
+    while read _name _vers; do
+        echo "P $_name $_name" 
+        test -n "$_vers" && echo " $_vers" 
+    done
+}
+
+#@ pp_solaris_space(dir,blocks,inodes): accumulate space reqts for a directory
+pp_solaris_space() {
+    echo "$2:$3:$1" >> $pp_wrkdir/space.cumulative
+}
+
+#@ pp_solaris_sum_space(): sum the spaces reqts
+pp_solaris_sum_space () {
+    if test -s $pp_wrkdir/space.cumulative; then
+        sort -t: +2 < $pp_wrkdir/space.cumulative |
+        awk -F: 'NR==1{n=$3}{if($3==n){b+=$1;i+=$2}else{print n" "b" "i;b=$1;i=$2;n=$3}}END{print n" "b" "i}' > $pp_wrkdir/space
+    fi
+}
+
+#@ pp_solaris_proto(class) < %files: generate prototype(4) file etc.
 pp_solaris_proto () {
-	while read t m o g p f st; do
+	while read t m o g f p st; do
 	  if test x"$o" = x"-"; then 
             o="bin"
           fi
@@ -109,8 +144,8 @@ pp_solaris_proto () {
 	  case "$t" in
 	    f) test x"$m" = x"-" && m=444
 	       case "$f" in 
-		*v*) echo "v $1 $p=$DESTDIR$p $m $o $g";;
-		*)   echo "f $1 $p=$DESTDIR$p $m $o $g";;
+		*v*) echo "v $1 $p=$pp_destdir$p $m $o $g";;
+		*)   echo "f $1 $p=$pp_destdir$p $m $o $g";;
 	       esac
                ;;
 	    d) test x"$m" = x"-" && m=555
@@ -128,7 +163,7 @@ pp_solaris_proto () {
 #-- Reads output files from the frontend and generates the single output
 #   package file under $pp_wrkdir/
 pp_backend_solaris () {
-        typeset _cmp
+        typeset _cmp _svc
 
 	prototype=$pp_wrkdir/prototype
 	: > $prototype
@@ -162,11 +197,6 @@ pp_backend_solaris () {
 	    echo "i copyright=$pp_wrkdir/copyright" >> $prototype
 	fi
 
-        #-- create the prototype file which lists the files to install
-	for _cmp in $pp_components; do
-	  pp_solaris_proto $_cmp < $pp_wrkdir/%files.$_cmp
-	done >> $prototype
-
         #-- scripts to run before and after install
         : > $pp_wrkdir/postinstall
         : > $pp_wrkdir/preremove
@@ -178,19 +208,55 @@ pp_backend_solaris () {
           fi
 	  if test -s $pp_wrkdir/%preun.$_cmp; then
                 #-- add the preremove rules in reverse definition order
-                mv $pp_wrkdir/preremove.OLD
-		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp \
-			> $pp_wrkdir/preremove
-                cat $pp_wrkdir/preremove.OLD >> $pp_wrkdir/preremove
-                rm $pp_wrkdir/preremove.OLD
+		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
+                    pp_prepend $pp_wrkdir/preremove
           fi
 	done
-        test -s $pp_wrkdir/preremove && 
-            echo "i $f=$pp_wrkdir/preremove" >> $prototype
-        test -s $pp_wrkdir/postinstall && 
-            echo "i $f=$pp_wrkdir/postinstall" >> $prototype
 
-        #-- TODO %services
+        test -s $pp_wrkdir/%depend &&
+            pp_solaris_depend < $pp_wrkdir/%depend > $pp_wrkdir/depend
+
+        pp_solaris_request > $pp_wrkdir/request
+
+        test -n "$pp_services" && 
+            for _svc in "$pp_services"; do
+                pp_load_service_vars $_svc
+                pp_solaris_make_service $_svc
+                pp_solaris_install_service $_svc >> $pp_wrkdir/postinstall
+                pp_prepend $pp_wrkdir/preremove <<-.
+                    /etc/init.d/$_svc stop >/dev/null 2>/dev/null
+.
+            done
+
+        #-- if installf was used; we need to indicate a termination
+        grep installf $pp_wrkdir/postinstall >/dev/null &&
+            echo 'installf -f $PKGINST' >> $pp_wrkdir/postinstall
+
+        pp_solaris_sum_space
+
+        # NB: pkginfo and copyright are added earlier
+        for f in compver depend space checkinstall \
+                 request preinstall postinstall \
+                 preremove postremove; do
+            if test -s $pp_wrkdir/$f; then
+                if $pp_opt_debug; then
+                    pp_debug "contents of $f:"
+                    cat $pp_wrkdir/$f >&2
+                fi
+                echo "i $f=$pp_wrkdir/$f" >> $prototype
+            fi
+        done
+
+        #-- create the prototype file which lists the files to install
+        # do this as late as possible because files could be added
+	for _cmp in $pp_components; do
+	  pp_solaris_proto $_cmp < $pp_wrkdir/%files.$_cmp
+	done >> $prototype
+
+if $pp_opt_debug; then
+  echo "$pkginfo::"; cat $pkginfo
+  echo "$prototype::"; cat $prototype
+fi >&2
 
 	mkdir $pp_wrkdir/pkg
 

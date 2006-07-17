@@ -2,7 +2,9 @@
 PP_SRCS= pp.util pp.back pp.front pp.main pp.platform pp.expand pp.model \
          pp.back.aix \
 	 pp.back.solaris \
-	 pp.back.rpm pp.back.rpm.svc \
+	 pp.back.solaris.svc \
+	 pp.back.rpm \
+	 pp.back.rpm.svc \
 	 pp.back.null
 
 build-example: pp
@@ -13,14 +15,22 @@ pp: $(PP_SRCS)
 	(echo '#!/bin/sh';                \
 	 echo 'd=`dirname $$0`';          \
 	 for p in $(PP_SRCS); do          \
-	    echo '. $$d/'$$p' || exit 1'; \
+	    echo '. "$$d/'$$p'" &&';        \
 	 done;                            \
 	 echo 'pp_main $${1+"$$@"}'       \
 	) > $@
 	chmod 555 $@
 
+pp-stripped: $(PP_SRCS)
+	(echo '#!/bin/sh';                \
+	 echo '# (c) 2006 Quest Software, Inc. All rights reserved'; \
+	 sed -e '/^#/d' $(PP_SRCS);	\
+	 echo 'pp_main $${1+"$$@"}';	\
+	 ) > $@
+	chmod +x $@
+
 clean:
-	rm -f pp tags
+	rm -f pp pp-stripped tags
 	cd example && $(MAKE) clean
 
 test: pp
