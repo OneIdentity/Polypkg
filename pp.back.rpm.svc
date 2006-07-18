@@ -163,7 +163,7 @@ pp_rpm_service_make_init_script () {
     cat <<'.' >>$out
 
         #-- use system message logging, if available
-        if [ -f /lib/lsb/init-functions -a ! -r /etc/release-redhat ]; then
+        if [ -f /lib/lsb/init-functions -a ! -r /etc/redhat-release ]; then
             . /lib/lsb/init-functions
             pp_success_msg () { log_success_msg ${1+"$@"}; }
             pp_failure_msg () { log_failure_msg ${1+"$@"}; }
