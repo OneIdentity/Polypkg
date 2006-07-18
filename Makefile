@@ -1,5 +1,12 @@
 
-PP_SRCS= pp.util pp.back pp.front pp.main pp.platform pp.expand pp.model \
+PP_SRCS= pp.licence \
+	 pp.main \
+	 pp.util \
+	 pp.front \
+	 pp.platform \
+	 pp.expand \
+	 pp.model \
+	 pp.back \
          pp.back.aix \
 	 pp.back.solaris \
 	 pp.back.solaris.svc \
