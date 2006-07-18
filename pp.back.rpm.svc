@@ -122,8 +122,8 @@ pp_rpm_service_make_init_script () {
     #-- generate the Red Hat chkconfig headers
     _rpmlevels=`echo $start_runlevels | tr -d ' '`
     cat <<-. >>$out
-	# chkconfig: ${_rpmlevels:--} ${start_priority} ${stop_priority}
-	# description: ${svc_description}
+	# chkconfig: ${_rpmlevels:--} ${start_priority:-50} ${stop_priority:-50}
+	# description: ${svc_description:-no description}
 	# processname: ${_process}
 	# pidfile: ${pidfile}
 .

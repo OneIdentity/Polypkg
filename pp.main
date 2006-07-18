@@ -144,6 +144,8 @@ pp_package () {
 	    *) pp_frontend <"$pp_opt_input";;
 	esac
 
+        pp_files_ignore_others
+
 	# some sanity checks after front-end processing
         if test x"$pp_platform" != x"null"; then
 	    pp_debug "sanity checks"

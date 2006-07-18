@@ -200,7 +200,6 @@ pp_backend_rpm () {
         #-- add service start/stop code
         if test -n "$pp_services"; then
             pp_rpm_service_install_common >> $pp_wrkdir/%post.run
-            pp_rpm_service_remove_common >> $pp_wrkdir/%preun.run
 
             #-- record the uninstall commands in reverse order
             for svc in $pp_services; do
@@ -215,6 +214,7 @@ pp_backend_rpm () {
                 # (use files in case vars are modified)
                 pp_rpm_service_remove $svc | pp_prepend $pp_wrkdir/%preun.run 
             done
+            pp_rpm_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
         fi
 
 	#-- Write the RPM %file sections

@@ -230,6 +230,9 @@ The %files sections
 		volatile	- uninstall will ignore changes in the file
 		optional	- ignore if the path-glob matches nothing
 		symlink		- a symlink target follows
+                ignore          - ignore this file (don't package it)
+                ignore-others   - ignore all other mentions of this file
+                                  (useful for wildcards)
 
         The %files section is not subjected to %() or %{} expansion.
         However, paths are expanded using shell globbing, so shell

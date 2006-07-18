@@ -52,35 +52,26 @@ pp_load_service_vars () {
 pp_files_expand () {
     typeset _p _mode _group _owner _flags _path _optional _has_target _tree
     typeset _path _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
+    typeset _ignore
 
     test $# -eq 0 && return
 
     pp_debug "pp_files_expand: $*"
 
-    case "$1" in 
-	"#"*) return;;                                  # a comment?
-	/*) _p="$1";;
-	*) _p="/$1"; pp_warn "$1: missing leading /";;  # ensure leading /
-    esac
-    shift;
-
-    #-- sanity checks
-    case "$_p" in
-	*/../*|*/..) pp_error "$_p: invalid .. in path";;
-	*/./*|*/.)   pp_warn  "$_p: invalid component . in path";;
-	*//*)        pp_warn  "$_p: redundant / in path";;
-    esac
+    case "$1" in "#"*) return;; esac
+    _p="$1"; shift
 
     #-- the mode must be an octal number of at least three digits
     _mode="="
     case "$1" in
 	*:*) :;;
-	[01234567][01234567][01234567]*) _mode="$1"; shift;;
+	-|=|[01234567][01234567][01234567]*) _mode="$1"; shift;;
     esac
 
     #-- the owner:group field may have optional parts
     case "$1" in
 	*:*) _group=${1#*:}; _owner=${1%:*}; shift;;
+	=|-) _group=$1;      _owner=$1; shift;;
 	*)   _group=-;       _owner=-;;
     esac
 
@@ -88,10 +79,13 @@ pp_files_expand () {
     _flags=
     _optional=false
     _has_target=false
+    _ignore=false
     if test $# -gt 0; then
 	case ",$1," in *,volatile,*) _flags="${_flags}v";; esac
 	case ",$1," in *,optional,*) _optional=true;; esac
 	case ",$1," in *,symlink,*) _has_target=true;; esac
+	case ",$1," in *,ignore-others,*) _flags="${_flags}i";; esac
+	case ",$1," in *,ignore,*) _ignore=true;; esac
 	shift
     fi
 
@@ -138,8 +132,23 @@ pp_files_expand () {
 	_g="$_group"
 	_f="$_flags"
 
+        case "$_path" in 
+            /*) :;; 
+            *)  pp_warn "$_path: inserting leading /"
+                _path="/$_path";;  # ensure leading /
+        esac
+
+        #-- sanity checks
+        case "$_path" in
+            */../*|*/..) pp_error "$_path: invalid .. in path";;
+            */./*|*/.)   pp_warn  "$_path: invalid component . in path";;
+            *//*)        pp_warn  "$_path: redundant / in path";;
+        esac
+
 	#-- set the type based on the real file's type
-	if test -h "$_file"; then
+        if $_ignore; then
+           _type=f _m=_ _o=_ _g=_
+	elif test -h "$_file"; then
 	   _type=s
 	   if test x"$_target" != x"="; then
 	       _tgt="$_target"
@@ -199,8 +208,9 @@ pp_files_expand () {
 	test -n "$_g" || pp_die "_g empty"
 
 	pp_debug "$_type $_m $_o $_g $_f $_path" $_tgt
-	echo "$_type $_m $_o $_g $_f $_path" $_tgt
+	$_ignore || echo "$_type $_m $_o $_g $_f $_path" $_tgt
         echo "$_path" >> $pp_wrkdir/all.files
+        case "$_f" in *i*) echo "$_path" >> $pp_wrkdir/ign.files;; esac
     done < $pp_wrkdir/tmp.files.exp
 }
 
@@ -237,4 +247,29 @@ pp_files_check_coverage () {
         pp_warn "The following files/directories were named but not found:"
         sed -e 's,^,    ,' <  $pp_wrkdir/coverage.not-avail >&2
     fi
+}
+
+#@ pp_files_ignore_others(): remove ignored files
+pp_files_ignore_others () {
+    typeset p f
+
+    test -s $pp_wrkdir/ign.files || return
+
+    #-- for each file in ign.files, we remove it from all the
+    #   other %files.* lists, except where it has an i flag.
+    #   rather than scan each list multiple times, we build
+    #   an awk script
+
+    pp_debug "stripping ignore files"
+
+    while read p; do
+        echo '$6 == "'"$p"'" { skip unless $5 ~ /i/; }'
+    done < $pp_wrkdir/ign.files > $pp_wrkdir/ign.awk
+
+    $pp_opt_debug && cat $pp_wrkdir/ign.awk
+
+    for f in $pp_wrkdir/%files.*; do
+        awk -f $pp_wrkdir/ign.awk < $f > $f.i || pp_error "awk"
+        mv $f.i $f
+    done
 }
