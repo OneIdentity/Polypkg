@@ -60,7 +60,7 @@ Examples
 
 Invocation
 
-        pp [options] [input-file]
+        pp [options] [input-file] [var=value...]
 
 	   -d --debug                  -- write copious info to stderr
 	      --destdir=path           -- defaults to $DESTDIR
@@ -159,6 +159,8 @@ The %set section
 		copyright	- copyright message, limit 40 characters
 				  [default is "(c) YYYY, Quest Software..."]
 
+        The %set section is *not* subject to %{} or %() expansion.
+
     Output of a %set section:
 
     	Each %set section generates a temporary file, whose contents
@@ -187,7 +189,12 @@ The %files sections
 	'Path-glob' is an absolute pathname which may contain the wildcard
 	and pattern metacharacters *,?,[,],{,}. 
 
-	  Impl note: {,}-patterns may be converted into /@(|)-patterns
+	  Impl note: {,}-patterns are converted into /@(|)-patterns
+          for some shells. This is automatically detected.
+
+        If the path-glob is of the form 'dir-path/**' then it is converted
+        into a list of all files and directories under (but not including)
+        the directories matched by dir-path.
 
 	If the path-glob ends with %so then it is replaced with
 	platform's native shared library suffix pattern. 
@@ -224,6 +231,10 @@ The %files sections
 		optional	- ignore if the path-glob matches nothing
 		symlink		- a symlink target follows
 
+        The %files section is not subjected to %() or %{} expansion.
+        However, paths are expanded using shell globbing, so shell
+        metacharacters are interpreted.
+
     Output of %files sections:
 
 	The result of processing all the %files sections is a collection
@@ -251,6 +262,24 @@ The %post and %preun sections
 	The body of these sections is treated as shell script, but
 	%{} and %() expansion takes place. The shell script body is
 	appended to any previous %post/%preun scripts for that component.
+
+    %{} and %() expansion
+
+        Because most sections (%set being an exception) are deferred
+        until later for exection, it is sometimes useful to be able
+        to perform variable expansion early. Otherwise, later %set
+        sections may change variables, and variable used in the 
+        other sections will be different when they eventually get run.
+
+        Subtrings of the form "%{FOO}" are replaced by the content of
+        the shell variable $FOO. (Other shell variable forms such as
+        "%{FOO:-default}" are possible: the '%' is replaced by a '$'
+        and then evaluated up to the '}'.
+
+        Substrings of the form %() are expanded using the shell's
+        backquote. e.g. "%(echo hello; echo there)" becomes "hello there".
+        Matching and expansion is very simplistic, so do not use '}', ')'
+        or newlines inside the %() or %{}.
 
     Output of %post or %preun sections
 
@@ -299,7 +328,10 @@ The %service section
 
 	Other platform-specific variables may be provided in this
 	section and are treated differently.
-	
+
+        The %service section, like other non-%set sections is subject to 
+        immediate %{} and %() expansion.
+
    Output of a %service section:
 
    	The result of processing a %service section is to create or
@@ -307,7 +339,7 @@ The %service section
 	name given to the service. The file will contains the shell
 	text. The shell text is sourced and then platform-specific
 	changes are made to the other output files before %fixup
-	
+
 The %depend section
 
 	The dependency section lists the names of packages that
@@ -325,6 +357,9 @@ The %depend section
 
 	Lines starting with a the special symbol "+" indicate 
 	platform-specific dependency information.
+
+        The %depend section, like other non-%set sections is subject to 
+        immediate %{} and %() expansion.
 
     Output of a %depend section
 
@@ -364,6 +399,9 @@ The %fixup section
 	This is really only intended as a last-resort place to hold 
 	any horrible hackery required.
 
+        The %depend section, like other non-%set sections is subject to 
+        immediate %{} and %() expansion.
+
     Output of a %fixup section
 
     	The bodies of fixup sections are concatenated together
@@ -372,7 +410,7 @@ The %fixup section
 The %pp section
 
 	This optional section has no body. It specifies a version of
-	the PolyPackage API that the script was written to use. This 
+	the PolyPackage API that the file expects to use. This 
 	document descibes version 1.0.
 
 		%pp 1.0

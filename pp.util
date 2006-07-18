@@ -19,9 +19,9 @@ if test -t; then
    pp_col_bluefg=`tput setf 1` 2>/dev/null
    pp_col_reset=`tput op` 2>/dev/null
 else
-   pp_col_redfg=
-   pp_col_bluefg=
-   pp_col_reset=
+   pp_col_redfg='['
+   pp_col_bluefg='['
+   pp_col_reset=']'
 fi
 
 #@ pp__warn(type,msg): prints a warning message including $pp_lineno if nonnull
@@ -35,18 +35,18 @@ pp__warn () {
 
 #@ pp_warn(msg): prints a warning message
 pp_warn () {
-	pp__warn "${pp_col_redfg}[warning]${pp_col_reset}" "$*"
+	pp__warn "pp: ${pp_col_redfg}warning${pp_col_reset}" "$*"
 }
 
 # pp_error(msg): prints an error message and sets $pp_errors to 'true'
 pp_error () {
-	pp__warn "${pp_col_redfg}[error]${pp_col_reset}" "$*"
+	pp__warn "pp: ${pp_col_redfg}error${pp_col_reset}" "$*"
 	pp_errors=true
 }
 
 #@ pp_die(msg): prints an error message and dies with exit code 1
 pp_die () {
-	pp_error "$@"
+	pp_error "pp: $@"
 	exit 1
 }
 
@@ -57,12 +57,12 @@ pp_die_if_errors () {
 
 #@ pp_debug(msg): writes a message only if the --debug option was given
 pp_debug () { 
-	$pp_opt_debug && echo "${pp_col_bluefg}[debug]${pp_col_reset} $*" >&2
+	$pp_opt_debug && echo "${pp_col_bluefg}debug${pp_col_reset} $*" >&2
 }
 
-#@ pp_verbose(msg): writes a message only if the --verbose option was given
+#@ pp_verbose(msg): executes a command, printing it if --verbose flag
 pp_verbose () {
-	$pp_opt_verbose && echo "${pp_col_bluefg}$*${pp_col_reset}" >&2
+	$pp_opt_verbose && echo "pp: ${pp_col_bluefg}info${pp_col_reset} $*" >&2
 	"$@";
 }
 

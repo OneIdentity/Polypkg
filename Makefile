@@ -7,7 +7,7 @@ PP_SRCS= pp.util pp.back pp.front pp.main pp.platform pp.expand pp.model \
 	 pp.back.rpm.svc \
 	 pp.back.null
 
-build-example: pp
+all: pp check
 	cd example && $(MAKE)
 
 pp: $(PP_SRCS)

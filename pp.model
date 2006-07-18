@@ -1,4 +1,8 @@
 
+#@ $pp_shlib_suffix: used to replace .%so at end of %files paths
+#    -- platform initialisation functions may (should) change this
+pp_shlib_suffix='.so*'
+
 #@ pp_have_component(component): return true if component was defined
 pp_have_component () {
 	pp_contains "$pp_components" "$1"
@@ -100,17 +104,18 @@ pp_files_expand () {
 
     test $# -eq 0 || pp_error "$_p: too many arguments"
 
-    #-- treat /** and /**/ endings specially
+    #-- process speciall suffixes
+    tree=
     case "$_p" in
-        *"/**") _p=${_p%"/**"}; tree="**";;
-        *)      tree="";
+        *"/**")  _p=${_p%"/**"}; tree="**";;
+        *".%so") _p=${_p%".%so"}"$pp_shlib_suffix"
     esac
 
     #-- expand the path using the shell glob
     pp_debug "expanding .$_p ..."
     (cd ${pp_destdir} && $pp_expand_path ".$_p") > $pp_wrkdir/tmp.files.exp
 
-    #-- expand path/** by following recursively
+    #-- expand path/** by rewriting the glob output file
     case "$tree" in
         "") : ;;
         "**")
@@ -118,7 +123,8 @@ pp_files_expand () {
             while read _path; do
                 _path="${_path#.}"
                 pp_find_recurse "$pp_destdir${_path%/}"
-            done < $pp_wrkdir/tmp.files.exp > $pp_wrkdir/tmp.files.exp2
+            done < $pp_wrkdir/tmp.files.exp | 
+                 sort -u > $pp_wrkdir/tmp.files.exp2
             mv $pp_wrkdir/tmp.files.exp2 $pp_wrkdir/tmp.files.exp
             ;;
     esac
@@ -133,12 +139,15 @@ pp_files_expand () {
 	_f="$_flags"
 
 	#-- set the type based on the real file's type
-	if $_has_target && test -h "$_file"; then
+	if test -h "$_file"; then
 	   _type=s
 	   if test x"$_target" != x"="; then
 	       _tgt="$_target"
 	   else
-	       _tgt=`readlink "$_file"`
+	       _tgt=`readlink "$_file"` || 
+                    pp_error "can't readlink $_file"
+               _tgt="${_tgt#$pp_destdir}"
+               # FIXME.. should we correct the symlink in situ??
 	   fi
 	   _m=777
 	elif test -d "$_file"; then
@@ -164,14 +173,19 @@ pp_files_expand () {
 	   _type=f
 	fi
 
-	#-- convert '=' into mode/owner/group from ls
+	#-- convert '=' shortcuts into mode/owner/group from ls
 	case ":$_m:$_o:$_g:" in *:=:*)
-	    /bin/ls -l1d "$_file" > $pp_wrkdir/ls.tmp ||
+	    if /bin/ls -l1d "$_file" > $pp_wrkdir/ls.tmp; then
+                read _lm _ll _lo _lg _ls _lx < $pp_wrkdir/ls.tmp
+                test x"$_m" = x"=" && _m=`pp_mode_from_ls "$_lm"`
+                test x"$_o" = x"=" && _o="$_lo"
+                test x"$_g" = x"=" && _g="$_lg"
+            else
                 pp_error "cannot read $_file"
-	    read _lm _ll _lo _lg _ls _lx < $pp_wrkdir/ls.tmp
-	    test x"$_m" = x"=" && _m=`pp_mode_from_ls "$_lm"`
-	    test x"$_o" = x"=" && _o="$_lo"
-	    test x"$_g" = x"=" && _g="$_lg"
+                test x"$_m" = x"=" && _m=-
+                test x"$_o" = x"=" && _o=-
+                test x"$_g" = x"=" && _g=-
+            fi
 	    ;;
 	esac
 	

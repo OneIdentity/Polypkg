@@ -55,7 +55,7 @@ pp_rpm_detect_arch () {
 	%description
 	dummy
 .
-    cat $pp_wrkdir/dummy.spec
+    $pp_opt_debug && cat $pp_wrkdir/dummy.spec
     pp_rpm_arch=`rpm -q --qf '%{arch}\n' --specfile $pp_wrkdir/dummy.spec`
     rm $pp_wrkdir/dummy.spec
 }
@@ -100,6 +100,14 @@ pp_rpm_subname () {
     esac
 }
 
+#@ pp_rpm_depend() < %depend: generate Requires rules
+pp_rpm_depend () {
+    while read _name _vers; do
+        case "$_name" in ""| "#"*) continue ;; esac
+        echo "Requires: $_name ${_vers:+>= $_vers}"
+    done
+}
+
 #@ pp_backend_rpm(): generate RPMs for the package
 #-- Reads output files from the frontend and generates multiple output
 #   package files under $pp_wrkdir/
@@ -132,8 +140,13 @@ pp_backend_rpm () {
 .
 	pp_rpm_label "Vendor"   "$pp_rpm_vendor"   >>$specfile
 	pp_rpm_label "Packager" "$pp_rpm_packager" >>$specfile
-	pp_rpm_label "Requires" "$pp_rpm_requires" >>$specfile
 	pp_rpm_label "Provides" "$pp_rpm_provides" >>$specfile
+
+        if test -n "$pp_rpm_requires"; then
+            pp_rpm_label "Requires" "$pp_rpm_requires" >>$specfile
+        elif test -s $pp_wrkdir/%depend.run; then
+            pp_rpm_depend < $pp_wrkdir/%depend.run >> $specfile
+        fi
 
 	cat <<-. >>$specfile
 
@@ -166,7 +179,11 @@ pp_backend_rpm () {
 			Group: $_group
 .
                 eval '_pkg="$pp_rpm_'$cmp'_requires"'
-		eval pp_rpm_label Requires ${pp_rpm_name:-$name} $_pkg
+                if test -n "$_pkg"; then
+                    eval pp_rpm_label Requires ${pp_rpm_name:-$name} $_pkg
+                elif test -s $pp_wrkdir/%depend.$cmp; then
+                    pp_rpm_depend < $pp_wrkdir/%depend.$cmp >> $specfile
+                fi
 
                 eval '_pkg="$pp_rpm_'$cmp'_provides"'
 		eval pp_rpm_label Provides $_pkg
@@ -241,10 +258,12 @@ $pp_opt_debug && cat $specfile
         pp_debug "creating: `pp_backend_rpm_names`"
 
 	HOME=$pp_wrkdir \
-        rpmbuild -v -bb \
+        rpmbuild -bb \
 		--buildroot="$pp_destdir/" \
                 --target="${pp_rpm_arch}" \
                 --define='_unpackaged_files_terminate_build 0' \
+                `$pp_opt_debug && echo --verbose || echo --quiet` \
+                $pp_rpm_rpmbuild_extra_flags \
 		$specfile || 
             pp_error "Problem creating RPM packages"
 

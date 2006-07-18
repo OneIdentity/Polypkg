@@ -224,7 +224,7 @@ pp_frontend () {
 		: ignore  # guaranteed to be the last section
 		;;
 	%set)
-                pp_debug "leaving %set: sourcing $pp_wrkdir/tmp"
+                pp_debug "leaving $section: sourcing $pp_wrkdir/tmp"
                 $pp_opt_debug && cat $pp_wrkdir/tmp >&2
 		. $pp_wrkdir/tmp
 		: > $pp_wrkdir/tmp

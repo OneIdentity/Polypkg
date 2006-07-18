@@ -30,6 +30,7 @@ pp_main_cleanup () {
 #@ pp_parseopts(args...): sets the $pp_opt_* variables from cmd line args
 #    exits on incorrect usage
 pp_parseopts () {
+        typeset a n _var _val
 	while test $# -gt 0; do
 
 	  # convert -[dilv] to --long-options
@@ -94,7 +95,20 @@ pp_parseopts () {
 	    shift
 	fi
 
-	test $# -gt 0 && pp_errors=true
+        #-- extra arguments of the form Foo=bar alter *global* vars
+        while test $# -gt 0; do
+            case "$1" in
+                *=*)    _val="${1#*=}"
+                        _var=${1%="$_val"}
+                        pp_debug "setting $_var = $_val"
+                        eval "$_var=\"\$_val\""
+                        shift;;
+                *)      break;;
+            esac
+        done
+
+	test $# -gt 0 &&
+            pp_error "unknown argument $1"
 
 	if $pp_errors; then 
 	    cat <<. >&2
@@ -149,8 +163,12 @@ pp_package () {
 	# copy the resulting package files to .
 	for f in `pp_backend_names` -; do
            test x"$f" = x"-" && continue
-	   pp_debug "copying: $f"
-	   cp $pp_wrkdir/$f . || pp_error "$f: missing package"
+	   pp_debug "copying: $f to `pwd`"
+	   if pp_verbose cp $pp_wrkdir/$f .; then
+               pp_debug "wrote: `pwd`/$f"
+           else
+               pp_error "$f: missing package"
+           fi
 	done
 	pp_die_if_errors "Errors during package copying"
 }
