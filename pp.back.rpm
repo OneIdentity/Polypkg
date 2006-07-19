@@ -6,8 +6,9 @@
 pp_platforms="$pp_platforms rpm"
 
 #@ pp_backend_rpm_detect(uname_s): return true if this platform uses RPM
+#    -- specific test for debian
 pp_backend_rpm_detect () {
-    test x"$1" = x"Linux"
+    test x"$1" = x"Linux" -a ! -f /etc/debian_version
 }
 
 #@ pp_backend_rpm_init(): initialises rpm backend variables

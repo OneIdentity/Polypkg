@@ -1,0 +1,36 @@
+# Debian backend
+
+pp_platforms="$pp_platforms deb"
+
+#@ pp_backend_deb_detect(uname_s): return true if matches uname on deb
+pp_backend_deb_detect () {
+    test -f /etc/debian_version
+}
+
+#@ pp_backend_deb_init(): initialises platform variables for deb 
+pp_backend_deb_init () {
+    :
+}
+
+
+#@ pp_backend_deb(): processes output files to generate a package files
+pp_backend_deb () {
+    pp_error unimplemented
+}
+
+#@ pp_backend_deb_cleanup(): removes any files created outside $pp_wrkdir
+pp_backend_deb_cleanup () {
+    :
+}
+
+#@ pp_backend_deb_names(): prints the paths to package files
+#    each path should start with $name-$version
+#    the package must be relative to the $pp_wrkdir directory
+pp_backend_deb_names () {
+    :
+}
+
+#@ pp_backend_deb_install(component): installs package containing the cpt
+pp_backend_deb_install () {
+    pp_error unimplemented
+}
