@@ -1,6 +1,5 @@
 #!/bin/sh
 
-name brackets
 desc 'test [platform] and %if [platform] notation works'
 
 pp_front_end <<-.

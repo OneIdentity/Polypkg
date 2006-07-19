@@ -1,6 +1,5 @@
 #!/bin/sh
 
-name ifelse3
 desc nested %if and %else
 
 pp_front_end <<-.

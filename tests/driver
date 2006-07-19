@@ -1,20 +1,26 @@
 #!/bin/sh
 #
 # Test driver
+# 
+# Environment variables
+#   SELECT: glob used to select tests to run (default is *)
+#   DEBUG: if set and non-empty, adds --debug to pp
 #
 
 PP=./pp
 TMPDIR=/tmp/pp.test
 
-NAME="**UNDEFINED** $1"
-DESC="**UNDEFINED**"
+d=${1%/*}
+NAME=${1#$d/}
+DESC="** NO DESCRIPTION **"
 
-name () { NAME="$*"; }
 desc () { DESC="$*"; }
 
 pass () { echo "PASS $NAME: $DESC"; exit 0; }
-fail () { echo "FAIL $NAME: $DESC"; exit 1; }
-skip () { echo "skip $NAME: $DESC"; exit 0; }
+fail () { echo "FAIL $NAME: $DESC";
+          test $# -gt 0 && echo "       reason: $*"; 
+          exit 1; }
+skip () { echo "?    $NAME"; exit 0; }
 
 #-- invokes the front-end only of pp
 pp_front_end () {
@@ -25,7 +31,10 @@ pp_front_end () {
     || fail
 }
 
+eval "case \$NAME in ${SELECT:-*}) :;; *) skip;; esac"
+
 rm -rf $TMPDIR
+mkdir $TMPDIR
 
 . "$1"
 fail

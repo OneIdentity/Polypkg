@@ -1,6 +1,5 @@
 #!/bin/sh
 
-name ifelse
 desc %if/%else works
 
 pp_front_end <<-.

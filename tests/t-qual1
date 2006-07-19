@@ -1,0 +1,31 @@
+#! /bin/sh
+
+desc Tests the qualifiers for %set
+
+pp_front_end <<-.
+	%set [null]
+	touch $TMPDIR/ok1  #-- should always be run
+	%set [other]
+	touch $TMPDIR/bad1 #-- should not be run
+        %set
+	touch $TMPDIR/ok2
+        %post [foo,null,bar]
+	touch $TMPDIR/ok3
+        %post [null,bar]
+	touch $TMPDIR/ok4
+        %post [foo,null]
+	touch $TMPDIR/ok5
+        %post [other]
+	touch $TMPDIR/bad2
+.
+
+test -r $TMPDIR/%post.run || fail %post.run
+. $TMPDIR/%post.run
+
+for ok in ok1 ok2 ok3 ok4 ok5; do
+        test -r $TMPDIR/$ok || fail $ok
+done
+for bad in bad1 bad2; do
+        test -r $TMPDIR/$bad && fail $bad
+done
+pass

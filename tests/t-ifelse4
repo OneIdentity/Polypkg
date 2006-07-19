@@ -1,6 +1,5 @@
 #!/bin/sh
 
-name ifelse4
 desc nested complex %if and %else
 
 pp_front_end <<-.

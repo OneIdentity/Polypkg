@@ -1,6 +1,5 @@
 #!/bin/sh
 
-name ifelse2
 desc complex %if
 
 pp_front_end <<-.

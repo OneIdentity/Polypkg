@@ -101,6 +101,9 @@ Sections
 
     	%% this line will not be interpreted as a %-directive
 
+    The first character of a directive line must be a '%'. Whitespace
+    after the '%' is removed.
+
 Conditionals
 
     The special %-directives %if, %else and %endif are processed
@@ -108,22 +111,26 @@ Conditionals
     shell's "test" builtin. 
 
     		%if $name = "foo"
-		   some lines
+                % ignore
+		  some lines for the foo package only
 		%endif
 
-    If the argument to the %if directive starts with '[' then it
-    is interpreted as a comma separated list of platform names
 
-                %if [aix,linux]
-                    some lines
+    If the argument to the %if directive starts with '[' then it
+    is interpreted as a platform qualifier. A platform qualifier
+    is comma separated list of platform names enclosed in square
+    brackets. No whitespace is permitted.
+
+                %if [solaris,rpm]
+                    some lines for solaris and rpm systems only
                 %endif
                 
                 %if [!hpux]
-                    some lines
+                    some lines for non-hpux systems
                 %endif
 
-    If a line begins with a '[' then it is treated as a platform
-    conditional as well.
+    If a line begins with a qualifier then it applies to that line only.
+    For example:
 
                 %files run
                 /etc/foo
@@ -131,6 +138,17 @@ Conditionals
                 [!aix] /etc/bar
 
     There is no %elif. Use nested %if instead.
+
+    If a line starts with the '#' character, the line is disabled
+    as if it had started with '[!]'.
+
+    Many sections directives (e.g. %files, described below) take
+    an optional 'qualifier' argument which selectively enables or
+    disables the entire section.
+
+    To prevent a line from being treated specially, either as
+    a section directive, or as prefixed with a qualifier, start
+    the line with the two characters '%\'.
 
 The %set section
 
@@ -190,11 +208,16 @@ The %files sections
 	and pattern metacharacters *,?,[,],{,}. 
 
 	  Impl note: {,}-patterns are converted into /@(|)-patterns
-          for some shells. This is automatically detected.
+          for some shells. This is automatically detected and performed.
 
-        If the path-glob is of the form 'dir-path/**' then it is converted
+        If the path-glob is of the form 'path/**' then it is converted
         into a list of all files and directories under (but not including)
-        the directories matched by dir-path.
+        the directories matched by path. If you want to include the
+        parent directory as well as all children, you must list the
+        directory separately:
+
+                /path/to/dir/
+                /path/to/dir/**
 
 	If the path-glob ends with %so then it is replaced with
 	platform's native shared library suffix pattern. 
@@ -229,10 +252,15 @@ The %files sections
 	'Flags' is a comma-delimited list of flags. Valid flags are:
 		volatile	- uninstall will ignore changes in the file
 		optional	- ignore if the path-glob matches nothing
-		symlink		- a symlink target follows
+		symlink		- The file must be packaged as a symlink
                 ignore          - ignore this file (don't package it)
                 ignore-others   - ignore all other mentions of this file
                                   (useful for wildcards)
+
+        If the 'symlink' flag is given, a symlink target should be
+        given.
+
+                /etc/foo.conf    volatile,optional
 
         The %files section is not subjected to %() or %{} expansion.
         However, paths are expanded using shell globbing, so shell
@@ -259,8 +287,8 @@ The %post and %preun sections
 	are executed after file components are installed, and before
 	file components are uninstalled.
 
-		%post [component]
-		%preun [component]
+		%post [component] [qualifier]
+		%preun [component] [qualifier]
 
 	The body of these sections is treated as shell script, but
 	%{} and %() expansion takes place. The shell script body is
@@ -297,7 +325,7 @@ The %service section
 	by a simple service identifier. If omitted, the simple name of the
 	package is used.
 	
-		%service [name]
+		%service [name] [qualifier]
 
 	The body of a %service section consists of shell text. It is
 	expected to set some simple shell variables, and is effectively
@@ -349,7 +377,7 @@ The %depend section
 	a component will depend on. The %depend directive is followed
 	by a component name ('run' is assumed if it is omitted).
 
-	    %depend [component]
+	    %depend [component] [qualifier]
 
 	The body of a depend section consists of names and 
 	minimum version numbers of (other PolyPackage) packages.
@@ -398,6 +426,8 @@ The %fixup section
 	The fixup section body contains shell text that is run
 	immediately before the platform packaging tools are executed.
 
+                %fixup [qualifier]
+
 	The %fixup directive is not followed by any identifier.
 	This is really only intended as a last-resort place to hold 
 	any horrible hackery required.
@@ -417,4 +447,11 @@ The %pp section
 	document descibes version 1.0.
 
 		%pp 1.0
+
+The %ignore section
+
+        Ignore sections contains text that is always ignored by pp.
+        This could be useful for comments.
+
+                %ignore
 

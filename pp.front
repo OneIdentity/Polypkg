@@ -64,38 +64,73 @@ pp_frontend_init () {
     : nothing
 }
 
-# frontend_if
-#   Handles %if/%else/%endif logic
+#@ pp_is_qualifier(): returns true if the arg is a qualifier expression
+pp_is_qualifier () {
+    typeset ret
+
+    case "$1" in
+        "["*"]") ret=true;;
+        *)       ret=false;;
+    esac
+    pp_debug "is_qualifier: $* -> $ret"
+    test $ret = true
+}
+
+#@ pp_eval_qualifier(): returns true if plat qual matches current plat
+#   Platform qualifiers match the following grammar
+#              '[' '!'? platform ( ',' platform )* ']'
+#   Returns true if the current platform is in the list of platforms.
+#   Starting with a '!' reverses the sense of the test.
+#   Special consequential qualifiers:
+#      []  - always false
+#      [!] - always true
+pp_eval_qualifier () {
+    typeset ret
+
+    case "$1" in
+        "[!$pp_platform]"| \
+         "[!"*",$pp_platform]"| \
+         "[!$pp_platform,"*"]"| \
+         "[!"*",$pp_platform,"*"]") ret=false;;
+        "[!"*"]") ret=true;;
+        "[$pp_platform]"| \
+         "["*",$pp_platform]"| \
+         "[$pp_platform,"*"]"| \
+         "["*",$pp_platform,"*"]") ret=true;;
+        "["*"]") ret=false;;
+        *) pp_die "pp_eval_qualifier: bad qualifier '$1'"
+    esac
+    pp_debug "eval: $* -> $ret"
+    test true = $ret
+}
+
+#@ pp_frontend_if(): helper function for %if/%else/%endif logic
+#   Updates $pp_if_true and $pp_if_false variables which count
+#   the depth of true or false if/else branches. (Note that this
+#   counting scheme is unable to support an '%elif' construct,
+#   which really needs a stack.)
 #   The '%if' arguments can be by any one of:
 #       - 1, true, 0, false => explicit true or false
-#       - [platform-list] => true if $pp_platform is in the list
-#       - [!platform-list] => false if $pp_platform is in the list
+#       - [qualifier] => see pp_eval_qualifier()
 #       - test-expr => given to the shell's test command
 #   The variables $pp_if_false and $pp_if_true are counters for if nesting.
 #   If $pp_if_false is non-zero then processing should be suppressed.
-frontend_if () {
+pp_frontend_if () {
     typeset ifcmd
     ifcmd="$1";
     shift
     case "$ifcmd" in
 	%if) if test 0 = $pp_if_false; then
 		case "$*" in 
-		    true|1) pp_incr pp_if_true;;
+		    true |1) pp_incr pp_if_true;;
 		    false|0) pp_incr pp_if_false;;
-
-                    "[!$pp_platform]"| \
-                     "[!"*",$pp_platform]"| \
-                     "[!$pp_platform,"*"]"| \
-                     "[!"*",$pp_platform,"*"]") pp_incr pp_if_false;;
-                    "[!"*"]") pp_incr pp_if_true;;
-                    "[$pp_platform]"| \
-                     "["*",$pp_platform]"| \
-                     "[$pp_platform,"*"]"| \
-                     "["*",$pp_platform,"*"]") pp_incr pp_if_true;;
-                    "["*"]") pp_incr pp_if_false;;
-
-		    *) if eval test "$@"; then pp_incr pp_if_true
-				     else pp_incr pp_if_false; fi;;
+                    *)
+                        if pp_is_qualifier "$*"; then
+                            pp_eval_qualifier "$*"
+                        else
+                            eval test "$@"
+                        fi && pp_incr pp_if_true || pp_incr pp_if_false
+                        ;;
 		esac
 	     else
 		pp_incr pp_if_false
@@ -136,15 +171,19 @@ frontend_if () {
 #   - detects %set, %post, %preun etc sections
 #   - handles %if/%else/%endif logic
 pp_frontend () {
-  typeset section newsection sed_word sed_ws line cpt
+  typeset section newsection sed_word sed_ws line cpt svc
+  typeset section_enabled newsection_enabled s
 
   section='%_initial'
   newsection='%_initial'
+  section_enabled=:
+  newsection_enabled=:
   sed_word="[a-zA-Z_][a-zA-Z_0-9]*"
   sed_ws="[	]"
 
   pp_lineno=0
 
+  #-- Note: this sed script should perform similar to pp_eval_qualifier()
   sed  -e "/^#/d" \
        -e "/^\\[!\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]/s/.*//" \
        -e "s/^\\[\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]$sed_ws*//" \
@@ -174,7 +213,7 @@ pp_frontend () {
         case "$1" in 
 	   %if|%else|%endif) 
                 pp_debug "processing if directive $1"
-	   	frontend_if ${1+"$@"}
+	   	pp_frontend_if ${1+"$@"}
 		continue;;
 	esac
 	test 0 -ne $pp_if_false && continue	# ignore lines %if'd out
@@ -182,43 +221,81 @@ pp_frontend () {
         case "$1" in 
 	  %set|%fixup|%ignore)
              pp_debug "processing new section $1"
-	     test $# -eq 1 || pp_error "no arguments needed for $1"
-	     newsection="$1"
+	     newsection="$1"; shift
+             newsection_enabled=:
+             if pp_is_qualifier "$1"; then
+                pp_eval_qualifier "$1" || newsection_enabled=false
+                shift
+             fi
+	     test $# -eq 0 || pp_warn "ignoring extra arguments: $line"
 	     continue;;
 	  %post|%preun|%files|%depend) 
-             pp_debug "processing new component section $1 ${2:-run}"
-	     test $# -le 2 || pp_error "bad argument count to $1"
-             cpt="${2:-run}"
+             pp_debug "processing new component section $*"
+             s="$1"; shift
+             if test $# -eq 0 || pp_is_qualifier "$1"; then
+                cpt=run
+             else
+                cpt="$1"
+                shift
+             fi
+             newsection="$s.$cpt"
+             newsection_enabled=:
+             if test $# -gt 0 && pp_is_qualifier "$1"; then
+                pp_eval_qualifier "$1" || newsection_enabled=false
+                shift
+             fi
+             test $# -eq 0 ||
+                pp_warn "ignoring extra arguments: $line"
              case "$cpt" in 
-                run|dbg|doc|dev) pp_add_component "$cpt";;
+                run|dbg|doc|dev) 
+                    $newsection_enabled && pp_add_component "$cpt";;
                 x-*) :;;    # useful for discarding stuff
                 *) pp_error "unknown component: $1 $cpt";;
              esac
-	     newsection="$1.$cpt"
 	     continue;;
 	  %service)
              pp_debug "processing new service section $1 $2"
-	     test $# -eq 2 || pp_error "bad argument count to $1"
-	     newsection="$1.$2"
-	     pp_add_service "$2"
+             s="$1"; shift
+             if test $# -eq 0 || pp_is_qualifier "$1"; then
+                pp_error "$s: service name required"
+                svc=unknown
+             else
+                svc="$1"; shift
+             fi
+
+	     newsection="$s.$svc"
+             newsection_enabled=:
+	     if test $# -gt 0 && pp_is_qualifier "$1"; then
+                pp_eval_qualifier "$1" || newsection_enabled=false
+                shift
+             fi
+             test $# -eq 0 ||
+                pp_warn "ignoring extra arguments: $line"
+	     $newsection_enabled && pp_add_service "$2"
 	     continue;;
 	  %%*) 
              pp_debug "removing leading %"
 	     line="${line#%}"
 	     ;;
+	  "%\\"*) 
+             pp_debug "removing leading %\\"
+	     line="${line#%\\}"
+             ;;
 	  %*) 
 	     pp_error "unknown section $1"
 	     newsection='%ignore'
+             newsection_enabled=:
 	     continue;;
 	esac;;
      esac
 
      test 0 != $pp_if_false && continue	# ignore lines %if'd out
 
-     pp_debug "section=$section newsection=$newsection"
+     pp_debug "section=$section($section_enabled) newsection=$newsection($newsection_enabled)"
 
      #-- finish processing a previous section
-     test x"$newsection" != x"$section" && case "$section" in
+     if test x"$newsection" != x""; then
+      $section_enabled && case "$section" in
      	%ignore|%_initial) 
                 pp_debug "leaving ignored section $section"
 		: ignore  # guaranteed to be the last section
@@ -238,8 +315,14 @@ pp_frontend () {
 		rm -f $pp_wrkdir/tmp.sh
 		: > $pp_wrkdir/tmp
 		;;
-     esac
-     section="$newsection"
+      esac
+      section="$newsection"
+      section_enabled="$newsection_enabled"
+      newsection=
+     fi
+
+     #-- ignore section content that is disabled
+     $section_enabled || continue
 
      #-- process some lines in-place
      case "$section" in
