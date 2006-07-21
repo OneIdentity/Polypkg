@@ -209,7 +209,7 @@ pp_files_expand () {
 
 	pp_debug "$_type $_m $_o $_g $_f $_path" $_tgt
 	$_ignore || echo "$_type $_m $_o $_g $_f $_path" $_tgt
-        echo "$_path" >> $pp_wrkdir/all.files
+        pp_note_file_used "$_path"
         case "$_f" in *i*) echo "$_path" >> $pp_wrkdir/ign.files;; esac
     done < $pp_wrkdir/tmp.files.exp
 }

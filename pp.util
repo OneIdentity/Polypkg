@@ -231,6 +231,11 @@ pp_prepend () {
     fi
 }
 
+#@ pp_note_file_used(path): record file used for later coverage analysis
+pp_note_file_used() {
+    echo "$1" >> $pp_wrkdir/all.files
+}
+
 #@ pp_create_dir_if_missing(path,mode): add directory if missing
 #   - cleans up afterwards
 pp_create_dir_if_missing () {
@@ -241,7 +246,7 @@ pp_create_dir_if_missing () {
                 pp_debug "fabricating directory $1/"
 		pp_create_dir_if_missing "${1%/*}"
 		mkdir "$pp_destdir$1" && 
-                echo "$1/" >> $pp_wrkdir/all.files
+                    pp_note_file_used "$1/"
 		pp_remove_later "$1" &&
 		chmod ${2-755} "$pp_destdir$1" 
 	    fi;;
@@ -265,7 +270,7 @@ pp_add_file_if_missing () {
     pp_create_dir_if_missing "${1%/*}"
     pp_debug "fabricating file $1"
     echo "f ${3:-755} - - - $1" >> $pp_wrkdir/%files.${2:-run}
-    echo "$1" >> $pp_wrkdir/all.files
+    pp_note_file_used "$1"
     pp_remove_later "$1"
     return 0
 }
@@ -275,7 +280,7 @@ pp_add_transient_file () {
     test -f "$pp_destdir$1" && pp_die "$pp_destdir$1: exists"
     pp_create_dir_if_missing "${1%/*}"
     pp_debug "transient file $1"
-    echo "$1" >> $pp_wrkdir/all.files
+    pp_note_file_used "$1"
     pp_remove_later "$1"
 }
 

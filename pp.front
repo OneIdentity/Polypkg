@@ -61,7 +61,15 @@ pp_if_false=0
 
 #@ pp_frontend_init(): Set variables to their default values
 pp_frontend_init () {
-    : nothing
+    name=
+    version=
+    summary="no summary"
+    description="No description"
+    copyright="(c) 2006 Quest Software, Inc. All rights reserved"
+
+    #-- if the user supplied extra arguments on the command line
+    #   then load them now.
+    eval "$pp_opt_init_vars"
 }
 
 #@ pp_is_qualifier(): returns true if the arg is a qualifier expression
@@ -271,7 +279,7 @@ pp_frontend () {
              fi
              test $# -eq 0 ||
                 pp_warn "ignoring extra arguments: $line"
-	     $newsection_enabled && pp_add_service "$2"
+	     $newsection_enabled && pp_add_service "$svc"
 	     continue;;
 	  %%*) 
              pp_debug "removing leading %"

@@ -32,13 +32,6 @@
 # platform name (eg aix or linux)
 #
 
-#-- defaults
-name=
-version=
-summary="no summary"
-description="No description"
-copyright="(c) 2006 Quest Software, Inc. All rights reserved"
-
 #@ pp_backend_init():    call the current platform backend's initialiser
 #@ pp_backend():         call the current platform backend's processor
 #@ pp_backend_names():   print the current platform backend's package names

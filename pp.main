@@ -14,6 +14,7 @@ pp_opt_wrkdir="${TMPDIR:-/var/tmp}/pp.work.$$"
 pp_opt_verbose=false
 pp_opt_version=false
 pp_opt_input="-"
+pp_opt_init_vars=""
 
 #@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
 pp_main_cleanup () {
@@ -100,8 +101,9 @@ pp_parseopts () {
             case "$1" in
                 *=*)    _val="${1#*=}"
                         _var=${1%="$_val"}
-                        pp_debug "setting $_var = $_val"
-                        eval "$_var=\"\$_val\""
+                        _val=`echo "$_val"|sed -e 's/[$"\\]/\\&/g'`
+                        pp_debug "setting $_var = \"$_val\""
+                        pp_opt_init_vars="$pp_opt_init_vars$_var=\"$_val\";"
                         shift;;
                 *)      break;;
             esac
