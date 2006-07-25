@@ -211,10 +211,11 @@ pp_backend_solaris () {
 		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
                     pp_prepend $pp_wrkdir/preremove
           fi
+          #-- All dependencies are merged together for Solaris pkgs
+          test -s $pp_wrkdir/%depend.$_cmp &&
+              pp_solaris_depend < $pp_wrkdir/%depend.$_cmp > $pp_wrkdir/depend
 	done
 
-        test -s $pp_wrkdir/%depend &&
-            pp_solaris_depend < $pp_wrkdir/%depend > $pp_wrkdir/depend
 
         pp_solaris_request > $pp_wrkdir/request
 
