@@ -192,7 +192,7 @@ pp_frontend () {
   pp_lineno=0
 
   #-- Note: this sed script should perform similar to pp_eval_qualifier()
-  sed  -e "/^#/d" \
+  sed  -e "/^#/s/.*//" \
        -e "/^\\[!\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]/s/.*//" \
        -e "s/^\\[\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]$sed_ws*//" \
        -e "s/^\\[!\\($sed_word,\\)*$sed_word\\]$sed_ws*//" \
@@ -261,6 +261,17 @@ pp_frontend () {
                 *) pp_error "unknown component: $1 $cpt";;
              esac
 	     continue;;
+          %pp)
+            newsection="%ignore"; shift
+            if test $# -gt 0; then
+                pp_set_api_version "$1"
+                shift
+            else
+                pp_error "%pp: missing version"
+            fi
+            test $# -gt 0 &&
+                pp_error "%pp: too many arguments"
+            continue;;
 	  %service)
              pp_debug "processing new service section $1 $2"
              s="$1"; shift
@@ -363,4 +374,12 @@ pp_frontend () {
   pp_debug ""
   pp_debug "\$pp_components: $pp_components"
   pp_debug "\$pp_services:   $pp_services"
+}
+
+#@ pp_set_api_version($v): change pp's behaviour to match the desired version
+pp_set_api_version() {
+    case "$1" in
+        1.0)    : ;;
+        *)      pp_error "This version of polypackage is too old";;
+    esac
 }

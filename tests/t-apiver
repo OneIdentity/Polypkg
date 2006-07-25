@@ -1,0 +1,8 @@
+#! /bin/sh
+
+desc Tests the %pp directive
+
+pp_front_end <<-. && pass
+	%pp 1.0
+.
+
