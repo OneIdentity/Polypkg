@@ -3,6 +3,22 @@
 #    -- platform initialisation functions may (should) change this
 pp_shlib_suffix='.so*'
 
+#@ pp_model_init(): initialise model variables and files
+pp_model_init () {
+    #@ $pp_components: whitespace-delimited list of components seen in %files
+    pp_components=
+    #@ $pp_services: whitespace-delimited list of %service seen
+    pp_services=
+
+    rm -f $pp_wrkdir/%files.* \
+          $pp_wrkdir/%post.* \
+          $pp_wrkdir/%preun.* \
+          $pp_wrkdir/%service.* \
+          $pp_wrkdir/%set \
+          $pp_wrkdir/%fixup
+}
+
+
 #@ pp_have_component(component): return true if component was defined
 pp_have_component () {
 	pp_contains "$pp_components" "$1"
@@ -72,7 +88,7 @@ pp_files_expand () {
     case "$1" in
 	*:*) _group=${1#*:}; _owner=${1%:*}; shift;;
 	=|-) _group=$1;      _owner=$1; shift;;
-	*)   _group=-;       _owner=-;;
+	*)   _group=;       _owner=;;
     esac
 
     #-- process the flags argument
@@ -128,8 +144,8 @@ pp_files_expand () {
 	_file="${pp_destdir}${_path}"
 	_tgt=
 	_m="$_mode"
-	_o="$_owner" 
-	_g="$_group"
+	_o="${_owner:--}" 
+	_g="${_group:--}"
 	_f="$_flags"
 
         case "$_path" in 

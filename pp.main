@@ -136,6 +136,7 @@ usage: $0 [options] [input.pp] >&2
 #@ pp_package(): drives the front-end, middle and backend 
 pp_package () {
 	# initialise the front and back ends
+        pp_model_init
 	pp_frontend_init
 	pp_backend_init
 

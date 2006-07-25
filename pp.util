@@ -5,11 +5,6 @@
 #@ $pp_errors: true if pp_error() has been called
 pp_errors=false
 
-#@ $pp_components: whitespace-delimited list of components seen in %files
-pp_components=
-#@ $pp_services: whitespace-delimited list of %service seen
-pp_services=
-
 #-- define some colour strings
 #@   $pp_col_redfg: terminal string to change foreground colour to red
 #@   $pp_col_bluefg: terminal string to change foreground colour to blue
