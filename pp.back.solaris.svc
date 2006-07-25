@@ -71,8 +71,6 @@ pp_solaris_smf () {
 pp_solaris_make_service () {
     typeset file out _cmd svc
 
-    set -x
-
     svc="$1"
     file="/etc/init.d/$svc"
     out="$pp_destdir$file"
@@ -116,6 +114,19 @@ pp_solaris_make_service () {
             kill -0 "$pid" 2>/dev/null
         }
 
+        pp_status () {
+            if pp_running; then
+                echo "service $svc is running (pid $pid)"
+                return 0
+            elif test -f "$pidfile"; then
+                echo "service $svc is not running, put pid file exists" 
+                return 2
+            else
+                echo "service $svc is not running" 
+                return 1
+            fi
+        }
+
         pp_start () {
             if pp_running; then
                 echo "service $svc already running" >&2
@@ -150,8 +161,9 @@ pp_solaris_make_service () {
         case "$1" in
             start)   pp_start;;
             stop)    pp_stop;;
+            status)  pp_status;;
             restart) pp_stop && pp_start;;
-            *)       echo "usage: $0 {start|stop|restart}"
+            *)       echo "usage: $0 {start|stop|restart|status}"
                      exit 1;;
         esac
 .
