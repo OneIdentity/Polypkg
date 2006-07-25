@@ -207,7 +207,7 @@ pp_rpm_service_make_init_script () {
         pp_signal () {
             if test -r "$pidfile"; then
                 read pid < $pidfile
-                kill "$@" "$pid"
+                kill "$@" "$pid" 2>/dev/null
             else
                 return 1
             fi
