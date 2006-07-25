@@ -1,5 +1,5 @@
 
-PP_SRCS= pp.licence \
+PP_SRCS= \
 	 pp.main \
 	 pp.util \
 	 pp.front \
@@ -33,6 +33,7 @@ pp-stripped: $(PP_SRCS)
 	(echo '#!/bin/sh';                \
 	 echo '# (c) 2006 Quest Software, Inc. All rights reserved'; \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
+	 cat pp.licence; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
 	 echo 'pp_main $${1+"$$@"}';	\
 	 ) > $@
