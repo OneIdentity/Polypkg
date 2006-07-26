@@ -40,6 +40,9 @@ pp_backend_rpm_init () {
     pp_rpm_dev_pkgname=devel
     pp_rpm_doc_pkgname=doc
 
+    pp_rpm_defattr_uid=root
+    pp_rpm_defattr_gid=root
+
     pp_rpm_detect_arch
 }
 
@@ -83,7 +86,10 @@ pp_rpm_writefiles () {
                 f) m=644;;
             esac
         fi
+        test x"$o" = x"-" && o="${pp_rpm_defattr_uid:-root}"
+        test x"$g" = x"-" && g="${pp_rpm_defattr_gid:-root}"
 	_l="%attr($m,$o,$g) $_l"
+
 	case $f in *v*) _l="%config $_l";; esac
 	echo "$_l"
     done
@@ -226,7 +232,6 @@ pp_backend_rpm () {
             if test -s $pp_wrkdir/%files.$cmp; then
                 echo ""
                 echo "%files $_subname"
-                echo "%defattr(-,root,root)"
                 pp_rpm_writefiles < $pp_wrkdir/%files.$cmp
             fi
 
