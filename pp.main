@@ -125,7 +125,7 @@ usage: $0 [options] [input.pp] [var=value ...]
        --no-package             -- do everything but create packages
        --only-front             -- only perform front-end actions
     -p --platform=platform      -- defaults to local platform
-       --wrkdir=path            -- defaults to subdirectory of $TMPDIR or /tmp
+       --wrkdir=path            -- defaults to subdirectory of \$TMPDIR or /tmp
     -v --verbose                -- write info to stderr
        --version                -- display version and quit
 .
