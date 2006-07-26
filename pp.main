@@ -115,7 +115,7 @@ pp_parseopts () {
 	if $pp_errors; then 
 	    cat <<. >&2
 polypkg $pp_version $pp_copyright
-usage: $0 [options] [input.pp] >&2
+usage: $0 [options] [input.pp] [var=value ...]
     -d --debug                  -- write copious info to stderr
        --destdir=path           -- defaults to \$DESTDIR
     -? --help                   -- display this information
