@@ -8,6 +8,7 @@ PP_SRCS= \
 	 pp.model \
 	 pp.back \
          pp.back.aix \
+         pp.back.sd \
 	 pp.back.solaris \
 	 pp.back.solaris.svc \
 	 pp.back.rpm \
