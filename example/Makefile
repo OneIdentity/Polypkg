@@ -9,8 +9,7 @@ sysconfdir=	/etc
 DESTDIR=	/tmp/destroot
 
 PP=		../pp
-PPFLAGS=	--verbose --debug --no-clean
-PPFLAGS+=	--destdir=$(DESTDIR) 
+PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) 
 #PPFLAGS+=	--platform=aix
 
 package: $(PP) install hello.pp
