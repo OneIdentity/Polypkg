@@ -33,6 +33,20 @@ pp_backend_aix_init () {
         pp_aix_init_services_after_install=true
 }
 
+#-- pp_aix_version_fix(version) convert version into an AIX version 
+#   AIX demands version strings of the form a.b.c.d[.e]
+pp_aix_version_fix () {
+    case $1 in
+        ""|.*|*.) pp_error "malformed '$1'"
+                 echo "0.0.0.0";;
+        *.*.*.*.*.*) pp_error "version '$1' has too many dots for AIX"
+                 echo "0.0.0.0";;
+        *.*.*.*.*|*.*.*.*) echo "$1";;
+        *.*.*) echo "$1.0";;
+        *.*) echo "$1.0.0";;
+        *) echo "$1.0.0.0";;
+    esac
+}
 
 #@ pp_aix_select(-user|-root) < file-list:
 #   Selects out the %files lines that are in /usr or /opt (-user) 
@@ -53,10 +67,13 @@ pp_aix_select () {
 pp_aix_copy_root () {
     typeset t m o g f p st
     while read t m o g f p st; do
-	test -d "$pp_destdir$1$p" ||
-	pp_add_transient_file "$1$p"
-	pp_verbose   ln "$pp_destdir$p" "$pp_destdir$1$p" || 
-		pp_error "can't link $p into $1"
+        case "$t" in
+           d) pp_create_dir_if_missing "$1${p%/}";;
+           f) pp_add_transient_file "$1$p"
+	      pp_verbose ln "$pp_destdir$p" "$pp_destdir$1$p" || 
+		pp_error "can't link $p into $1";;
+           *) pp_warn "pp_aix_copy_root: filetype $t not handled";;
+        esac
     done
 }
 
@@ -305,7 +322,7 @@ pp_backend_aix () {
 	    pp_aix_select -root < $pp_wrkdir/%files.$cmp > $root_files
 	    content=U; test -s $root_files && content=B
 
-if $pp_debug; then
+if $pp_opt_debug; then
     echo "$cmp USER %files:"
     cat $user_files
     echo "$cmp ROOT %files:"
@@ -314,8 +331,10 @@ fi >&2
 
 	    bosboot=N; pp_contains_any "$pp_aix_bosboot" $cmp && bosboot=b
 
-	    echo $name.$ex $version 1 $bosboot $content \
-	    	    $pp_aix_lang $summary $briefex
+            echo $name.$ex \
+                 ${pp_aix_version:-`pp_aix_version_fix "$version"`} \
+	         1 $bosboot $content \
+	         $pp_aix_lang "$summary $briefex"
 	    echo "["
 
 	    pp_aix_depend $pp_wrkdir/%depend.$cmp 
@@ -330,7 +349,7 @@ fi >&2
 	    pp_aix_list $instroot  < $root_files >> $user_wrkdir/$name.$ex.al
 	    pp_aix_list            < $root_files  > $root_wrkdir/$name.$ex.al
 
-if $pp_debug; then
+if $pp_opt_debug; then
     echo "$cmp USER $name.$ex.al:"
     cat $user_wrkdir/$name.$ex.al 
     echo "$cmp ROOT $name.$ex.al:"
@@ -342,7 +361,7 @@ fi >&2
 	    pp_aix_inventory $name.$ex < $root_files \
                                        > $root_wrkdir/$name.$ex.inventory
 
-if $pp_debug; then
+if $pp_opt_debug; then
     pp_debug "$cmp USER $name.$ex.inventory:"
     cat $user_wrkdir/$name.$ex.inventory 
     pp_debug "$cmp ROOT $name.$ex.inventory:"
@@ -397,7 +416,7 @@ fi >&2
 		pp_error "cannot create root liblpp.a"
 	fi
 
-if $pp_debug; then
+if $pp_opt_debug; then
     echo "/lpp_name :"
     cat $pp_destdir/lpp_name
 fi >&2
@@ -426,7 +445,7 @@ pp_backend_aix_cleanup () {
 #-- prints the output package name without the $pp_wrkdir prefix.
 #   the name always starts with $name-$version
 pp_backend_aix_names () {
-	echo $name-$version-$pp_aix_arch_p.bff
+	echo "$name-${pp_aix_version:-`pp_aix_version_fix "$version"`}-$pp_aix_arch_p.bff"
 }
 
 #@ pp_backend_aix_install(): installs generated files
