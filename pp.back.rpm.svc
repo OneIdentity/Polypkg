@@ -6,7 +6,7 @@ pp_backend_rpm_init_svc_vars () {
     pp_rpm_default_svc_description="No description"
 }
 
-#@ pp_rpm_service_install_common(svc): emit common code for service install
+#@ pp_rpm_service_install_common(): emit common code for service install
 pp_rpm_service_install_common () {
     cat <<-'.'
 
@@ -33,7 +33,7 @@ pp_rpm_service_install_common () {
 .
 }
 
-#@ pp_rpm_service_remove_common(svc): emit common code for service removal
+#@ pp_rpm_service_remove_common(): emit common code for service removal
 pp_rpm_service_remove_common () {
     cat <<-'.'
 
