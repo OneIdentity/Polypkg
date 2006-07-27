@@ -141,10 +141,18 @@ pp_package () {
 	pp_backend_init
 
 	# run the front-end to generate the intermediate files
+        # set $pp_input_dir to be the 'include dir' if needed
 	pp_debug "calling frontend on $pp_opt_input"
 	case "$pp_opt_input" in 
-	    -) pp_frontend;;
-	    *) pp_frontend <"$pp_opt_input";;
+	    -)   pp_input_dir=.
+                 pp_frontend
+                 ;;
+            */*) pp_input_dir=${pp_opt_input%/*}
+	         pp_frontend <"$pp_opt_input"
+                 ;;
+            *)   pp_input_dir=.
+	         pp_frontend <"$pp_opt_input"
+                 ;;
 	esac
 
         pp_files_ignore_others
