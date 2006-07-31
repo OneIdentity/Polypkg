@@ -23,6 +23,8 @@ pp_backend_rpm_init () {
     pp_rpm_packager=
     pp_rpm_provides=
     pp_rpm_requires=
+    pp_rpm_release=1
+    pp_rpm_serial=
     pp_rpm_dev_group="Development/Libraries"
     pp_rpm_dbg_group="Development/Tools"
     pp_rpm_doc_group="Documentation"
@@ -140,7 +142,7 @@ pp_backend_rpm () {
 	cat <<-. >>$specfile
 		Name: ${pp_rpm_name:-$name}
 		Version: ${pp_rpm_version:-$version}
-		Release: 1
+		Release: ${pp_rpm_release}
 		Summary: ${pp_rpm_summary:-$summary}
 		Group:   ${pp_rpm_group}
 		License: ${pp_rpm_license}
@@ -148,6 +150,7 @@ pp_backend_rpm () {
 	pp_rpm_label "Vendor"   "$pp_rpm_vendor"   >>$specfile
 	pp_rpm_label "Packager" "$pp_rpm_packager" >>$specfile
 	pp_rpm_label "Provides" "$pp_rpm_provides" >>$specfile
+	pp_rpm_label "Serial"    $pp_rpm_serial    >>$specfile
 
         if test -n "$pp_rpm_requires"; then
             pp_rpm_label "Requires" "$pp_rpm_requires" >>$specfile
