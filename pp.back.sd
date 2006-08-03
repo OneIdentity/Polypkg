@@ -17,6 +17,17 @@ pp_backend_sd_init () {
     pp_sd_default_start=1           # config_file default start value
 
     pp_readlink_fn=pp_sd_readlink   # HPUX has no readlink
+
+    pp_sd_detect_os
+}
+
+pp_sd_detect_os () {
+    typeset revision
+
+    revision=`uname -r`
+    pp_sd_os="${revision#?.}"
+    test -z "$pp_sd_os" &&
+        pp_warn "cannot detect OS version"
 }
 
 #@ pp_sd_readlink(file): print the content of a symbolic link
@@ -335,7 +346,7 @@ pp_backend_sd_cleanup () {
 #    each path should start with $name-$version
 #    the package must be relative to the $pp_wrkdir directory
 pp_backend_sd_names () {
-    echo "$name-$version.depot"
+    echo "$name-$version${pp_sd_os:+-hpux$pp_sd_os}.depot"
 }
 
 #@ pp_backend_sd_install(component): installs package containing the cpt

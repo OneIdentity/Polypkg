@@ -42,8 +42,6 @@ pp_backend_solaris_detect () {
 
 #@ pp_backend_solaris_init(): initialise the solaris vars
 pp_backend_solaris_init () {
-        typeset osrel
-
 	pp_solaris_arch=`uname -p`
 	pp_solaris_category=application
 	pp_solaris_istates="s S 1 2 3"	# run-states when install is ok
@@ -55,12 +53,21 @@ pp_backend_solaris_init () {
 
         pp_solaris_init_svc
 
+        pp_solaris_detect_os
+}
+
+#@ pp_solaris_detect_os(): set $pp_solaris_os to short platform ID
+pp_solaris_detect_os () {
+        typeset osrel
+
         osrel=`/usr/bin/uname -r`
         case "$osrel" in
-            5.*) pp_solaris_os_sufx="sol2${osrel#5.}";;
-            *)   pp_solaris_os_sufx=
-                 pp_warn "can't determine OS suffix from uname -r";;
+            5.??) pp_solaris_os="sol${osrel#5.}";;
+            5.*) pp_solaris_os="sol2${osrel#5.}";;
         esac
+        test -z "$pp_solaris_os" &&
+             pp_warn "can't determine OS suffix from uname -r"
+
 }
 
 #@ pp_solaris_request(output): Generate a request script for all components
@@ -285,7 +292,7 @@ pp_backend_solaris_cleanup () {
 
 #@ pp_backend_solaris_names(): print the name of the package files created
 pp_backend_solaris_names () {
-	echo ${pp_solaris_name:-$name}-$version.${pp_solaris_os_sufx:+$pp_solaris_os_sufx-}$pp_solaris_arch.pkg
+	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_os:+$pp_solaris_os-}$pp_solaris_arch.pkg
 }
 
 #-- (re-)installs the newly created package
