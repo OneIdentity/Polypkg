@@ -13,7 +13,20 @@ pp_backend_sd_init () {
     pp_sd_sudo=sudo     # FIXME: argh why is hpux so braindead
     pp_sd_startlevels=2
     pp_sd_stoplevels=auto
-    pp_sd_config_files=
+    pp_sd_config_file=
+    pp_sd_default_start=1           # config_file default start value
+
+    pp_readlink_fn=pp_sd_readlink   # HPUX has no readlink
+}
+
+#@ pp_sd_readlink(file): print the content of a symbolic link
+pp_sd_readlink () {
+    if test -h "$1"; then
+        ls -1ld "$1" | sed -ne 's,.* -> ,,p'
+    else
+        echo "$1: not a symbolic link" >&2
+        return 1
+    fi
 }
 
 #@ pp_sd_write_files() <file-list: writes PSF lines for each file
@@ -32,11 +45,10 @@ pp_sd_write_files () {
         test x"$g" = x"-" && g=bin
         test x"$m" = x"-" && m=$dm
 
-        if test $t != s; then
-            line="$line -o $o -g $g -m $m"
-        fi
-
-        echo "$line $pp_destdir$p $p"
+        case $t in
+            s) echo "$line $st $p";;
+            *) echo "$line -o $o -g $g -m $m $pp_destdir$p $p";;
+        esac
 
     done
 }
@@ -51,7 +63,7 @@ pp_sd_service_script () {
 
     config_file=${pp_sd_config_file:-/etc/rc.config.d/$name}
     sd_config_var=`echo start-$svc | tr '[a-z]-' '[A-Z]_'`
-    sd_config_value=1
+    sd_config_value=${pp_sd_default_start:-0}
     pp_load_service_vars "$svc"
 
     test -n "$user" &&
@@ -61,8 +73,10 @@ pp_sd_service_script () {
         cmd="$cmd & echo \$! > \$pidfile"
     fi
 
-    pp_add_file_if_missing $scriptpath 755
-    pp_add_file_if_missing $config_file 644
+pp_debug "config file is $config_file"
+
+    pp_add_file_if_missing $scriptpath run 755
+    pp_add_file_if_missing $config_file run 644 v
 
     cat <<-. >> $pp_destdir$config_file
 
@@ -76,7 +90,7 @@ pp_sd_service_script () {
 
         svc="$svc"
         pidfile="$pidfile"
-        configfile="$sd_configfile"
+        config_file="$config_file"
 
         pp_start () {
             $cmd
@@ -105,16 +119,27 @@ pp_sd_service_script () {
             fi
         }
 
+        pp_running () {
+            if test ! -s "$pidfile"; then
+                return 1
+            else
+                read pid < "$pidfile" 
+                kill -0 "$pid" 2>/dev/null
+            fi
+        }
 
         case $1 in
             start_msg) echo "Starting the $svc service";;
             stop_msg)  echo "Stopping the $svc service";;
             start)  
-                    if test -f "$configfile"; then
-                        . /etc/rc.config.d/$svc
+                    if test -f "$config_file"; then
+                        . $config_file
                     fi
                     if pp_disabled; then
                         exit 2
+                    elif pp_running; then
+                        echo "$svc already running";
+                        exit 0
                     elif pp_start; then
                         echo "$svc started";
                         exit 4
@@ -137,7 +162,6 @@ pp_sd_service_script () {
 pp_sd_make_service () {
         typeset level priority startlevels stoplevels
         typeset svc
-
         svc="$1"
 
         #-- don't do anything if the script exists
@@ -147,37 +171,42 @@ pp_sd_make_service () {
         fi
 
         # symlink the script, depending on the priorities chosen
-        eval priority='$pp_sd_priority_'$svc
-        test -z "$priority" || priority="${pp_sd_priority:-50}"
+        eval priority='${pp_sd_priority_'$svc'}'
+        test -z "$priority" && priority="${pp_sd_priority:-50}"
+
+        eval startlevels='${pp_sd_startlevels_'$svc'}'
+        test -z "$startlevels" && startlevels="$pp_sd_startlevels"
+
+        eval stoplevels='${pp_sd_stoplevels_'$svc'}'
+        test -z "$stoplevels" && stoplevels="$pp_sd_stoplevels"
+
+        # create the script and config file
+        pp_sd_service_script $svc
+
+        # fix the priority up
         case "$priority" in 
             ???) :;;
             ??) priority=0$priority;;
             ?) priority=00$priority;;
         esac
 
-        eval startlevels='$pp_sd_startlevels_'$svc
-        test -z "$startlevels" && startlevels="$pp_sd_startlevels"
-
-        eval stoplevels='$pp_sd_stoplevels_'$svc
-        test -z "$stoplevels" && stoplevels="$pp_sd_stoplevels"
         if test x"$stoplevels" = x"auto"; then
             stoplevels=
             test -z "$startlevels" || for level in $startlevels; do
-                stoplevel="$stoplevels `expr $level - 1`"
+                stoplevels="$stoplevels `expr $level - 1`"
             done
         fi
 
-        # create the script and config file
-        pp_sd_service_script $svc
-
         # create the symlinks
         test -z "$startlevels" || for level in $startlevels; do
-            echo "file -t s /sbin/rc$level.d/S$priority$svc" \
-                    "/sbin/init.d/$svc" 
+            echo "                file -t s" \
+                    "/sbin/init.d/$svc" \
+                    "/sbin/rc$level.d/S$priority$svc"
         done
         test -z "$stoplevels" || for level in $stoplevels; do
-            echo "file -t s /sbin/rc$level.d/K$priority$svc" \
-                    "/sbin/init.d/$svc"
+            echo "                file -t s" \
+                    "/sbin/init.d/$svc" \
+                    "/sbin/rc$level.d/K$priority$svc" 
         done
 }
 
@@ -203,7 +232,7 @@ pp_sd_control () {
 .
     cat "$@" >> $script
     /usr/bin/chmod +x $script
-    echo "$ctrl $script"
+    echo "                $ctrl $script"
 }
 
 #@ pp_backend_sd(): processes output files to generate a package files
@@ -227,7 +256,6 @@ pp_backend_sd () {
             vendor_tag      Quest
             is_patch        false
             title           "$summary"
-            description     "$descrption"
             copyright       "$copyright"
             machine_type    *
             os_name         HP-UX
@@ -235,6 +263,9 @@ pp_backend_sd () {
             os_version      ?
             directory       /
             is_locatable    false
+.
+    test -n "$description" && cat <<. >>$psf
+            description     "$descrption"
 .
 
     for cpt in $pp_components; do
@@ -261,7 +292,7 @@ pp_backend_sd () {
                 esac
                 pp_sd_make_service $svc >> $psf
             done
-            pp_sd_make_service_config
+            #pp_sd_make_service_config
         fi
 
         pp_sd_write_files < $pp_wrkdir/%files.$cpt >> $psf
