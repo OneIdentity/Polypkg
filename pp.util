@@ -248,7 +248,7 @@ pp_create_dir_if_missing () {
     esac
 }
 
-#@ pp_add_file_if_missing(path,cpt,mode): add file to component only if missing
+#@ pp_add_file_if_missing(path,cpt,mode,flag): add file to component only if missing
 #   returns false if the file already exists; otherwise adds
 #   adds an entry to the %files.$cpt list. If the path is in a missing
 #   directory, that directory is also created under $pp_destdir.
@@ -264,7 +264,7 @@ pp_add_file_if_missing () {
                 
     pp_create_dir_if_missing "${1%/*}"
     pp_debug "fabricating file $1"
-    echo "f ${3:-755} - - - $1" >> $pp_wrkdir/%files.${2:-run}
+    echo "f ${3:-755} - - ${4:--} $1" >> $pp_wrkdir/%files.${2:-run}
     pp_note_file_used "$1"
     pp_remove_later "$1"
     return 0
@@ -303,5 +303,18 @@ pp_remove_later_now () {
 	    fi
         done < $pp_wrkdir/pp_cleanup
         rm $pp_wrkdir/pp_cleanup
+    fi
+}
+
+#@ pp_readlink()
+pp_readlink() {
+
+pp_debug "&& pp_readlink_fn=$pp_readlink_fn"
+
+    if test -n "$pp_readlink_fn"; then
+pp_debug "&& calling $pp_readlink_fn $*"
+        "$pp_readlink_fn" "$@"
+    else
+        readlink "$@"
     fi
 }

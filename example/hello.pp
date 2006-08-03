@@ -19,6 +19,7 @@
 
 %files
   /usr/bin/hello
+  /usr/bin/goodbye
   /usr/sbin/hellod
   /etc/hello.conf  644 volatile
 

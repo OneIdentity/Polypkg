@@ -165,14 +165,27 @@ pp_files_expand () {
         if $_ignore; then
            _type=f _m=_ _o=_ _g=_
 	elif test -h "$_file"; then
+	   case "$_path" in
+		*/) pp_warn "$_path (symlink $_file): removing trailing /"
+		    _path="${_path%/}"
+		    ;;
+	   esac
 	   _type=s
-	   if test x"$_target" != x"="; then
+	   if test x"$_target" != x"=" -a -n "$_target"; then
 	       _tgt="$_target"
+pp_debug "symlink target is $_tgt"
 	   else
-	       _tgt=`readlink "$_file"` || 
-                    pp_error "can't readlink $_file"
-               _tgt="${_tgt#$pp_destdir}"
-               # FIXME.. should we correct the symlink in situ??
+	       _tgt=`pp_readlink "$_file"`;
+               test -z "$_tgt" && pp_error "can't readlink $_file"
+               case "$_tgt" in 
+                    ${pp_destdir}/*) 
+                       pp_warn "stripped \$destdir from symlink ($_path)"
+                       _tgt="${_tgt#$pp_destdir}";;
+                    /*) :;;
+                    *)  
+                       pp_warn "converted relative symlink to absolute ($_path)"
+                       _tgt="${_path%/*}/$_tgt";;
+               esac
 	   fi
 	   _m=777
 	elif test -d "$_file"; then
