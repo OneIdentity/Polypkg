@@ -23,7 +23,7 @@ pp_backend_rpm_init () {
     pp_rpm_packager=
     pp_rpm_provides=
     pp_rpm_requires=
-    pp_rpm_release=1
+    pp_rpm_release=
     pp_rpm_serial=
     pp_rpm_dev_group="Development/Libraries"
     pp_rpm_dbg_group="Development/Tools"
@@ -46,6 +46,7 @@ pp_backend_rpm_init () {
     pp_rpm_defattr_gid=root
 
     pp_rpm_detect_arch
+    pp_rpm_detect_distro
 }
 
 #@ pp_rpm_detect_arch(): sets $pp_rpm_arch to current RPM architecture
@@ -64,6 +65,34 @@ pp_rpm_detect_arch () {
     $pp_opt_debug && cat $pp_wrkdir/dummy.spec
     pp_rpm_arch=`rpm -q --qf '%{arch}\n' --specfile $pp_wrkdir/dummy.spec`
     rm $pp_wrkdir/dummy.spec
+}
+
+#@ pp_rpm_detect_distro(): sets $pp_rpm_distro to a short distro name or ''
+pp_rpm_detect_distro () {
+    pp_rpm_distro=
+    if test -f /etc/whitebox-release; then
+       pp_rpm_distro=`awk '
+          /^White Box Enterprise Linux release/ { print "wbel" $6; exit; }
+       ' /etc/fedora-release`
+    elif test -f /etc/fedora-release; then
+       pp_rpm_distro=`awk '
+          /^Fedora Core release/ { print "fc" $4; exit; }
+       ' /etc/fedora-release`
+    elif test -f /etc/redhat-release; then
+       pp_rpm_distro=`awk '
+          /^Red Hat Enterprise Linux/ { print "rhel" $7; exit; }
+          /^CentOS release/           { print "centos" $3; exit; }
+          /^Red Hat Linux release/    { print "rh" $5; exit; }
+       ' /etc/redhat-release`
+    elif test -f /etc/SuSE-release; then
+       pp_rpm_distro=`awk '
+          /^SuSE Linux [0-9]/ { print "suse" $3; exit; }
+          /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
+       ' /etc/SuSE-release`
+    fi
+    pp_rpm_distro=`echo $pp_rpm_distro | tr -d .`
+    test -z "$pp_rpm_distro" &&
+       pp_warn "unknown distro"
 }
 
 #@ pp_rpm_label(label [arg...]): writes "$label: $arg" for each non-empty arg
@@ -142,7 +171,7 @@ pp_backend_rpm () {
 	cat <<-. >>$specfile
 		Name: ${pp_rpm_name:-$name}
 		Version: ${pp_rpm_version:-$version}
-		Release: ${pp_rpm_release}
+		Release: ${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}
 		Summary: ${pp_rpm_summary:-$summary}
 		Group:   ${pp_rpm_group}
 		License: ${pp_rpm_license}
@@ -288,7 +317,7 @@ pp_backend_rpm_names () {
     typeset cmp _subname
     for cmp in $pp_components; do
         _subname=`pp_rpm_subname $cmp -`
-        echo "${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_revision:-1}.${pp_rpm_arch}.rpm"
+        echo "${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm"
     done
 }
 
