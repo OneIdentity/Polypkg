@@ -180,7 +180,7 @@ pp_frontend_if () {
 #   - handles %if/%else/%endif logic
 pp_frontend () {
   typeset section newsection sed_word sed_ws line cpt svc
-  typeset section_enabled newsection_enabled s
+  typeset section_enabled newsection_enabled s sed sed_candidate
 
   section='%_initial'
   newsection='%_initial'
@@ -189,15 +189,27 @@ pp_frontend () {
   sed_word="[a-zA-Z_][a-zA-Z_0-9]*"
   sed_ws="[	]"
 
+  #-- not all seds are created equal
+  sed=
+  for sed_candidate in ${PP_SED:-sed} /usr/xpg4/bin/sed; do
+      if echo 'foo' | $sed_candidate -ne '/^\(x\)*foo/p' | grep foo > /dev/null
+      then
+        sed="$sed_candidate"
+        break
+      fi
+  done
+  test -z "$sed" &&
+        pp_die "sed is broken on this system"
+
   pp_lineno=0
 
   #-- Note: this sed script should perform similar to pp_eval_qualifier()
-  sed  -e "/^#/s/.*//" \
+  $sed -e "/^#/s/.*//" \
        -e "/^\\[!\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]/s/.*//" \
        -e "s/^\\[\\($sed_word,\\)*$pp_platform\\(,$sed_word\\)*\\]$sed_ws*//" \
        -e "s/^\\[!\\($sed_word,\\)*$sed_word\\]$sed_ws*//" \
        -e "/^\\[\\($sed_word,\\)*$sed_word\\]/s/.*//" \
-       -e "s/^%[ 	]*/%/" \
+       -e "s/^%$sed_ws*/%/" \
      > $pp_wrkdir/frontend.tmp
 
   #-- add an ignore section at the end to force section completion
