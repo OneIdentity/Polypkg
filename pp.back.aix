@@ -521,7 +521,7 @@ pp_backend_aix_install_script () {
                     echo "$pp_services"
                     ;;
                 list-files)
-                    test \$# -eq 0 || usage
+                    test \$# -ge 1 || usage
                     echo \${PP_PKGDESTDIR:-.}/$pkgname
                     ;;
                 install)
