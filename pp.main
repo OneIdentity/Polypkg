@@ -85,6 +85,7 @@ pp_parseopts () {
 	    --verbose)         pp_opt_verbose=true;    shift;;
 	    --version)         pp_opt_version=true;    shift;;
 	    --help)            pp_errors=true;         shift;;
+	    -) break;;
 	    -*) pp_error "unknown option $1"; shift;;
 	    *) break;;
 	  esac

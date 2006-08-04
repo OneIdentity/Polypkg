@@ -297,8 +297,11 @@ pp_backend_solaris_names () {
 
 #@ pp_backend_solaris_install_script(): generates a helper install script
 pp_backend_solaris_install_script () {
+        typeset pkgname
+
         echo "#! /sbin/sh"
         pp_install_script_common
+        pkgname=`pp_backend_solaris_names`
 
         cat <<.
             tmpnocheck=/tmp/nocheck\$\$
@@ -325,7 +328,7 @@ pp_backend_solaris_install_script () {
 ..
             }
 
-            test \#$ -eq 0 && usage
+            test \$# -eq 0 && usage
             op="\$1"; shift
 
             case "\$op" in 
@@ -337,17 +340,24 @@ pp_backend_solaris_install_script () {
                     test \$# -eq 0 || usage
                     echo "$pp_services"
                     ;;
+                list-files)
+                    test \$# -ge 1 || usage
+                    echo \${PP_PKGDESTDIR:-.}/$pkgname
+                    ;;
                 install)
                     test \$# -ge 1 || usage
-                    make_tmpfiles
-                    pkgadd -n -d $pkgname \
-                        -r $tmpresponse \
-                        -a $tmpnocheck \
+                    make_tmpfiles "\$@"
+                    pkgadd -n -d \${PP_PKGDESTDIR:-.}/$pkgname \
+                        -r \$tmpresponse \
+                        -a \$tmpnocheck \
                         ${pp_solaris_name:-$name}
                     ;;
                 uninstall)
                     test \$# -ge 1 || usage
-                    pkgrm -n ${pp_solaris_name:-$name}
+                    make_tmpfiles "\$@"
+                    pkgrm -n \
+                        -a \$tmpnocheck \
+                        ${pp_solaris_name:-$name}
                     ;;
                 start|stop)
                     test \$# -ge 1 || usage
@@ -355,6 +365,7 @@ pp_backend_solaris_install_script () {
                     do
                         /etc/init.d/\$svc \$op
                     done
+                    ;;
                 *)
                     usage
                     ;;

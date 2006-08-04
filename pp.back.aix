@@ -520,9 +520,15 @@ pp_backend_aix_install_script () {
                     test \$# -eq 0 || usage
                     echo "$pp_services"
                     ;;
+                list-files)
+                    test \$# -eq 0 || usage
+                    echo \${PP_PKGDESTDIR:-.}/$pkgname
+                    ;;
                 install)
                     test \$# -ge 1 || usage
-                    installp -acX -V0 -d $pkgname \`cpt_to_fileset "\$@"\`
+                    installp -acX -V0 \
+                        -d \${PP_PKGDESTDIR:-.}/$pkgname \
+                        \`cpt_to_fileset "\$@"\`
                     ;;
                 uninstall)
                     test \$# -ge 1 || usage

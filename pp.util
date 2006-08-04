@@ -65,11 +65,12 @@ pp_verbose () {
 #     - substitutes each %{var} with shell variable $var
 #     - substitutes each %(cmd) with the output of `cmd`
 #     - otherwise passes characters unchanged.
-#     - assumes input does not contain ^U ^V ow ^W characters
+#     - assumes input does not contain ^U ^V or ^W characters
 pp_substitute () { 
-  sed -e 's,%(\([^)]*\)),\n`\1`\n,g' \
-      -e 's,%{\([^}]*\)},\n${\1}\n,g' \
+  sed -e 's,%(\([^)]*\)),`\1`,g' \
+      -e 's,%{\([^}]*\)},${\1},g' \
       -e 's,$,,' |
+  tr '' '\012' |
   sed -e '/^[^]/s/["$`\\]/\\&/g' \
       -e 's/^//' \
       -e '1s/^/echo "/' \
@@ -328,12 +329,14 @@ pp_install_script_common () {
             # by PolyPackage $pp_version
 
             usage () {
-                echo "usage: \$0 list-components" >&2
-                echo "       \$0 list-services" >&2
-                echo "       \$0 install [cpt...|all]" >&2
-                echo "       \$0 uninstall [cpt...|all]" >&2
-                echo "       \$0 start svc..." >&2
-                echo "       \$0 stop svc..." >&2
+                echo "usage: \$0 command [args]" >&2
+                echo "   list-services" >&2
+                echo "   list-components" >&2
+                echo "   list-files {cpt...|all}" >&2
+                echo "   install {cpt...|all}" >&2
+                echo "   uninstall {cpt...|all}" >&2
+                echo "   start {svc...}" >&2
+                echo "   stop {svc...}" >&2
                 exit 1
             }
 .

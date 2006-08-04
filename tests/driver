@@ -25,9 +25,10 @@ skip () { echo "?    $NAME"; exit 0; }
 #-- invokes the front-end only of pp
 pp_front_end () {
     $PP --platform=null \
-        --wrkdir=$TMPDIR ${1+"$@"} \
+        --wrkdir=$TMPDIR \
         ${DEBUG:+--debug} \
         --no-clean \
+        ${1+"$@"} \
     || fail
 }
 

@@ -360,7 +360,7 @@ pp_backend_rpm_install_script () {
 .
     for cmp in $pp_components; do
         _subname=`pp_rpm_subname $cmp -`
-        echo "$cmp) echo ${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm;;"
+        echo "$cmp) echo \${PP_PKGDESTDIR:-.}/${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm;;"
     done
     cat <<.
                 *) usage;;
@@ -379,6 +379,10 @@ pp_backend_rpm_install_script () {
             list-services)
                 test \$# -eq 0 || usage
                 echo $pp_services
+                ;;
+            list-files)
+                test \$# -ge 1 || usage
+                cmp_to_pathname "\$@"
                 ;;
             install)
                 test \$# -ge 1 || usage

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+desc 'test trailing bakslash in a section works'
+
+pp_front_end <<-.
+	%set
+	touch $TMPDIR/foo \
+              $TMPDIR/bar
+        %post
+        echo hello \
+            there
+.
+
+for f in foo bar; do
+    test -r $TMPDIR/$f  || fail "$f missing"
+done
+grep 'hello.*there' $TMPDIR/%post.run > /dev/null || fail "grep failed"
+
+pass

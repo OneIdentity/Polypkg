@@ -276,7 +276,7 @@ pp_backend_sd () {
             is_locatable    false
 .
     test -n "$description" && cat <<. >>$psf
-            description     "$descrption"
+            description     "$description"
 .
 
     for cpt in $pp_components; do
@@ -351,5 +351,59 @@ pp_backend_sd_names () {
 
 #@ pp_backend_sd_install_script(): generate a helper install script
 pp_backend_sd_install_script () {
-    : #${pp_sd_sudo} swinstall -s $PWD/`pp_backend_sd_names` $name.$1
+    typeset pkgname
+
+    pkgname=`pp_backend_sd_names`
+
+    echo "#!/bin/sh"
+    pp_install_script_common
+    cat <<.
+
+        cpt_to_tags () {
+            test x"\$*" = x"all" && set -- $pp_components
+            for cpt
+            do
+                echo "$name.\$cpt"
+            done
+        }
+
+        test \$# -eq 0 && usage
+        op="\$1"; shift
+
+        case "\$op" in 
+            list-components)
+                test \$# -eq 0 || usage
+                echo "$pp_components"
+                ;;
+            list-services)
+                test \$# -eq 0 || usage
+                echo "$pp_services"
+                ;;
+            list-files)
+                test \$# -ge 1 || usage
+                echo \${PP_PKGDESTDIR:-.}/$pkgname
+                ;;
+            install)
+                test \$# -ge 1 || usage
+                swinstall -x verbose=0 \
+                    -s \${PP_PKGDESTDIR:-\`pwd\`}/$pkgname \
+                    \`cpt_to_tags "\$@"\`
+                ;;
+            uninstall)
+                test \$# -ge 1 || usage
+                swremove -x verbose=0 \
+                    \`cpt_to_tags "\$@"\`
+                ;;
+            start|stop)
+                test \$# -ge 1 || usage
+                for svc
+                do
+                    /sbin/init.d/\$svc \$op
+                done
+                ;;
+            *)
+                usage
+                ;;
+        esac
+.
 }
