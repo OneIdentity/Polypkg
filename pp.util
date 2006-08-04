@@ -318,3 +318,24 @@ pp_debug "&& calling $pp_readlink_fn $*"
         readlink "$@"
     fi
 }
+
+#@ pp_install_script_common(): generate common code in the install script
+pp_install_script_common () {
+        cat <<-.
+
+            # Automatically generated for
+            #    $name $version ($pp_platform)
+            # by PolyPackage $pp_version
+
+            usage () {
+                echo "usage: \$0 list-components" >&2
+                echo "       \$0 list-services" >&2
+                echo "       \$0 install [cpt...|all]" >&2
+                echo "       \$0 uninstall [cpt...|all]" >&2
+                echo "       \$0 start svc..." >&2
+                echo "       \$0 stop svc..." >&2
+                exit 1
+            }
+.
+}
+

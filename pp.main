@@ -191,7 +191,7 @@ pp_package () {
 pp_install_script () {
         pp_debug "writing install script to $pp_opt_install_script"
         rm -f $pp_opt_install_script
-        pp_backend_install > $pp_opt_install_script
+        pp_backend_install_script > $pp_opt_install_script
 	pp_die_if_errors "Errors during package install script"
         chmod +x $pp_opt_install_script
 }

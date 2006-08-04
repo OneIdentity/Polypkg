@@ -490,6 +490,7 @@ pp_backend_aix_install_script () {
         done
 
         echo '#!/bin/sh'
+        pp_install_script_common
 
         cat <<-.
             usage () {

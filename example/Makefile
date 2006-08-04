@@ -9,14 +9,17 @@ sysconfdir=	/etc
 DESTDIR=	/tmp/destroot
 
 PP=		../pp
-PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) 
+PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) \
+		--install-script=inst.sh
 #PPFLAGS+=	--platform=aix
 
 package: $(PP) install hello.pp
 	$(PP) $(PPFLAGS) $(srcdir)/hello.pp 2>&1
 
 installpkg:
-	SUDO= $(PP) $(PPFLAGS) -i $(srcdir)/hello.pp
+	SUDO= $(PP) $(PPFLAGS) $(srcdir)/hello.pp
+	./inst.sh list-components
+	./inst.sh list-services
 
 install: hello hello.conf
 	mkdir -p $(DESTDIR)$(sysconfdir)
@@ -33,7 +36,8 @@ install: hello hello.conf
 	ln -s hello $(DESTDIR)$(bindir)/goodbye
 
 clean:
-	rm -rf $(DESTDIR)
+	rm -rf $(DESTDIR) inst.sh
+
 inst-clean:
 	rm -f $(DESTDIR)$(sysconfdir)/hello.conf \
 	      $(DESTDIR)$(bindir)/hello \

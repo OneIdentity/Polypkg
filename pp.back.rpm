@@ -326,5 +326,78 @@ pp_backend_rpm_cleanup () {
 }
 
 pp_backend_rpm_install_script () {
-	:
+    typeset cmp _subname
+
+    echo "#!/bin/sh"
+    pp_install_script_common
+
+    cat <<.
+
+        cmp_to_pkgname () {
+            test x"\$*" = x"all" && 
+                set -- $pp_components
+            for cmp
+            do
+                case \$cmp in
+.
+    for cmp in $pp_components; do
+        _subname=`pp_rpm_subname $cmp -`
+         echo "$cmp) echo ${pp_rpm_name:-$name}${_subname};;"
+    done
+    cat <<.
+                *) usage;;
+                esac
+            done
+        }
+
+
+        cmp_to_pathname () {
+            test x"\$*" = x"all" && 
+                set -- $pp_components
+            for cmp
+            do
+                case \$cmp in
+.
+    for cmp in $pp_components; do
+        _subname=`pp_rpm_subname $cmp -`
+        echo "$cmp) echo ${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm;;"
+    done
+    cat <<.
+                *) usage;;
+                esac
+            done
+        }
+
+
+        test \$# -eq 0 && usage
+        op="\$1"; shift
+        case "\$op" in
+            list-components) 
+                test \$# -eq 0 || usage
+                echo $pp_components
+                ;;
+            list-services)
+                test \$# -eq 0 || usage
+                echo $pp_services
+                ;;
+            install)
+                test \$# -ge 1 || usage
+                rpm -U \`cmp_to_pathname "\$@"\`
+                ;;
+            uninstall)
+                test \$# -ge 1 || usage
+                rpm -e \`cmp_to_pkgname "\$@"\`
+                ;;
+            start|stop)
+                for svc
+                do
+                    /etc/init.d/\$svc \$op
+                done
+                ;;
+            *)
+                usage
+                ;;
+        esac
+.
+
 }
