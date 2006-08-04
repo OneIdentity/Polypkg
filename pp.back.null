@@ -30,7 +30,7 @@ pp_backend_null_names () {
     :
 }
 
-#@ pp_backend_null_install(component): installs package containing the cpt
-pp_backend_null_install () {
+#@ pp_backend_null_install_script(component): generate helper install script
+pp_backend_null_install_script () {
     :
 }

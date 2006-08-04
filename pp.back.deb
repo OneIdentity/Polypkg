@@ -30,7 +30,7 @@ pp_backend_deb_names () {
     :
 }
 
-#@ pp_backend_deb_install(component): installs package containing the cpt
-pp_backend_deb_install () {
+#@ pp_backend_deb_install_script(): generate a helper install script
+pp_backend_deb_install_script () {
     pp_error unimplemented
 }

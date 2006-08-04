@@ -64,7 +64,7 @@ Invocation
 
 	   -d --debug                  -- write copious info to stderr
 	      --destdir=path           -- defaults to $DESTDIR
-	   -i --install                -- install after packaging
+	   -i --install-script=path    -- create a helper install script
 	   -l --list                   -- write package filenames to stdout
 	      --no-clean               -- don't remove files in wrkdir
 	      --no-package             -- do everything but create packages

@@ -325,6 +325,6 @@ pp_backend_rpm_cleanup () {
     :
 }
 
-pp_backend_rpm_install () {
+pp_backend_rpm_install_script () {
 	:
 }

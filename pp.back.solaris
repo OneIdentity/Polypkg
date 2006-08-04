@@ -295,7 +295,7 @@ pp_backend_solaris_names () {
 	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_os:+$pp_solaris_os-}$pp_solaris_arch.pkg
 }
 
-#-- (re-)installs the newly created package
-pp_backend_solaris_install () {
+#@ pp_backend_solaris_install_script(): generates a helper install script
+pp_backend_solaris_install_script () {
 	: # FOO
 }

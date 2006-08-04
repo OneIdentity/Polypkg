@@ -462,17 +462,89 @@ pp_backend_aix_names () {
 	echo "$name-${pp_aix_version:-`pp_aix_version_fix "$version"`}-${pp_aix_os:+$pp_aix_os-}${pp_aix_arch_p}.bff"
 }
 
-#@ pp_backend_aix_install(): installs generated files
-pp_backend_aix_install () {
-	names="`pp_backend_aix_names`"
-	fsets=`for f in $names; do
-	   pp_verbose ${SUDO} installp -L -d $pp_wrkdir/$f | awk -F: '{print $2}'
-	done | sort -u`
-	pp_debug "removing filesets: $fsets"
-	pp_verbose ${SUDO} installp -u -V0 $fsets 
-	for f in $names; do
-	    pp_debug installp -acX -V0 -d $f all || 
-	    pp_verbose ${SUDO} installp -acX -V0 -d $pp_wrkdir/$f all || 
-		pp_error "$f: failed to install"
-	done
+#@ pp_backend_aix_install_script(): generate install script
+pp_backend_aix_install_script () {
+	typeset pkgname
+        #
+        # The script should take a first argument being the
+        # operation; further arguments refer to components or services
+        #
+        # list-components           -- lists components in the pkg
+        # install component...      -- installs the components
+        # uninstall component...    -- uninstalles the components
+        # list-services             -- lists the services in the pkg
+        # start service...          -- starts the name service
+        # stop service...           -- stops the named services
+        #
+        pkgname="`pp_backend_aix_names`"
+
+        fsets=
+        for cmp in $pp_components; do
+	    case "$cmp" in 
+		run) ex=rte;;
+		doc) ex=doc;;
+		dev) ex=adt;;
+		dbg) ex=diag;;
+	    esac
+            fsets="$fsets $name.$ex"
+        done
+
+        echo '#!/bin/sh'
+
+        cat <<-.
+            usage () {
+                echo "usage: \$0 list-components" >&2
+                echo "       \$0 list-services" >&2
+                echo "       \$0 install [cpt...|all]" >&2
+                echo "       \$0 uninstall [cpt...|all]" >&2
+                echo "       \$0 start svc..." >&2
+                echo "       \$0 stop svc..." >&2
+                exit 1
+            }
+
+            cpt_to_fileset () {
+                test x"\$*" = x"all" &&
+                    set -- $pp_components
+                for cpt
+                do
+                    case "\$cpt" in 
+                        run) echo "$name.rte";;
+                        doc) echo "$name.doc";;
+                        dev) echo "$name.adt";;
+                        dbg) echo "$name.diag";;
+                        *) usage;;
+                    esac
+                done
+            }
+
+            op="\$1"; shift
+
+            case "\$op" in
+                list-components)
+                    test \$# -eq 0 || usage
+                    echo "$pp_components"
+                    ;;
+                list-services)
+                    test \$# -eq 0 || usage
+                    echo "$pp_services"
+                    ;;
+                install)
+                    test \$# -ge 1 || usage
+                    installp -acX -V0 -d $pkgname \`cpt_to_fileset "\$@"\`
+                    ;;
+                uninstall)
+                    test \$# -ge 1 || usage
+                    installp -u -V0 \`cpt_to_fileset "\$@"\`
+                    ;;
+                start|stop)
+                    test \$# -ge 1 || usage
+                    for svc
+                    do
+                        /etc/init.d/\$svc $op
+                    done
+                    ;;
+                *)
+                    usage;;
+            esac
+.
 }

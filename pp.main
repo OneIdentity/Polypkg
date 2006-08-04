@@ -5,7 +5,7 @@ pp_copyright="(c) 2006, Quest Software, Inc. All rights reserved."
 
 pp_opt_debug=false
 pp_opt_destdir="$DESTDIR"
-pp_opt_install=false
+pp_opt_install_script=
 pp_opt_list=false
 pp_opt_no_clean=false
 pp_opt_no_package=false
@@ -46,9 +46,9 @@ pp_parseopts () {
 	    -d*) a=`echo "$1" | sed -ne 's/^-.//'` 
 		 shift; set -- "--debug" ${1+"$@"};;
 
-	    -i)  shift; set -- "--install" ${1+"$@"};;
-	    -i*) a=`echo "$1" | sed -ne 's/^-.//'` 
-		 shift; set -- "--install" ${1+"$@"};;
+	    -i) shift; set -- "--install-script" ${1+"$@"};;
+	    -i*) a=`echo "$1" | sed -ne 's/^-.//'`
+		 shift; set -- "--install-script" "$a" ${1+"$@"};;
 
 	    -l)  shift; set -- "--list" ${1+"$@"};;
 	    -l*) a=`echo "$1" | sed -ne 's/^-.//'` 
@@ -61,6 +61,7 @@ pp_parseopts () {
 	    -v)  shift; set -- "--verbose" ${1+"$@"};;
 	    -v*) a=`echo "$1" | sed -ne 's/^-.//'` 
 		 shift; set -- "--verbose" ${1+"$@"};;
+
 	    -\?)  shift; set -- "--help" ${1+"$@"};;
 	    -\?*) a=`echo "$1" | sed -ne 's/^-.//'` 
 		 shift; set -- "--help" ${1+"$@"};;
@@ -75,7 +76,7 @@ pp_parseopts () {
 	    --) 				       shift;break;;
 	    --debug)           pp_opt_debug=true;      shift;;
 	    --destdir)         pp_opt_destdir="$2";    shift;shift;;
-	    --install)         pp_opt_install=true;    shift;;
+	    --install-script)  pp_opt_install_script="$2"; shift;shift;;
 	    --list)            pp_opt_list=true;       shift;;
 	    --no-clean)        pp_opt_no_clean=true;   shift;;
 	    --no-package)      pp_opt_no_package=true; shift;;
@@ -119,7 +120,7 @@ usage: $0 [options] [input.pp] [var=value ...]
     -d --debug                  -- write copious info to stderr
        --destdir=path           -- defaults to \$DESTDIR
     -? --help                   -- display this information
-    -i --install                -- install after packaging
+    -i --install-script=path    -- create an install helper script
     -l --list                   -- write package filenames to stdout
        --no-clean               -- don't remove temporary files
        --no-package             -- do everything but create packages
@@ -186,15 +187,13 @@ pp_package () {
 	pp_die_if_errors "Errors during package copying"
 }
 
-#@ pp_install() install all the components
-pp_install () {
-	typeset _cpt
-
-	for _cpt in $pp_components; do
-	    pp_debug "installing $_cpt"
-	    pp_backend_install $_cpt
-	done
-	pp_die_if_errors "Errors during package install"
+#@ pp_install_script(): generate the install script 
+pp_install_script () {
+        pp_debug "writing install script to $pp_opt_install_script"
+        rm -f $pp_opt_install_script
+        pp_backend_install > $pp_opt_install_script
+	pp_die_if_errors "Errors during package install script"
+        chmod +x $pp_opt_install_script
 }
 
 #@ pp_main(): main driver function
@@ -223,7 +222,7 @@ pp_main () {
         mkdir -p "$pp_wrkdir"
 
 	pp_package
-	$pp_opt_install && pp_install
+	test -n "$pp_opt_install_script" && pp_install_script
 
 	exit 0
 }
