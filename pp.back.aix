@@ -493,15 +493,6 @@ pp_backend_aix_install_script () {
         pp_install_script_common
 
         cat <<-.
-            usage () {
-                echo "usage: \$0 list-components" >&2
-                echo "       \$0 list-services" >&2
-                echo "       \$0 install [cpt...|all]" >&2
-                echo "       \$0 uninstall [cpt...|all]" >&2
-                echo "       \$0 start svc..." >&2
-                echo "       \$0 stop svc..." >&2
-                exit 1
-            }
 
             cpt_to_fileset () {
                 test x"\$*" = x"all" &&
@@ -541,7 +532,7 @@ pp_backend_aix_install_script () {
                     test \$# -ge 1 || usage
                     for svc
                     do
-                        /etc/init.d/\$svc $op
+                        /etc/init.d/\$svc \$op
                     done
                     ;;
                 *)

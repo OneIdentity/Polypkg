@@ -297,5 +297,67 @@ pp_backend_solaris_names () {
 
 #@ pp_backend_solaris_install_script(): generates a helper install script
 pp_backend_solaris_install_script () {
-	: # FOO
+        echo "#! /sbin/sh"
+        pp_install_script_common
+
+        cat <<.
+            tmpnocheck=/tmp/nocheck\$\$
+            tmpresponse=/tmp/response\$\$
+            trap 'rm -f \$tmpnocheck \$tmpresponse' 0
+
+            make_tmpfiles () {
+                cat <<-.. > \$tmpresponse
+                        CLASSES=\$*
+                        SERVICES=$pp_services
+..
+                cat <<-.. > \$tmpnocheck
+			mail=
+			instance=unique
+			partial=nocheck
+			runlevel=nocheck
+			idepend=nocheck
+			rdepend=nocheck
+			space=nocheck
+			setuid=nocheck
+			conflict=nocheck
+			action=nocheck
+			basedir=default
+..
+            }
+
+            test \#$ -eq 0 && usage
+            op="\$1"; shift
+
+            case "\$op" in 
+                list-components)
+                    test \$# -eq 0 || usage
+                    echo "$pp_components"
+                    ;;
+                list-services)
+                    test \$# -eq 0 || usage
+                    echo "$pp_services"
+                    ;;
+                install)
+                    test \$# -ge 1 || usage
+                    make_tmpfiles
+                    pkgadd -n -d $pkgname \
+                        -r $tmpresponse \
+                        -a $tmpnocheck \
+                        ${pp_solaris_name:-$name}
+                    ;;
+                uninstall)
+                    test \$# -ge 1 || usage
+                    pkgrm -n ${pp_solaris_name:-$name}
+                    ;;
+                start|stop)
+                    test \$# -ge 1 || usage
+                    for svc
+                    do
+                        /etc/init.d/\$svc \$op
+                    done
+                *)
+                    usage
+                    ;;
+            esac
+.
 }
