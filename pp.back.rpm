@@ -87,6 +87,7 @@ pp_rpm_detect_distro () {
     elif test -f /etc/SuSE-release; then
        pp_rpm_distro=`awk '
           /^SuSE Linux [0-9]/ { print "suse" $3; exit; }
+          /^SUSE LINUX [0-9]/ { print "suse" $3; exit; }
           /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
        ' /etc/SuSE-release`
     fi
