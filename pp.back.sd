@@ -16,7 +16,7 @@ pp_backend_sd_init () {
     pp_sd_config_file=
     pp_sd_default_start=1           # config_file default start value
 
-    pp_readlink_fn=pp_sd_readlink   # HPUX has no readlink
+    pp_readlink_fn=pp_ls_readlink   # HPUX has no readlink
 
     pp_sd_detect_os
 }
@@ -28,16 +28,6 @@ pp_sd_detect_os () {
     pp_sd_os="${revision#?.}"
     test -z "$pp_sd_os" &&
         pp_warn "cannot detect OS version"
-}
-
-#@ pp_sd_readlink(file): print the content of a symbolic link
-pp_sd_readlink () {
-    if test -h "$1"; then
-        ls -1ld "$1" | sed -ne 's,.* -> ,,p'
-    else
-        echo "$1: not a symbolic link" >&2
-        return 1
-    fi
 }
 
 #@ pp_sd_write_files() <file-list: writes PSF lines for each file

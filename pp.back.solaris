@@ -54,6 +54,11 @@ pp_backend_solaris_init () {
         pp_solaris_init_svc
 
         pp_solaris_detect_os
+
+        #-- readlink not available on SOlaris 2.6
+        case "$pp_solaris_os" in
+            sol26) pp_readlink_fn=pp_ls_readlink;;
+        esac
 }
 
 #@ pp_solaris_detect_os(): set $pp_solaris_os to short platform ID
@@ -187,6 +192,21 @@ pp_backend_solaris () {
 	pkginfo=$pp_wrkdir/pkginfo
 	: > $pkginfo
 	echo "i pkginfo=$pkginfo" >> $prototype
+
+        case "${pp_solaris_name:-$name}" in
+            [0-9]*)
+                pp_error "Package name '${pp_solaris_name:-$name}'" \
+                        "cannot start with a number"
+                ;;
+            ???????????????*)
+                pp_warn "Package name '${pp_solaris_name:-$name}'" \
+                        "WAY too long for Solaris 2.6"
+                ;;
+            ??????????*)
+                pp_warn "Package name '${pp_solaris_name:-$name}'" \
+                        "too long for Solaris (max 9 characters)"
+                ;;
+        esac
 
         #-- generate the package info file
 	echo "ARCH=$pp_solaris_arch" >> $pkginfo

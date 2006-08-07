@@ -10,8 +10,10 @@
 PP=./pp
 TMPDIR=/tmp/pp.test
 
-d=${1%/*}
-NAME=${1#$d/}
+#d=${1%/*}
+#NAME=${1#$d/}
+d=`dirname $1`
+NAME=`basename $1`
 DESC="** NO DESCRIPTION **"
 
 desc () { DESC="$*"; }

@@ -290,6 +290,16 @@ pp_remove_later () {
    mv $pp_wrkdir/pp_cleanup.new $pp_wrkdir/pp_cleanup
 }
 
+#@ pp_ls_readlink(file): print the content of a symbolic link using ls
+pp_ls_readlink () {
+    if test -h "$1"; then
+        ls -1ld "$1" | sed -ne 's,.* -> ,,p'
+    else
+        echo "$1: not a symbolic link" >&2
+        return 1
+    fi
+}
+
 #@ pp_remove_later_now(): removes all files registered with pp_remove_later
 pp_remove_later_now () {
     typeset f
@@ -319,6 +329,7 @@ pp_debug "&& calling $pp_readlink_fn $*"
         readlink "$@"
     fi
 }
+
 
 #@ pp_install_script_common(): generate common code in the install script
 pp_install_script_common () {
