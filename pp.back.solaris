@@ -200,7 +200,7 @@ pp_backend_solaris () {
                 ;;
             ???????????????*)
                 pp_warn "Package name '${pp_solaris_name:-$name}'" \
-                        "WAY too long for Solaris 2.6"
+                        "WAY too long for Solaris 2.6 (max 9 characters)"
                 ;;
             ??????????*)
                 pp_warn "Package name '${pp_solaris_name:-$name}'" \
