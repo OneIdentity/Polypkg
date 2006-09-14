@@ -1,3 +1,4 @@
+PP_SHELL=	/bin/sh
 
 PP_SRCS= \
 	 pp.main \
@@ -20,7 +21,7 @@ all: pp check
 
 pp: $(PP_SRCS)
 	rm -f $@
-	(echo '#!/bin/sh';                \
+	(echo '#!$(PP_SHELL)';                \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
 	 echo 'd=`dirname $$0`';          \
 	 for p in $(PP_SRCS); do          \
@@ -31,7 +32,7 @@ pp: $(PP_SRCS)
 	chmod 555 $@
 
 pp-stripped: $(PP_SRCS)
-	(echo '#!/bin/sh';                \
+	(echo '#!$(PP_SHELL)';                \
 	 echo '# (c) 2006 Quest Software, Inc. All rights reserved'; \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
 	 cat pp.licence; \
