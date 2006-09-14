@@ -6,7 +6,7 @@ pp_front_end <<-.
 	%set
 	touch $TMPDIR/foo \
               $TMPDIR/bar
-        %post
+	%post
         echo hello \
             there
 .

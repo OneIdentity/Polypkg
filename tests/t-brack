@@ -16,21 +16,21 @@ pp_front_end <<-.
 	[!null,bar] touch $TMPDIR/bad4
 	[!null,null,null] touch $TMPDIR/bad5
 
-        %if [null]
+	%if [null]
         touch $TMPDIR/ok7
-        %endif
+	%endif
 
-        %if [foo,null]
+	%if [foo,null]
         touch $TMPDIR/ok8
-        %endif
+	%endif
 
-        %if [!null]
+	%if [!null]
         touch $TMPDIR/bad6
-        %endif
+	%endif
 
-        %if [!foo,null]
+	%if [!foo,null]
         touch $TMPDIR/bad7
-        %endif
+	%endif
 .
 
 for f in ok1 ok2 ok3 ok4 ok5 ok6 ok7 ok8; do

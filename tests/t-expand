@@ -2,8 +2,8 @@
 
 desc 'test %{} and %() expansion'
 
-pp_front_end - foo=FOO bar=BAR<<.
-        %post
+pp_front_end - foo=FOO bar=BAR<<-.
+	%post
         : t-1=%{foo}
         : t-2=%(echo \$bar | tr A K)
         : t-3=%{foo} %{foo} %{foo} bar

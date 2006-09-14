@@ -7,15 +7,15 @@ pp_front_end <<-.
 	touch $TMPDIR/ok1  #-- should always be run
 	%set [other]
 	touch $TMPDIR/bad1 #-- should not be run
-        %set
+	%set
 	touch $TMPDIR/ok2
-        %post [foo,null,bar]
+	%post [foo,null,bar]
 	touch $TMPDIR/ok3
-        %post [null,bar]
+	%post [null,bar]
 	touch $TMPDIR/ok4
-        %post [foo,null]
+	%post [foo,null]
 	touch $TMPDIR/ok5
-        %post [other]
+	%post [other]
 	touch $TMPDIR/bad2
 .
 
