@@ -13,22 +13,16 @@
 #	[d|f] path mode owner group [v|-]
 #	s     path mode owner group [v|-] target
 #
-#   %post.run   - post-install script (run component)
-#   %post.doc   - post-install script (doc component)
-#   %post.dbg   - post-install script (dbg component)
-#   %post.dev   - post-install script (dev component)
-#   %preun.run  - pre-uninstall script (run component)
-#   %preun.doc  - pre-uninstall script (doc component)
-#   %preun.dbg  - pre-uninstall script (dbg component)
-#   %preun.dev  - pre-uninstall script (dev component)
+#   %post.$cpt  - post-install script ($cpt component)
+#   %preun.$cpt - pre-uninstall script ($cpt component)
+#   %check.$cpt - pre-install check script ($cpt component)
+#
+#     where $cpt is one of [ run doc dbg dev ]
 #
 #   %service.$svc - service variables
 #
-#   %depend     - common package dependencies (one per line)
-#   %depend.run - run component dependencies
-#   %depend.doc - doc component dependencies
-#   %depend.dbg - dbg component dependencies
-#   %depend.dev - dev component dependencies
+#   %depend      - common package dependencies (one per line)
+#   %depend.$cpt - $cpt component dependencies
 #
 # Internal file output:
 #
@@ -187,7 +181,7 @@ pp_frontend () {
   section_enabled=:
   newsection_enabled=:
   sed_word="[a-zA-Z_][a-zA-Z_0-9]*"
-  sed_ws="[	]"
+  sed_ws="[ 	]"
 
   #-- not all seds are created equal
   sed=
@@ -210,6 +204,7 @@ pp_frontend () {
        -e "s/^\\[!\\($sed_word,\\)*$sed_word\\]$sed_ws*//" \
        -e "/^\\[\\($sed_word,\\)*$sed_word\\]/s/.*//" \
        -e "s/^%$sed_ws*/%/" \
+       -e "s/^$sed_ws/%\\\\&/" \
      > $pp_wrkdir/frontend.tmp
 
   #-- add an ignore section at the end to force section completion
@@ -219,7 +214,7 @@ pp_frontend () {
   exec 0<$pp_wrkdir/frontend.tmp
   : > $pp_wrkdir/tmp
   : > $pp_wrkdir/%fixup
-  while read line; do
+  while read -r line; do
      #-- Convert leading double-% to single-%, or switch sections
      pp_incr pp_lineno
 
@@ -249,7 +244,7 @@ pp_frontend () {
              fi
 	     test $# -eq 0 || pp_warn "ignoring extra arguments: $line"
 	     continue;;
-	  %post|%preun|%files|%depend) 
+	  %post|%preun|%files|%depend|%check) 
              pp_debug "processing new component section $*"
              s="$1"; shift
              if test $# -eq 0 || pp_is_qualifier "$1"; then
@@ -304,14 +299,20 @@ pp_frontend () {
                 pp_warn "ignoring extra arguments: $line"
 	     $newsection_enabled && pp_add_service "$svc"
 	     continue;;
+	  %\\*) 
+             pp_debug "removing leading %\\"
+	     line="${line#%\\}"
+             set -f
+             set -- $line
+             set +f
+             ;;
 	  %%*) 
              pp_debug "removing leading %"
 	     line="${line#%}"
+             set -f
+             set -- $line
+             set +f
 	     ;;
-	  "%\\"*) 
-             pp_debug "removing leading %\\"
-	     line="${line#%\\}"
-             ;;
 	  %*) 
 	     pp_error "unknown section $1"
 	     newsection='%ignore'
@@ -337,7 +338,7 @@ pp_frontend () {
 		. $pp_wrkdir/tmp
 		: > $pp_wrkdir/tmp
 		;;
-	%preun.*|%post.*|%depend.*|%service.*|%fixup)
+	%preun.*|%post.*|%depend.*|%check.*|%service.*|%fixup)
                 pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
                 $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
 		pp_substitute < $pp_wrkdir/tmp > $pp_wrkdir/tmp.sh
@@ -360,7 +361,7 @@ pp_frontend () {
 	%_initial)	
 		case "$line" in "") continue;; esac # ignore non-section blanks
 		pp_die "Ignoring text before % section introducer";;
-	%set|%preun.*|%post.*|%depend.*|%service.*|%fixup)
+	%set|%preun.*|%post.*|%check.*|%depend.*|%service.*|%fixup)
                 pp_debug "appending line to \$pp_wrkdir/tmp"
 		echo "$line" >> $pp_wrkdir/tmp
 		;;
