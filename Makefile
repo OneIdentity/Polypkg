@@ -52,7 +52,7 @@ check: pp
 	    ${TEST_SHELL} -f tests/driver $$t || ex=1; \
 	done; exit $$ex
 
-tags:
+tags: $(PP_SRCS)
 	for f in $(PP_SRCS); do \
 	    : sed -n -e 's,^\(#@[ 	]*\$$*\([^(:/ ]*\)[^:]*:*\).*,\2	'$$f'	/^\1/,p' $$f; \
 	    sed -n -e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)[ 	]*(\))[ 	]*{.*,\2	'$$f'	/^\1/,p' \
