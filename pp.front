@@ -301,7 +301,8 @@ pp_frontend () {
 	     continue;;
 	  %\\*) 
              pp_debug "removing leading %\\"
-	     line="${line#%\\}"
+	     line="${line#??}"
+             pp_debug "  result is <$line>"
              set -f
              set -- $line
              set +f
@@ -340,6 +341,7 @@ pp_frontend () {
 		;;
 	%preun.*|%post.*|%depend.*|%check.*|%service.*|%fixup)
                 pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
+                # cat $pp_wrkdir/tmp >&2    # debugging
                 $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
 		pp_substitute < $pp_wrkdir/tmp > $pp_wrkdir/tmp.sh
                 . $pp_wrkdir/tmp.sh >> $pp_wrkdir/$section ||
