@@ -1,6 +1,6 @@
 #
 # AIX backend
-# http://publib.boulder.ibm.com/infocenter/pseries/topic/com.ibm.aix.doc/aixprggd/genprogc/pkging_sw4_install.htm
+# http://publib.boulder.ibm.com/infocenter/pseries/v5r3/topic/com.ibm.aix.genprogc/doc/genprogc/pkging_sw4_install.htm
 #
 
 pp_platforms="$pp_platforms aix"
@@ -12,7 +12,7 @@ pp_backend_aix_detect () {
 
 #@ pp_backend_aix_init(): initialise the 
 pp_backend_aix_init () {
-	test -n "$pp_destdir" = x"" ||
+	test -n "$pp_destdir" ||
 	   pp_error "AIX backend requires the '--destdir' option"
 
         pp_aix_detect_arch
@@ -21,10 +21,13 @@ pp_backend_aix_init () {
 	pp_aix_bosboot=		# components that need bosboot
 	pp_aix_lang=en_US
 	pp_aix_copyright="$pp_copyright"
-	pp_aix_mkuser_args=
-	pp_aix_mkgroup_args=
         pp_aix_start_services_after_install=false
         pp_aix_init_services_after_install=true
+
+        case "$pp_aix_os" in
+            *) pp_readlink_fn=pp_ls_readlink;;  # XXX
+        esac
+
 }
 
 pp_aix_detect_arch () {
@@ -67,25 +70,30 @@ pp_aix_version_fix () {
 #   or otherwise (-root).
 pp_aix_select () {
 	case "$1" in
-	    -user) op="~";;
-	    -root) op="!~";;
+	    -user) op="";;
+	    -root) op="!";;
 	    *) pp_die "pp_aix_select: bad argument";;
 	esac
-	pp_debug awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
-	awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
+	#pp_debug awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
+	#awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
+	awk $op'($6 ~ /^\/usr\// || $6 ~ /^\/opt\//) { print; }'
 }
 
 #@ pp_aix_copy_root($root) < root-file-list:
 #   Copies (links) the files from $pp_destdir into $pp_destdir$root, creating 
 #   directories as needed. This is used prior to running the BFF backup. 
 pp_aix_copy_root () {
-    typeset t m o g f p st
+    typeset t m o g f p st target
     while read t m o g f p st; do
         case "$t" in
            d) pp_create_dir_if_missing "$1${p%/}";;
            f) pp_add_transient_file "$1$p"
 	      pp_verbose ln "$pp_destdir$p" "$pp_destdir$1$p" || 
 		pp_error "can't link $p into $1";;
+#           s) pp_add_transient_file "$1$p"
+#              #target=`$pp_readlink_fn $pp_destdir$p`
+#              pp_verbose ln -s "$st" "$pp_destdir$1$p" ||
+#		pp_error "can't create symbolic link $p to $st";;
            *) pp_warn "pp_aix_copy_root: filetype $t not handled";;
         esac
     done
@@ -173,9 +181,9 @@ pp_aix_inventory () {
 
       case "$m" in ????)
 	m=`echo $m|sed -e 's/^1/TCB,/' \
-		       -e 's/^[23]/TCB,SGID/' \
-		       -e 's/^[45]/TCB,SUID/' \
-		       -e 's/^[67]/TCB,SUID,SGID/'`;;  # vtx bit ignored
+		       -e 's/^[23]/TCB,SGID,/' \
+		       -e 's/^[45]/TCB,SUID,/' \
+		       -e 's/^[67]/TCB,SUID,SGID,/'`;;  # vtx bit ignored
       esac
       echo " mode = $m"
       case "$t" in
@@ -243,17 +251,7 @@ pp_aix_add_service () {
 	if test "$user" = "root"; then
 	    uid=0
 	else
-	    cat <<-. >> $pp_wrkdir/%post.run
-
-		# create user/group '$user'
-		lsgroup $user >/dev/null ||
-		  mkgroup -A ${pp_aix_mkgroup_args} $user
-		lsuser $user >/dev/null ||
-		  mkuser login=false rlogin=false account_locked=true \
-			home=/nohome.$user pgrp=$user \
-			${pp_aix_mkuser_args} $user
-.
-	    uid="\"\`/usr/bin/id -u $user\`\""
+            uid="\"\`/usr/bin/id -u $user\`\""
 	fi
 
 
@@ -398,6 +396,12 @@ fi >&2
 	    if test -r $pp_wrkdir/%preun.$cmp; then
 		pp_aix_make_script $root_wrkdir/$name.$ex.unpost_i \
 			< $pp_wrkdir/%preun.$cmp
+	    fi
+
+	    if test -r $pp_wrkdir/%check.$cmp; then
+                #-- if this script exits false, then it should print a msg
+		pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
+			< $pp_wrkdir/%post.$cmp
 	    fi
 
 	    # remove empty files
@@ -545,4 +549,45 @@ pp_backend_aix_install_script () {
                     usage;;
             esac
 .
+}
+
+#@ pp_backend_aix_function(func): output one platform-dependent function
+pp_backend_aix_function () {
+    case "$1" in
+    pp_mkgroup) cat <<'.';;
+            # group
+            lsgroup $1 >/dev/null ||
+              mkgroup -A $1
+.
+    pp_mkuser) cat <<'.';;
+            # [-d dir] [-g group] user
+            typeset home group
+            home= group=
+            if test x"$1" = x"-d"; then home="$2"; shift; shift; fi
+            if test x"$1" = x"-g"; then group="$2"; shift; shift; fi
+            lsuser "$1" >/dev/null ||
+              mkuser login=false rlogin=false account_locked=true \
+                    home=${home-/nohome.$1} ${group+pgrp=$group} \
+                    $1
+.
+    pp_havelib) cat <<'.';;
+            # libname major[.minor] [path]
+            # Returns true if the shared library can be found
+            # 'path' should a colon-separated list of directories
+            # major may be an empty string if a path is required.
+            typeset name dir
+            case "$2" in
+                "")    name="lib$1.so";;
+                *.*.*) name="lib$1.so.$2";;
+                *.*)   name="lib$1.so.$2.0";;
+                *)     name="lib$1.so.$2";;
+            esac
+            for dir in `echo "/usr/lib:/lib${3+:$3}" | tr : ' '`; do
+                test -r "$dir/$name" -a -r "$dir/lib$1.so" && return 0
+            done
+            return 1
+.
+    *)
+            pp_error "unknown function request: $1" ;;
+    esac
 }
