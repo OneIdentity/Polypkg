@@ -119,6 +119,7 @@ pp_solaris_request () {
 }
 
 #@ pp_solaris_procedure(component, post|pre): add per-component scripts
+#   The code fragments are run only if the components are active
 pp_solaris_procedure () {
     cat <<.
 
@@ -242,10 +243,16 @@ pp_backend_solaris () {
 		pp_solaris_procedure $_cmp postinst < $pp_wrkdir/%post.$_cmp \
 			>> $pp_wrkdir/postinstall
           fi
+          #-- add the preremove rules in reverse definition order
 	  if test -s $pp_wrkdir/%preun.$_cmp; then
-                #-- add the preremove rules in reverse definition order
 		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
                     pp_prepend $pp_wrkdir/preremove
+          fi
+          #-- Add the check script in definition order
+	  if test -s $pp_wrkdir/%check.$_cmp; then
+		pp_solaris_procedure $_cmp checkinstall \
+                        < $pp_wrkdir/%check.$_cmp \
+			>> $pp_wrkdir/checkinstall
           fi
           #-- All dependencies are merged together for Solaris pkgs
           test -s $pp_wrkdir/%depend.$_cmp &&

@@ -262,6 +262,12 @@ pp_backend_rpm () {
 	for cmp in $pp_components; do
             _subname=`pp_rpm_subname $cmp`
 
+            if test -s $pp_wrkdir/%check.$cmp; then
+                echo ""
+                echo "%pre $_subname"
+                pp_rpm_writefiles < $pp_wrkdir/%check.$cmp
+            fi
+
             if test -s $pp_wrkdir/%files.$cmp; then
                 echo ""
                 echo "%files $_subname"

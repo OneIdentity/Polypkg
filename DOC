@@ -421,6 +421,23 @@ The %depend section
 		  $name $version
 
 
+The %check section
+
+        The check section body contains a shell script that
+        is executed on the target host to ensure that dependencies
+        are met.
+
+        The script must either exit with success to indicate that
+        installation may proceed. If it fails, it should write
+        an explanation to standard output.
+
+            %check [component]
+
+        The check section must not be interactive.
+
+        The check script might not be executed on some platforms.
+
+
 The %fixup section
 
 	The fixup section body contains shell text that is run

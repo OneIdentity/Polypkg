@@ -284,6 +284,8 @@ pp_backend_sd () {
             pp_sd_control configure $pp_wrkdir/%post.$cpt >> $psf
         test -s $pp_wrkdir/%preun.$cpt &&
             pp_sd_control unconfigure $pp_wrkdir/%preun.$cpt >> $psf
+        test -s $pp_wrkdir/%check.$cpt &&
+            pp_sd_control checkinstall $pp_wrkdir/%check.$cpt >> $psf
 
         if test $cpt = run -a -n "$pp_services"; then
             for svc in $pp_services; do
