@@ -1,0 +1,44 @@
+
+Common functions
+----------------
+
+pp_mkgroup group
+
+    Creates a local group, usually in /etc/groups, with no members.
+    If the group already exists, this function performs no action.
+    The function returns success if creation succeeded.
+
+pp_mkuser [-d homedir] [-g group] user
+
+    Creates a local user entry. If the user already exists,
+    no action is performed.
+
+    -d homedir
+        Specifies the home directory of the user that is
+        created. The directory itself is not created.
+
+    -g group
+        Specifies the default group when a user is created.
+        If not specified, then a system default is chosen.
+
+    The created user's shell is set to indicate a disabled
+    account; typically it is set to /bin/false.
+
+    The function returns success if the user already existed, or 
+    if the creation succeeded.
+
+pp_havelib name [major[.minor] [directory...]]
+    This function returns true if a program dynamically 
+    linked with -l<name> will have a chance of finding 
+    its dependent library (eg lib<name>.so).
+
+    If the major[.minor] is provided, then the found library
+    must match that version. 
+
+    Extra directories provided are added to the 'standard' 
+    directory search list of the platform.
+
+
+
+
+[ Remember to update documentation in pp.back ]

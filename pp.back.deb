@@ -34,3 +34,18 @@ pp_backend_deb_names () {
 pp_backend_deb_install_script () {
     pp_error unimplemented
 }
+
+#@ pp_backend_deb_function(): output a platform-dependent function
+pp_backend_deb_function() {
+    case "$1" in
+        pp_mkuser)
+            pp_error unimplemented;;
+        pp_mkgroup)
+            pp_error unimplemented;;
+        pp_havelib)
+            pp_error unimplemented;;
+        *)
+            pp_error "unknown function request: $1";;
+    esac
+}
+

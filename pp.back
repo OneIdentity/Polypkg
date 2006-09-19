@@ -17,6 +17,7 @@
 #  pp_backend_P_init_svc_vars - Initialise per-service variables
 #  pp_backend_P_install_script - Generates a script file that installs/
 #                           upgrades the recently package built
+#  pp_backend_P_function - Generates shell code for platform functions
 #
 # A backend should also add itself to the $pp_platforms variable
 #  
@@ -32,6 +33,12 @@
 # and document user-provided variables of the form $P_* where P is the
 # platform name (eg aix or linux)
 #
+# Helper functions are:
+#
+#   pp_mkgroup group                       -- no effect if group exists
+#   pp_mkuser  [-d home] [-g group] user   -- no effect if user exists
+#   pp_havelib name [major[.minor] [directory...]]
+#
 
 #@ pp_backend_init():    call the current platform backend's initialiser
 #@ pp_backend():         call the current platform backend's processor
@@ -39,7 +46,10 @@
 #@ pp_backend_cleanup(): call the current platform backend's cleanup
 #@ pp_backend_init_svc_vars(): call the current platform backend's svc var init
 #@ pp_backend_install_script(): call the current backend's install script gen
+#@ pp_backend_function(): emit a helper function
 #-- these functions are so similar, we generate them
-for _sufx in _init '' _names _cleanup _install_script _init_svc_vars; do
+for _sufx in _init '' _names _cleanup _install_script \
+    _init_svc_vars _function
+do
  eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \${1+\"\$@\"}; }"
 done

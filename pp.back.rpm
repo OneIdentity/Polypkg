@@ -406,3 +406,23 @@ pp_backend_rpm_install_script () {
 .
 
 }
+
+#@ pp_backend_rpm_function(func): emit shell code for a utility function
+pp_backend_rpm_function () {
+    case "$1" in
+        pp_mkgroup) cat<<'.';;
+            /usr/sbin/groupadd -r $1
+.
+        pp_mkuser) cat<<'.';;
+            /usr/sbin/useradd -s /bin/false -M -r $@ 
+.
+        pp_havelib) cat<<'.';;
+            typeset dir
+            for dir in `echo "/usr/lib:/lib${3+:$3}" | tr : ' '`; do
+                test -r "$dir/lib$1.so{$2+.$2}" && return 0
+            done
+            return 1
+.
+        *) pp_error "unknown function request: $1" ;;
+    esac
+}

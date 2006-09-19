@@ -34,3 +34,8 @@ pp_backend_null_names () {
 pp_backend_null_install_script () {
     :
 }
+
+#@ pp_backend_null_function(func): output one platform-dependent function
+pp_backend_null_function () {
+    echo false
+}

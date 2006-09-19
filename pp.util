@@ -353,3 +353,22 @@ pp_install_script_common () {
 .
 }
 
+
+#@ pp_functions(func...): emit platform-dependent function definitions
+pp_functions () {
+    typeset func
+    for func
+    do
+        pp_debug "generating function code for '$1'"
+        echo ""
+        echo "$func () {"
+        pp_backend_function "$func" ||
+            echo "false"
+        echo "}"
+    done
+}
+
+#@ pp_function(func): emits a single platform-dependent function definition
+pp_function () { 
+    pp_functions "$1"
+}
