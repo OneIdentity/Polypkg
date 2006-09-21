@@ -294,7 +294,7 @@ pp_aix_add_service () {
 
 #@ pp_backend_aix(): generate an installable AIX package
 pp_backend_aix () {
-        typeset briefex instuser instroot svc cmp
+        typeset briefex instuser instroot svc cmp outbff
         typeset user_wrkdir root_wrkdir
         typeset user_files root_files
 
@@ -308,8 +308,6 @@ pp_backend_aix () {
 	#  dbg -> $name.diag ('Diagnostics')
 
 	test `echo "$summary" | wc -c ` -gt 40 && pp_error "\$summary too long"
-
-        pp_add_transient_file /lpp_name
 
 	user_wrkdir=$pp_wrkdir/u
 	root_wrkdir=$pp_wrkdir/r
@@ -337,7 +335,17 @@ pp_backend_aix () {
 
 	    pp_aix_select -user < $pp_wrkdir/%files.$cmp > $user_files
 	    pp_aix_select -root < $pp_wrkdir/%files.$cmp > $root_files
-	    content=U; test -s $root_files && content=B
+
+            # Default to USR only unless there are root files,
+            # or a post/pre/check script associated
+	    content=U
+            if test -s $root_files \
+                    -o -s $pp_wrkdir/%post.$cmp \
+                    -o -s $pp_wrkdir/%preun.$cmp \
+                    -o -s $pp_wrkdir/%check.$cmp
+            then
+                content=B
+            fi
 
 if $pp_opt_debug; then
     echo "$cmp USER %files:"
@@ -406,12 +414,15 @@ fi >&2
 	    if test -r $pp_wrkdir/%check.$cmp; then
                 #-- if this script exits false, then it should print a msg
 		pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
-			< $pp_wrkdir/%post.$cmp
+			< $pp_wrkdir/%check.$cmp
 	    fi
 
 	    # remove empty files
 	    for f in $user_wrkdir/$name.$ex.* $root_wrkdir/$name.$ex.*; do
-	      test -s "$f" || rm -f "$f"
+	      if test ! -s "$f"; then
+                pp_debug "removing empty $f"
+                rm -f "$f"
+              fi
 	    done
 
 	    # copy/link the root files so we can do an easy backup later
@@ -421,7 +432,16 @@ fi >&2
 	    echo "]"
 	  done
 	  echo "}"
-	} > $pp_destdir/lpp_name
+	} > $pp_wrkdir/lpp_name
+
+if $pp_opt_debug; then
+    echo "/lpp_name :"
+    cat $pp_wrkdir/lpp_name
+fi >&2
+
+        #-- copy the /lpp_name file to the destdir
+        pp_add_transient_file /lpp_name
+        cp $pp_wrkdir/lpp_name $pp_destdir/lpp_name
 
         #-- copy the liblpp.a files under destdir for packaging
 	(cd $user_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
@@ -439,29 +459,25 @@ fi >&2
 		pp_error "cannot create root liblpp.a"
 	fi
 
-if $pp_opt_debug; then
-    echo "/lpp_name :"
-    cat $pp_destdir/lpp_name
-fi >&2
-
         { echo ./lpp_name
-	  echo .$instuser/liblpp.a
-	  echo .$instroot/liblpp.a
+	  test -s $user_wrkdir/liblpp.a && echo .$instuser/liblpp.a
+	  test -s $root_wrkdir/liblpp.a && echo .$instroot/liblpp.a
 	  cat $user_wrkdir/$name.*.al   # includes the relocated root files!
 	} > $pp_wrkdir/bff.list
         
 	. $pp_wrkdir/%fixup
 
-        pp_debug "creating: $pp_wrkdir/`pp_backend_aix_names`"
-
+        outname=`pp_backend_aix_names`
+        pp_debug "creating: $pp_wrkdir/$outname"
 	(cd $pp_destdir && pp_verbose  backup -i -q -p -f -) \
           < $pp_wrkdir/bff.list \
-	  > $pp_wrkdir/`pp_backend_aix_names` || pp_error "backup failed"
+	  > $pp_wrkdir/$outname || pp_error "backup failed"
+        ${SUDO:-sudo} installp -l -d $pp_wrkdir/$outname
 }
 
 #@ pp_backend_aix_cleanup(): removes leftover files
 pp_backend_aix_cleanup () {
-	pp_verbose rm -rf $pp_destdir/usr/lpp $pp_destdir/lpp_name
+    :
 }
 
 #@ pp_backend_aix_names(): print the name of the AIX package
@@ -535,20 +551,22 @@ pp_backend_aix_install_script () {
                     ;;
                 install)
                     test \$# -ge 1 || usage \$op
-                    installp -acX -V0 -F \
+                    verbose installp -acX -V0 -F \
                         -d \${PP_PKGDESTDIR:-.}/$pkgname \
                         \`cpt_to_fileset "\$@"\`
                     ;;
                 uninstall)
                     test \$# -ge 1 || usage \$op
-                    installp -u -V0 \`cpt_to_fileset "\$@"\`
+                    verbose installp -u -e/dev/null -V0 \`cpt_to_fileset "\$@"\`
                     ;;
                 start|stop)
                     test \$# -ge 1 || usage \$op
+                    ec=0
                     for svc
                     do
-                        \${op}src -s \$svc || exit 1
+                        verbose \${op}src -s \$svc || ec=1
                     done
+                    exit \$ec
                     ;;
                 *)
                     usage;;
