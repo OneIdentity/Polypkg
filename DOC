@@ -93,6 +93,26 @@ Platforms
 	bash -c 'echo /{usr,bin}'        - re-execute
 	bash -c 'echo /@(usr|bin)'       - re-execute
 
+Helper install script
+
+    The --install-script option directs pp to generate a helper shell
+    script that provides a uniform interface to the platform's packaging
+    tool.
+
+    The helper script takes one of the following as command arguments:
+
+           list-services              -- lists services defined in the pkg
+           list-components            -- lists components defined in the pkg
+           list-files {cpt...|all}    -- lists package files containing cpts
+           install {cpt...|all}       -- installs pkgs containig cpts
+           uninstall {cpt...|all}     -- uninstalls pkgs containing cpts
+           start {svc...}             -- starts the service
+           stop {svc...}              -- stops the service
+
+    The 'install' command performs an upgrade if another version of
+    the software is already installed. Even if you are installing an
+    older version, this command will still succeed.
+
 Sections
 
     Sections are introduced by %-directives. A line that starts with '%%'
