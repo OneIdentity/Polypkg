@@ -113,6 +113,10 @@ Helper install script
     the software is already installed. Even if you are installing an
     older version, this command will still succeed.
 
+    The following options are understood before the script command argument:
+    
+           -q          -- quiet mode: do not show package tool invocations
+
 Sections
 
     Sections are introduced by %-directives. A line that starts with '%%'

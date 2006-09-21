@@ -393,18 +393,21 @@ pp_backend_rpm_install_script () {
                 ;;
             install)
                 test \$# -ge 1 || usage \$op
-                rpm -U --replacepkgs --oldpackage \`cmp_to_pathname "\$@"\`
+                verbose rpm -U --replacepkgs --oldpackage \
+                    \`cmp_to_pathname "\$@"\`
                 ;;
             uninstall)
                 test \$# -ge 1 || usage \$op
-                rpm -e \`cmp_to_pkgname "\$@"\`
+                verbose rpm -e \`cmp_to_pkgname "\$@"\`
                 ;;
             start|stop)
                 test \$# -ge 1 || usage \$op
+                ec=0
                 for svc
                 do
-                    /etc/init.d/\$svc \$op
+                    verbose /etc/init.d/\$svc \$op || ec=1
                 done
+                exit \$ec
                 ;;
             *)
                 usage
