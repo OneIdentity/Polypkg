@@ -111,7 +111,7 @@ pp_debug "config file is $config_file"
                 return 1
             else
                 read pid < "$pidfile" 
-                if kill -$stop_signal "$pid"; then
+                if kill -${stop_signal:-TERM} "$pid"; then
                     rm -f "$pidfile"
                     return 0
                 else
