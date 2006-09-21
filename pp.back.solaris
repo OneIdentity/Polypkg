@@ -342,7 +342,7 @@ pp_backend_solaris_install_script () {
 ..
                 cat <<-.. > \$tmpnocheck
 			mail=
-			instance=unique
+			instance=overwrite
 			partial=nocheck
 			runlevel=nocheck
 			idepend=nocheck
