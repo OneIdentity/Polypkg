@@ -67,8 +67,8 @@ pp_sd_service_script () {
     sd_config_value=${pp_sd_default_start:-0}
     pp_load_service_vars "$svc"
 
-    test -n "$user" &&
-        cmd="su $user $cmd"
+    test -n "$user" -a x"$user" != x"root" &&
+        cmd="SHELL=/usr/bin/sh /usr/bin/su $user -c \"exec `echo $cmd | sed -e 's,[$\\\`],\\&,g'`\""
     if test -z "$pidfile"; then
         pidfile="/var/run/$svc.pid"
         cmd="$cmd & echo \$! > \$pidfile"
@@ -377,21 +377,24 @@ pp_backend_sd_install_script () {
                 ;;
             install)
                 test \$# -ge 1 || usage \$op
-                swinstall -x verbose=0 \
+                verbose swinstall -x verbose=0 \
                     -s \${PP_PKGDESTDIR:-\`pwd\`}/$pkgname \
                     \`cpt_to_tags "\$@"\`
                 ;;
             uninstall)
                 test \$# -ge 1 || usage \$op
-                swremove -x verbose=0 \
+                verbose swremove -x verbose=0 \
                     \`cpt_to_tags "\$@"\`
                 ;;
             start|stop)
                 test \$# -ge 1 || usage \$op
+                ec=0
                 for svc
                 do
-                    /sbin/init.d/\$svc \$op
+                    verbose /sbin/init.d/\$svc \$op
+                    [ \$? -eq 4 -o \$? -eq 0 ] || ec=1
                 done
+                exit \$ec
                 ;;
             *)
                 usage
