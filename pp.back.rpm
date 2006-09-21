@@ -265,7 +265,7 @@ pp_backend_rpm () {
             if test -s $pp_wrkdir/%check.$cmp; then
                 echo ""
                 echo "%pre $_subname"
-                pp_rpm_writefiles < $pp_wrkdir/%check.$cmp
+                cat $pp_wrkdir/%check.$cmp
             fi
 
             if test -s $pp_wrkdir/%files.$cmp; then
