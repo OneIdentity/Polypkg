@@ -1,0 +1,48 @@
+# Quest-specific functions
+
+#@ quest_require_vas(version): generates %check script that checks VAS version
+#
+# Example usage:
+#      %check
+#         %(quest_require_vas 3.0.2)
+
+quest_require_vas () {
+    typeset v d
+
+    if test $# -ne 1; then
+        return
+    fi
+    set -- `echo "$1" | tr . ' '` 0 0 0
+
+    for d
+    do
+        echo $d | grep '^[0-9][0-9]*$' > /dev/null ||
+            pp_error "quest_require_vas: Bad version component $d"
+    done
+
+    test $# -lt 4 &&
+            pp_error "quest_require_vas: missing version number"
+
+    case "$1.$2.$3.$4" in
+        *.0.0.0) v=$1;;
+        *.*.0.0) v=$1.$2;;
+        *.*.*.0) v=$1.$2.$3;;
+        *)       v=$1.$2.$3.$4;;
+    esac
+        
+    cat <<.
+        if test -x /opt/quest/bin/vastool &&
+           /opt/quest/bin/vastool -v | 
+            awk 'NR == 1 {print \$4}' |
+            awk -F. '{ if (\$1<$1 || \$1==$1 && ( \
+                           \$2<$2 || \$2==$2 && ( \
+                           \$3<$3 || \$2==$3 && ( \
+                           \$4<$4 )))) exit(1); }'
+        then
+            exit 0
+        else
+            echo "Requires VAS $v or later"
+            exit 1
+        fi
+.
+}
