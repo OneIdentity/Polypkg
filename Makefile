@@ -14,7 +14,8 @@ PP_SRCS= \
 	 pp.back.solaris.svc \
 	 pp.back.rpm \
 	 pp.back.rpm.svc \
-	 pp.back.null
+	 pp.back.null \
+	 pp.quest
 
 all: pp check
 	cd example && $(MAKE)
