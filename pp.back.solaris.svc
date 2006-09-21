@@ -84,7 +84,7 @@ pp_solaris_make_service () {
     #   and forks the daemon
     _cmd="$cmd";
     if test -z "$pidfile"; then
-        pidfile=/var/run/$svc.pid
+        pidfile=/var/tmp/$svc.pid
         _cmd="$cmd & echo \$! > \$pidfile"
     fi
     if test "${user:-root}" != "root"; then
