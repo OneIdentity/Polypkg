@@ -360,19 +360,19 @@ pp_backend_solaris_install_script () {
 
             case "\$op" in 
                 list-components)
-                    test \$# -eq 0 || usage
+                    test \$# -eq 0 || usage \$op
                     echo "$pp_components"
                     ;;
                 list-services)
-                    test \$# -eq 0 || usage
+                    test \$# -eq 0 || usage \$op
                     echo "$pp_services"
                     ;;
                 list-files)
-                    test \$# -ge 1 || usage
+                    test \$# -ge 1 || usage \$op
                     echo \${PP_PKGDESTDIR:-.}/$pkgname
                     ;;
                 install)
-                    test \$# -ge 1 || usage
+                    test \$# -ge 1 || usage \$op
                     make_tmpfiles "\$@"
                     pkgadd -n -d \${PP_PKGDESTDIR:-.}/$pkgname \
                         -r \$tmpresponse \
@@ -380,14 +380,14 @@ pp_backend_solaris_install_script () {
                         ${pp_solaris_name:-$name}
                     ;;
                 uninstall)
-                    test \$# -ge 1 || usage
+                    test \$# -ge 1 || usage \$op
                     make_tmpfiles "\$@"
                     pkgrm -n \
                         -a \$tmpnocheck \
                         ${pp_solaris_name:-$name}
                     ;;
                 start|stop)
-                    test \$# -ge 1 || usage
+                    test \$# -ge 1 || usage \$op
                     for svc
                     do
                         /etc/init.d/\$svc \$op

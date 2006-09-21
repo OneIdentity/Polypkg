@@ -340,15 +340,33 @@ pp_install_script_common () {
             # by PolyPackage $pp_version
 
             usage () {
-                echo "usage: \$0 command [args]" >&2
-                echo "   list-services" >&2
-                echo "   list-components" >&2
-                echo "   list-files {cpt...|all}" >&2
-                echo "   install {cpt...|all}" >&2
-                echo "   uninstall {cpt...|all}" >&2
-                echo "   start {svc...}" >&2
-                echo "   stop {svc...}" >&2
-                exit 1
+              case "$1" in
+              "list-services")
+                echo "usage: \$0 list-services" ;;
+              "list-components")
+                echo "usage: \$0 list-components" ;;
+              "list-files")
+                echo "usage: \$0 list-files {cpt...|all}" ;;
+              "install")
+                echo "usage: \$0 install {cpt...|all}" ;;
+              "uninstall")
+                echo "usage: \$0 uninstall {cpt...|all}" ;;
+              "start")
+                echo "usage: \$0 start {svc...}" ;;
+              "stop")
+                echo "usage: \$0 stop {svc...}" ;;
+              *)
+                echo "usage: \$0 command [args]" 
+                echo "   list-services" 
+                echo "   list-components" 
+                echo "   list-files {cpt...|all}" 
+                echo "   install {cpt...|all}" 
+                echo "   uninstall {cpt...|all}" 
+                echo "   start {svc...}" 
+                echo "   stop {svc...}" 
+                ;;
+              esac >&2
+              exit 1
             }
 .
 }

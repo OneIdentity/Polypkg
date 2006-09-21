@@ -380,26 +380,27 @@ pp_backend_rpm_install_script () {
         op="\$1"; shift
         case "\$op" in
             list-components) 
-                test \$# -eq 0 || usage
+                test \$# -eq 0 || usage \$op
                 echo $pp_components
                 ;;
             list-services)
-                test \$# -eq 0 || usage
+                test \$# -eq 0 || usage \$op
                 echo $pp_services
                 ;;
             list-files)
-                test \$# -ge 1 || usage
+                test \$# -ge 1 || usage \$op
                 cmp_to_pathname "\$@"
                 ;;
             install)
-                test \$# -ge 1 || usage
-                rpm -U \`cmp_to_pathname "\$@"\`
+                test \$# -ge 1 || usage \$op
+                rpm -U --replacepkgs --oldpackage \`cmp_to_pathname "\$@"\`
                 ;;
             uninstall)
-                test \$# -ge 1 || usage
+                test \$# -ge 1 || usage \$op
                 rpm -e \`cmp_to_pkgname "\$@"\`
                 ;;
             start|stop)
+                test \$# -ge 1 || usage \$op
                 for svc
                 do
                     /etc/init.d/\$svc \$op
