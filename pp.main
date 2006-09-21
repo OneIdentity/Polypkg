@@ -119,7 +119,7 @@ pp_parseopts () {
 polypkg $pp_version $pp_copyright
 usage: $0 [options] [input.pp] [var=value ...]
     -d --debug                  -- write copious info to stderr
-       --destdir=path           -- defaults to \$DESTDIR
+       --destdir=path           -- file root, defaults to \$DESTDIR
     -? --help                   -- display this information
     -i --install-script=path    -- create an install helper script
     -l --list                   -- write package filenames to stdout
