@@ -467,12 +467,12 @@ fi >&2
         
 	. $pp_wrkdir/%fixup
 
-        outname=`pp_backend_aix_names`
-        pp_debug "creating: $pp_wrkdir/$outname"
+        outbff=`pp_backend_aix_names`
+        pp_debug "creating: $pp_wrkdir/$outbff"
 	(cd $pp_destdir && pp_verbose  backup -i -q -p -f -) \
           < $pp_wrkdir/bff.list \
-	  > $pp_wrkdir/$outname || pp_error "backup failed"
-        ${SUDO:-sudo} installp -l -d $pp_wrkdir/$outname
+	  > $pp_wrkdir/$outbff || pp_error "backup failed"
+        ${SUDO:-sudo} installp -l -d $pp_wrkdir/$outbff
 }
 
 #@ pp_backend_aix_cleanup(): removes leftover files
