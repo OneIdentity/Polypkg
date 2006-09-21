@@ -53,15 +53,20 @@ pp_aix_detect_os () {
 #-- pp_aix_version_fix(version) convert version into an AIX version 
 #   AIX demands version strings of the form a.b.c.d[.e]
 pp_aix_version_fix () {
-    case $1 in
-        ""|.*|*.) pp_error "malformed '$1'"
+    typeset v
+    v=`echo $1 | tr -c -d '[0-9].\012'`
+    if test x"$v" != x"$1"; then
+        pp_warn "stripped version '$1' to '$v'"
+    fi
+    case $v in
+        ""|*..*|.*|*.) pp_error "malformed '$1'"
                  echo "0.0.0.0";;
         *.*.*.*.*.*) pp_error "version '$1' has too many dots for AIX"
                  echo "0.0.0.0";;
-        *.*.*.*.*|*.*.*.*) echo "$1";;
-        *.*.*) echo "$1.0";;
-        *.*) echo "$1.0.0";;
-        *) echo "$1.0.0.0";;
+        *.*.*.*.*|*.*.*.*) echo "$v";;
+        *.*.*) echo "$v.0";;
+        *.*) echo "$v.0.0";;
+        *) echo "$v.0.0.0";;
     esac
 }
 
@@ -530,7 +535,7 @@ pp_backend_aix_install_script () {
                     ;;
                 install)
                     test \$# -ge 1 || usage
-                    installp -acX -V0 \
+                    installp -acX -V0 -F \
                         -d \${PP_PKGDESTDIR:-.}/$pkgname \
                         \`cpt_to_fileset "\$@"\`
                     ;;
