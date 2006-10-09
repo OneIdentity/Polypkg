@@ -403,7 +403,7 @@ pp_backend_solaris_install_script () {
 }
 
 #@ pp_backend_solaris_function(func): output platform-specific function
-pp_backend_solaris_func () {
+pp_backend_solaris_function () {
     case "$1" in
         pp_mkgroup) cat <<'.';;
             grep "^$1:" /etc/group >/dev/null ||
