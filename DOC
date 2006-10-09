@@ -119,14 +119,18 @@ Helper install script
 
 Sections
 
-    Sections are introduced by %-directives. A line that starts with '%%'
-    will be treated as if it were a literal line and the first '%' will 
-    be removed.
+    Sections are introduced by %-directives. These directives are
+    on a line by themselves.  The first character the line must be a '%'. 
+    Whitespace after the first '%' is always removed. e.g.:
+	
+	%foo
+	% bar
+
+    A line that starts with '%%' is be treated as if it were a 
+    literal line and the first '%' and following whitespace 
+    will be removed.
 
     	%% this line will not be interpreted as a %-directive
-
-    The first character of a directive line must be a '%'. Whitespace
-    after the '%' is removed.
 
 Conditionals
 
@@ -139,47 +143,47 @@ Conditionals
 		  some lines for the foo package only
 		%endif
 
+    There is no %elif. Use nested %if instead.
 
     If the argument to the %if directive starts with '[' then it
     is interpreted as a platform qualifier. A platform qualifier
-    is comma separated list of platform names enclosed in square
-    brackets. No whitespace is permitted.
+    is a comma-separated list of platform names enclosed in square
+    brackets. No whitespace is permitted within the brackets.
 
                 %if [solaris,rpm]
                     some lines for solaris and rpm systems only
                 %endif
                 
-                %if [!hpux]
+                %if [!sd]
                     some lines for non-hpux systems
                 %endif
 
-    If a line begins with a qualifier then it applies to that line only.
-    For example:
+    If a line begins with a [platform] qualifier then it applies to 
+    that line only. For example:
 
                 %files run
                 /etc/foo
                 [aix] /etc/aix/bar
                 [!aix] /etc/bar
 
-    There is no %elif. Use nested %if instead.
-
-    If a line starts with the '#' character, the line is disabled
-    as if it had started with '[!]'.
+    If a line starts in column 1 with the '#' character, then the
+    line is disabled as if it had started with '[!]'.
 
     Many sections directives (e.g. %files, described below) take
     an optional 'qualifier' argument which selectively enables or
     disables the entire section.
 
     To prevent a line from being treated specially, either as
-    a section directive, or as prefixed with a qualifier, start
-    the line with the two characters '%\'.
+    a section directive, or as prefixed with a qualifier, you must
+    start the line with the two characters '%\'. The '%\' is removed
+    and the rest of the line is treated as an unqualified non-directive.
 
 The %set section
 
 	The %set section directive causes successive lines to 
 	be interpreted as literal shell code. The section body is stored
-	in a text file and then sourced with the '.' operator at the 
-	end of the section.
+	in a text file and then sourced with the shell's '.' operator at
+        the end of the section.
 
 		%set
 		  name="foo"
@@ -333,12 +337,15 @@ The %post and %preun sections
 
         Substrings of the form %() are expanded using the shell's
         backquote. e.g. "%(echo hello; echo there)" becomes "hello there".
-        Matching and expansion is very simplistic, so do not use '}', ')'
-        or newlines inside the %() or %{}.
+
+	%{} and %() expressions must not contain the characters '}', ')'
+	or newlines. If you must include those characters, create
+	them in variables in an earlier %set section, or put them in
+	an external file and use %(cat file).
 
     Output of %post or %preun sections
 
-    	The result of processing these sections are files such as
+    	The result of processing the %post or %preun sections are files such as
 	"%post.run" or "%preun.dbg". The platform-specific code ensures
 	that these scripts are invoked at the right times during
 	installation.
@@ -449,7 +456,8 @@ The %check section
 
         The check section body contains a shell script that
         is executed on the target host to ensure that dependencies
-        are met.
+        are met. It is processed in a manner very similar to %post 
+        or %preun.
 
         The script must either exit with success to indicate that
         installation may proceed. If it fails, it should write
@@ -466,20 +474,19 @@ The %fixup section
 
 	The fixup section body contains shell text that is run
 	immediately before the platform packaging tools are executed.
+	It is processed in a manner similar to %set.
 
                 %fixup [qualifier]
 
-	The %fixup directive is not followed by any identifier.
+	The %fixup directive is not followed by any component identifier.
 	This is really only intended as a last-resort place to hold 
-	any horrible hackery required.
-
-        The %depend section, like other non-%set sections is subject to 
-        immediate %{} and %() expansion.
+	any horrible hackery required. It is a last chance to perform
+	changes before the active backend creates its package files.
 
     Output of a %fixup section
 
     	The bodies of fixup sections are concatenated together
-	into a temporary file.
+	into a temporary file, and executed together.
 
 The %pp section
 
@@ -489,10 +496,13 @@ The %pp section
 
 		%pp 1.0
 
+	This section can be specified early to make use of
+	particular features of an older interface.
+
 The %ignore section
 
-        Ignore sections contains text that is always ignored by pp.
-        This could be useful for comments.
+        These sections contain text that is always ignored by
+	polypkg. This could be useful for comments.
 
                 %ignore
 
