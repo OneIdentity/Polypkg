@@ -12,10 +12,45 @@ pp_backend_deb_init () {
     :
 }
 
+#@ pp_deb_makedeb(out controlfile...): create a debian file
+pp_deb_makedeb () {
+    typeset outfile
+    typeset _l t m o g f p st
+
+    outfile="$1"; shift
+
+    echo 2.0 > $pp_wrkdir/debian-binary || return
+    ar cv $outfile $pp_wrkdir/debian-binary || return
+    rm -f $pp_wrkdir/debian-binary 
+
+    # add control files from the argument list
+    if test $# -gt 0; then
+	tar -C $pp_wrkdir -z -f $pp_wrkdir/control.tar.gz "$@" || return
+	ar u $outfile $pp_wrkdir/control.tar.gz || return
+	rm -f $pp_wrkdir/control.tar.gz
+    fi
+
+    # add data files from on stdin, relative to pp_destdir
+    while read t m o g f p st; do
+        case "$t" in
+	    *) :;;  # XXX this won't work - need to 'hand create' the tar
+	esac
+    done |
+    tar -C $pp_destdir -z -f $pp_wrkdir/data.tar.gz \
+	-T - || return
+    ar u $outfile $pp_wrkdir/data.tar.gz || return
+    rm -f $pp_wrkdir/data.tar.gz
+}
 
 #@ pp_backend_deb(): processes output files to generate a package files
 pp_backend_deb () {
-    pp_error unimplemented
+    typeset debname
+
+    debname=`pp_backend_deb_names`
+
+    debian-binary
+    control.tar.gz
+    data.tar.gz
 }
 
 #@ pp_backend_deb_cleanup(): removes any files created outside $pp_wrkdir
