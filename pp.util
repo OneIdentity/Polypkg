@@ -397,3 +397,9 @@ pp_functions () {
 pp_function () { 
     pp_functions "$1"
 }
+
+#@ pp_makevar(str): makes a variable name out of a string
+pp_makevar () {
+    #-- convert all non alpha/digits to underscores
+    echo "$*" | tr -c '[a-z][A-Z][0-9]\012' '[_*]'
+}

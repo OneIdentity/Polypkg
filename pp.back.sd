@@ -162,8 +162,10 @@ pp_debug "config file is $config_file"
 #@ pp_sd_make_service($svc): create the service files and links
 pp_sd_make_service () {
         typeset level priority startlevels stoplevels
-        typeset svc
+        typeset svc svcvar
+
         svc="$1"
+	svcvar=`pp_makevar $svc`
 
         #-- don't do anything if the script exists
         if test -s "$pp_destdir/sbin/init.d/$svc"; then
@@ -172,13 +174,13 @@ pp_sd_make_service () {
         fi
 
         # symlink the script, depending on the priorities chosen
-        eval priority='${pp_sd_priority_'$svc'}'
+        eval priority='${pp_sd_priority_'$svcvar'}'
         test -z "$priority" && priority="${pp_sd_priority:-50}"
 
-        eval startlevels='${pp_sd_startlevels_'$svc'}'
+        eval startlevels='${pp_sd_startlevels_'$svcvar'}'
         test -z "$startlevels" && startlevels="$pp_sd_startlevels"
 
-        eval stoplevels='${pp_sd_stoplevels_'$svc'}'
+        eval stoplevels='${pp_sd_stoplevels_'$svcvar'}'
         test -z "$stoplevels" && stoplevels="$pp_sd_stoplevels"
 
         # create the script and config file
