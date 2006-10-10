@@ -55,10 +55,8 @@ pp_backend_solaris_init () {
 
         pp_solaris_detect_os
 
-        #-- readlink not available on SOlaris 2.6
-        case "$pp_solaris_os" in
-            sol26) pp_readlink_fn=pp_ls_readlink;;
-        esac
+        #-- readlink not reliably available on Solaris
+	pp_readlink_fn=pp_ls_readlink
 }
 
 #@ pp_solaris_detect_os(): set $pp_solaris_os to short platform ID
