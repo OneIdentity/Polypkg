@@ -42,8 +42,7 @@ pp_backend_solaris_detect () {
 
 #@ pp_backend_solaris_init(): initialise the solaris vars
 pp_backend_solaris_init () {
-	pp_solaris_arch=`uname -p`
-	pp_solaris_category=application
+	pp_solaris_category="application"
 	pp_solaris_istates="s S 1 2 3"	# run-states when install is ok
 	pp_solaris_rstates="s S 1 2 3"	# run-states when remove is ok
 	pp_solaris_vendor="Quest Software, Inc."
@@ -51,26 +50,45 @@ pp_backend_solaris_init () {
 	pp_solaris_name=
 	pp_solaris_desc=
 
-        pp_solaris_init_svc
-
         pp_solaris_detect_os
+        pp_solaris_detect_arch
+
+        pp_solaris_init_svc
 
         #-- readlink not reliably available on Solaris
 	pp_readlink_fn=pp_ls_readlink
 }
 
 #@ pp_solaris_detect_os(): set $pp_solaris_os to short platform ID
+# Following the sunfreeware.com convention:
+#   SunOS 5.5   -> sol25
+#   SunOS 5.6   -> sol26
+#   SunOS 5.7   -> sol7
+#   SunOS 5.8   -> sol8
+#   SunOS 5.9   -> sol9
+#   SunOS 5.10  -> sol10
 pp_solaris_detect_os () {
         typeset osrel
 
         osrel=`/usr/bin/uname -r`
         case "$osrel" in
-            5.??) pp_solaris_os="sol${osrel#5.}";;
-            5.*) pp_solaris_os="sol2${osrel#5.}";;
+	    5.[0-6])	pp_solaris_os="sol2${osrel#5.}";;
+	    5.*)        pp_solaris_os="sol${osrel#5.}";;
         esac
         test -z "$pp_solaris_os" &&
              pp_warn "can't determine OS suffix from uname -r"
 
+}
+
+#@ pp_solaris_detect_arch(): set $pp_solaris_arch to short platform arch
+#   i386    = 32-bit intel
+#   amd64   = 64-bit intel
+#   sparc   = 32-bit sparc
+#   sparcv9 = 64-bit sparc
+pp_solaris_detect_arch () {
+	pp_solaris_arch=`/usr/bin/optisa amd64 sparcv9 i386 sparc`
+	[ -z "$pp_solaris_arch" ] &&
+	    pp_error "can't determine processor architecture"
 }
 
 #@ pp_solaris_request(output): Generate a request script for all components
