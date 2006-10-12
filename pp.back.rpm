@@ -277,17 +277,17 @@ pp_backend_rpm () {
             if test -s $pp_wrkdir/%post.$cmp; then
                 echo ""
                 echo "%post $_subname"
-                echo 'if test "$1" -eq 1; then # first install'
+#               echo 'if test "$1" -eq 1; then # first install'
                 cat $pp_wrkdir/%post.$cmp
-                echo 'fi'
+#               echo 'fi'
             fi
 
             if test -s $pp_wrkdir/%preun.$cmp; then
                 echo ""
                 echo "%preun $_subname"
-                echo 'if test "$1" -eq 0; then # uninstall'
+#               echo 'if test "$1" -eq 0; then # uninstall'
                 cat $pp_wrkdir/%preun.$cmp
-                echo 'fi'
+#               echo 'fi'
             fi
 	done >>$specfile
 
