@@ -236,6 +236,14 @@ pp_debug "symlink target is $_tgt"
 	test -n "$_o" || pp_die "_o empty"
 	test -n "$_g" || pp_die "_g empty"
 
+	#-- setuid/gid files must be given an explicit owner/group (or =)
+	case "$_o:$_g:$_m" in
+	    -:*:[4657][1357]??|-:*:[4657]?[1357]?|-:*:[4657]??[1357])
+		pp_error "$_path: setuid program missing explicit owner";;
+	    *:-:[2367][1357]??|*:-:[2367]?[1357]?|*:-:[2367]??[1357])
+		pp_error "$_path: setgid program missing explicit group";;
+	esac
+
 	pp_debug "$_type $_m $_o $_g $_f $_path" $_tgt
 	$_ignore || echo "$_type $_m $_o $_g $_f $_path" $_tgt
         pp_note_file_used "$_path"
