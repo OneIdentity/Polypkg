@@ -403,3 +403,16 @@ pp_makevar () {
     #-- convert all non alpha/digits to underscores
     echo "$*" | tr -c '[a-z][A-Z][0-9]\012' '[_*]'
 }
+
+#@ pp_getpwuid(uid): returns username for a LOCAL uid
+pp_getpwuid () {
+    awk -F: '$3 == uid { print $1; exit 0; } END { exit 1; }' uid="$1" \
+	< /etc/passwd || pp_error "no local username for uid $1"
+}
+
+#@ pp_getgruid(gid): returns group for a LOCAL gid
+pp_getgrgid () {
+    awk -F: '$3 == gid { print $1; exit 0; } END { exit 1; }' gid="$1" \
+	< /etc/group || pp_error "no local group for gid $1"
+}
+
