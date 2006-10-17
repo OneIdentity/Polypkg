@@ -11,18 +11,18 @@ pp_set_platform () {
 	pp_contains "$pp_platforms" "$pp_opt_platform" ||
 		pp_die "$pp_opt_platform: unknown platform"
 	pp_platform="$pp_opt_platform"
-	pp_debug "forcing platform $pp_platform"
     else
 	uname_s=`uname -s 2>/dev/null`
 	pp_platform=
 	for p in $pp_platforms; do
+	    pp_debug "probing for platform $p"
 	    if eval pp_backend_${p}_detect "$uname_s"; then
 		pp_platform="$p"
-		pp_debug "selecting platform $pp_platform"
 		break;
 	    fi
 	done
 	test -z "$pp_platform" && 
 		pp_die "cannot detect platform (supported: $pp_platforms)"
     fi
+    pp_debug "pp_platform = $pp_platform"
 }
