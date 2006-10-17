@@ -68,7 +68,7 @@ pp_load_service_vars () {
 pp_files_expand () {
     typeset _p _mode _group _owner _flags _path _optional _has_target _tree
     typeset _path _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
-    typeset _ignore
+    typeset _ignore _a
 
     test $# -eq 0 && return
 
@@ -79,16 +79,18 @@ pp_files_expand () {
 
     #-- the mode must be an octal number of at least three digits
     _mode="="
-    case "$1" in
+    _a=`eval echo \"$1\"`
+    case "$_a" in
 	*:*) :;;
-	-|=|[01234567][01234567][01234567]*) _mode="$1"; shift;;
+	-|=|[01234567][01234567][01234567]*) _mode="$_a"; shift;;
     esac
 
     #-- the owner:group field may have optional parts
-    case "$1" in
-	*:*) _group=${1#*:}; _owner=${1%:*}; shift;;
-	=|-) _group=$1;      _owner=$1; shift;;
-	*)   _group=;       _owner=;;
+    _a=`eval echo \"$1\"`
+    case "$_a" in
+	*:*) _group=${_a#*:}; _owner=${_a%:*}; shift;;
+	=|-) _group=$_a;      _owner=$_a; shift;;
+	*)   _group=;         _owner=;;
     esac
 
     #-- process the flags argument
@@ -97,20 +99,24 @@ pp_files_expand () {
     _has_target=false
     _ignore=false
     if test $# -gt 0; then
-	case ",$1," in *,volatile,*) _flags="${_flags}v";; esac
-	case ",$1," in *,optional,*) _optional=true;; esac
-	case ",$1," in *,symlink,*) _has_target=true;; esac
-	case ",$1," in *,ignore-others,*) _flags="${_flags}i";; esac
-	case ",$1," in *,ignore,*) _ignore=true;; esac
+        _a=`eval echo \"$1\"`
+	case ",$_a," in *,volatile,*) _flags="${_flags}v";; esac
+	case ",$_a," in *,optional,*) _optional=true;; esac
+	case ",$_a," in *,symlink,*) _has_target=true;; esac
+	case ",$_a," in *,ignore-others,*) _flags="${_flags}i";; esac
+	case ",$_a," in *,ignore,*) _ignore=true;; esac
 	shift
     fi
 
     #-- process the target argument
     if $_has_target; then
 	test $# -ne 0 || pp_error "$_p: missing target"
-	_target="$1"
+	_a=`eval echo \"$1\"`
+	_target="$_a"
 	shift
     fi
+
+    pp_debug "pp_files_expand: $_mode|$_owner:$_group|$_flags|$_target|$*"
 
     test $# -eq 0 || pp_error "$_p: too many arguments"
 
