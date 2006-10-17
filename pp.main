@@ -16,6 +16,9 @@ pp_opt_version=false
 pp_opt_input="-"
 pp_opt_init_vars=""
 
+test -n "$PP_NO_CLEAN" && pp_opt_no_clean=true
+test -n "$PP_DEBUG" && pp_opt_debug=true
+
 #@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
 pp_main_cleanup () {
 	pp_debug "main_cleanup"
