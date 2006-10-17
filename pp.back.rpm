@@ -291,14 +291,14 @@ pp_backend_rpm () {
             fi
 	done >>$specfile
 
-$pp_opt_debug && cat $specfile 
-
         #-- create a suitable work area for rpmbuild
         echo "%_topdir $pp_wrkdir" >$pp_wrkdir/.rpmmacros
 	mkdir $pp_wrkdir/RPMS
 	mkdir $pp_wrkdir/BUILD
 
         . $pp_wrkdir/%fixup
+
+$pp_opt_debug && cat $specfile 
 
         pp_debug "creating: `pp_backend_rpm_names`"
 
