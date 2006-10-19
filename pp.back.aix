@@ -534,6 +534,7 @@ pp_backend_aix_install_script () {
                 done
             }
 
+	    test \$# -eq 0 && usage
             op="\$1"; shift
 
             case "\$op" in
