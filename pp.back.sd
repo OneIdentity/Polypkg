@@ -234,6 +234,7 @@ pp_sd_control () {
 ########
 .
     cat "$@" >> $script
+    echo "exit 0" >> $script
     /usr/bin/chmod +x $script
     echo "                $ctrl $script"
 }

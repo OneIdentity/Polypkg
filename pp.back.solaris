@@ -299,6 +299,7 @@ pp_backend_solaris () {
                  request preinstall postinstall \
                  preremove postremove; do
             if test -s $pp_wrkdir/$f; then
+		echo "exit 0" >> $pp_wrkdir/$f
                 if $pp_opt_debug; then
                     pp_debug "contents of $f:"
                     cat $pp_wrkdir/$f >&2

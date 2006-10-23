@@ -350,6 +350,12 @@ The %post and %preun sections
 	that these scripts are invoked at the right times during
 	installation.
 
+    Exit codes
+
+	The %post, %preun, and %check scripts are automatically appended
+	with an 'exit 0' statement. For a script to terminate installation,
+	it must explicitly invoke 'exit 1'.
+
 The %service section
 
 	A %service section consists of the directive %service followed
@@ -459,9 +465,9 @@ The %check section
         are met. It is processed in a manner very similar to %post 
         or %preun.
 
-        The script must either exit with success to indicate that
-        installation may proceed. If it fails, it should write
-        an explanation to standard output.
+	If the script calls 'exit 1', installation will be
+	cancelled. The script *must* write an explanation
+	to the standard output before calling 'exit 1'.
 
             %check [component]
 

@@ -157,6 +157,7 @@ pp_aix_make_script () {
     rm -f "$1"
     echo "#!/bin/sh" > "$1"
     cat >> "$1"
+    echo "exit 0" >> "$1"
     chmod +x "$1"
 }
 

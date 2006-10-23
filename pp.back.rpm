@@ -266,6 +266,7 @@ pp_backend_rpm () {
                 echo ""
                 echo "%pre $_subname"
                 cat $pp_wrkdir/%check.$cmp
+                echo :   # causes script to exit true by default
             fi
 
             if test -s $pp_wrkdir/%files.$cmp; then
@@ -279,6 +280,7 @@ pp_backend_rpm () {
                 echo "%post $_subname"
 #               echo 'if test "$1" -eq 1; then # first install'
                 cat $pp_wrkdir/%post.$cmp
+                echo :   # causes script to exit true
 #               echo 'fi'
             fi
 
@@ -287,6 +289,7 @@ pp_backend_rpm () {
                 echo "%preun $_subname"
 #               echo 'if test "$1" -eq 0; then # uninstall'
                 cat $pp_wrkdir/%preun.$cmp
+                echo :   # causes script to exit true
 #               echo 'fi'
             fi
 	done >>$specfile
