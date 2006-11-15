@@ -427,15 +427,13 @@ pp_backend_solaris_function () {
                 /usr/sbin/groupadd $1
 .
         pp_mkuser) cat <<'.';;
-            typeset user
-            eval user=\$$#
-            grep "^$user:" /etc/passwd >/dev/null ||
+            eval _user=\$$#
+            grep "^$_user:" /etc/passwd >/dev/null ||
                 /usr/sbin/useradd -s /usr/bin/false "$@"
 .
         pp_havelib) cat <<'.';;
-            typeset dir
-            for dir in `echo "/usr/lib${3+:$3}" | tr : ' '`; do
-                test -r "$dir/lib$1.so{$2+.$2}" && return 0
+            for _dir in `echo "/usr/lib${3+:$3}" | tr : ' '`; do
+                test -r "$_dir/lib$1.so{$2+.$2}" && return 0
             done
             return 1
 .
