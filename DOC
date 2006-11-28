@@ -70,6 +70,7 @@ Invocation
 	      --no-package             -- do everything but create packages
 	      --only-front             -- only perform front-end actions
 	   -p --platform=platform      -- defaults to local platform
+	      --probe                  -- print host identifier and exit
 	      --wrkdir=path            -- defaults to $TMPDIR or /tmp
 	   -v --verbose                -- write info to stderr
 	      --version                -- write version and exit
@@ -424,10 +425,14 @@ The %depend section
 		name version
 
 	Lines starting with a the special symbol "+" indicate 
-	platform-specific dependency information.
+	platform-specific dependency information. See the platform
+        backend documentation for details.
 
         The %depend section, like other non-%set sections is subject to 
         immediate %{} and %() expansion.
+
+	Backends will insert dependencies on packages that provide
+	shared libraries automatically.
 
     Output of a %depend section
 

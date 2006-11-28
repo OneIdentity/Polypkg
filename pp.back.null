@@ -39,3 +39,8 @@ pp_backend_null_install_script () {
 pp_backend_null_function () {
     echo false
 }
+
+#@ pp_backend_null_probe(): output local platform's short name
+pp_backend_null_function () {
+    echo unknown-unknown
+}

@@ -21,6 +21,7 @@ pp_backend_sd_init () {
     pp_sd_detect_os
 }
 
+#@ pp_sd_detect_os(): detect and set operating system vars
 pp_sd_detect_os () {
     typeset revision
 
@@ -28,6 +29,13 @@ pp_sd_detect_os () {
     pp_sd_os="${revision#?.}"
     test -z "$pp_sd_os" &&
         pp_warn "cannot detect OS version"
+    pp_sd_os_std="hpux`echo $pp_sd_os | tr -d .`"
+
+    case "`uname -m`" in
+	9000/[678]??) pp_sd_arch_std=hppa;;
+	ia64) pp_sd_arch_std=ia64;;
+	*) pp_sd_arch_std=unknown;;
+    esac
 }
 
 #@ pp_sd_write_files() <file-list: writes PSF lines for each file
@@ -428,4 +436,9 @@ pp_backend_sd_function () {
 .
         *) pp_error "unknown function request: $1";;
     esac
+}
+
+#@ pp_backend_sd_probe() : detect local platform name
+pp_backend_sd_probe () {
+    echo "${pp_sd_os_std}-${pp_sd_arch_std}"
 }

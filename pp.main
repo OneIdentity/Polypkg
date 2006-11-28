@@ -10,6 +10,7 @@ pp_opt_list=false
 pp_opt_no_clean=false
 pp_opt_no_package=false
 pp_opt_platform=
+pp_opt_probe=false
 pp_opt_wrkdir="${TMPDIR:-/var/tmp}/pp.work.$$"
 pp_opt_verbose=false
 pp_opt_version=false
@@ -84,6 +85,7 @@ pp_parseopts () {
 	    --no-clean)        pp_opt_no_clean=true;   shift;;
 	    --no-package)      pp_opt_no_package=true; shift;;
 	    --platform)        pp_opt_platform="$2";   shift;shift;;
+	    --probe)           pp_opt_probe=true;      shift;;
 	    --wrkdir)          pp_opt_wrkdir="$2";     shift;shift;;
 	    --verbose)         pp_opt_verbose=true;    shift;;
 	    --version)         pp_opt_version=true;    shift;;
@@ -130,6 +132,7 @@ usage: $0 [options] [input.pp] [var=value ...]
        --no-package             -- do everything but create packages
        --only-front             -- only perform front-end actions
     -p --platform=platform      -- defaults to local platform
+       --probe                  -- print local system identifier, then exit
        --wrkdir=path            -- defaults to subdirectory of \$TMPDIR or /tmp
     -v --verbose                -- write info to stderr
        --version                -- display version and quit
@@ -224,6 +227,12 @@ pp_main () {
 
 	rm -rf "$pp_wrkdir"
         mkdir -p "$pp_wrkdir"
+
+        if $pp_opt_probe; then
+	    pp_backend_init
+            pp_backend_probe
+            exit 0
+        fi
 
 	pp_package
 	test -n "$pp_opt_install_script" && pp_install_script

@@ -9,10 +9,11 @@
 #  pp_backend_P_names   - Prints the output package names, without the 
 #                         $pp_wrkdir prefix. The names should start with 
 #                         "$name-$version"
+#  pp_backend_P_probe   - Prints the short platform identifier
 #  pp_backend_P_cleanup - Removes leftover temporary files, and may be
 #		          called without pp_backend_P_init/pp_backend_P 
 #                         being invoked.
-#  pp_backend_P_detect  - returns true if running on the given platform.
+#  pp_backend_P_detect  - Returns true if running on the given platform.
 #                         First arguement is output of 'uname -s'
 #  pp_backend_P_init_svc_vars - Initialise per-service variables
 #  pp_backend_P_install_script - Generates a script file that installs/
@@ -47,9 +48,10 @@
 #@ pp_backend_init_svc_vars(): call the current platform backend's svc var init
 #@ pp_backend_install_script(): call the current backend's install script gen
 #@ pp_backend_function(): emit a helper function
+#@ pp_backend_probe():   print the current platform's short identifier
 #-- these functions are so similar, we generate them
 for _sufx in _init '' _names _cleanup _install_script \
-    _init_svc_vars _function
+    _init_svc_vars _function _probe
 do
  eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \${1+\"\$@\"}; }"
 done

@@ -89,6 +89,13 @@ pp_solaris_detect_arch () {
 	pp_solaris_arch=`/usr/bin/optisa amd64 sparcv9 i386 sparc`
 	[ -z "$pp_solaris_arch" ] &&
 	    pp_error "can't determine processor architecture"
+	case "$pp_solaris_arch" in
+	    amd64)   pp_solaris_arch_std=x86_64;;
+	    i386)    pp_solaris_arch_std=i386;;
+	    sparcv9) pp_solaris_arch_std=sparc64;;
+	    sparc)   pp_solaris_arch_std=sparc;;
+	    *)       pp_solaris_arch_std=unknown;;
+	esac
 }
 
 #@ pp_solaris_request(output): Generate a request script for all components
@@ -481,4 +488,9 @@ pp_solaris_add_dynlib_depends () {
 	fi
 	rm -f $tmp
     done
+}
+
+#@ pp_backend_solaris_probe(): probe local host type
+pp_backend_solaris_probe () {
+    echo "${pp_solaris_os}-${pp_solaris_arch_std}"
 }

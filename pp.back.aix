@@ -12,9 +12,6 @@ pp_backend_aix_detect () {
 
 #@ pp_backend_aix_init(): initialise the 
 pp_backend_aix_init () {
-	test -n "$pp_destdir" ||
-	   pp_error "AIX backend requires the '--destdir' option"
-
         pp_aix_detect_arch
         pp_aix_detect_os
 
@@ -39,6 +36,12 @@ pp_aix_detect_arch () {
 	   powerpc) pp_aix_arch=R;;
 	   *)       pp_aix_arch_p=intel
                     pp_aix_arch=I;;  # XXX? verify
+	esac
+
+	case "`/usr/sbin/lsattr -El proc0 -a type -F value`" in
+	    PowerPC_POWER*) pp_aix_arch_std=ppc64;;	
+	    PowerPC*) pp_aix_arch_std=ppc;;	
+	    *) pp_aix_arch_std=unknown;;	
 	esac
 }
 
@@ -299,6 +302,9 @@ pp_backend_aix () {
         typeset user_wrkdir root_wrkdir
         typeset user_files root_files
 
+	test -n "$pp_destdir" ||
+	   pp_error "AIX backend requires the '--destdir' option"
+
 	instuser="/usr/lpp/$name"
 	instroot="$instuser/inst_root"
 
@@ -485,7 +491,7 @@ pp_backend_aix_cleanup () {
 #-- prints the output package name without the $pp_wrkdir prefix.
 #   the name always starts with $name-$version
 pp_backend_aix_names () {
-	echo "$name-${pp_aix_version:-`pp_aix_version_fix "$version"`}-${pp_aix_os:+$pp_aix_os-}${pp_aix_arch_p}.bff"
+	echo "$name-${pp_aix_version:-`pp_aix_version_fix "$version"`}-`pp_backend_aix_probe`.bff"
 }
 
 #@ pp_backend_aix_install_script(): generate install script
@@ -615,4 +621,9 @@ pp_backend_aix_function () {
     *)
             pp_error "unknown function request: $1" ;;
     esac
+}
+
+#@ pp_backend_aix_probe(): print local host identifier
+pp_backend_aix_probe () {
+	echo "${pp_aix_os}-${pp_aix_arch_std}"
 }

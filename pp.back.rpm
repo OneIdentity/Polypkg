@@ -65,6 +65,14 @@ pp_rpm_detect_arch () {
     $pp_opt_debug && cat $pp_wrkdir/dummy.spec
     pp_rpm_arch=`rpm -q --qf '%{arch}\n' --specfile $pp_wrkdir/dummy.spec`
     rm $pp_wrkdir/dummy.spec
+
+    case "`uname -m`" in
+	i?86)	pp_rpm_arch_std=i386;;
+	x86_64)	pp_rpm_arch_std=x86_64;;
+	ppc)	pp_rpm_arch_std=ppc;;
+	ppc64)	pp_rpm_arch_std=ppc64;;
+	*)	pp_rpm_arch_std=unknown;;
+    esac
 }
 
 #@ pp_rpm_detect_distro(): sets $pp_rpm_distro to a short distro name or ''
@@ -89,6 +97,7 @@ pp_rpm_detect_distro () {
           /^SuSE Linux [0-9]/ { print "suse" $3; exit; }
           /^SUSE LINUX [0-9]/ { print "suse" $3; exit; }
           /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
+          /^SUSE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
        ' /etc/SuSE-release`
     fi
     pp_rpm_distro=`echo $pp_rpm_distro | tr -d .`
@@ -438,4 +447,9 @@ pp_backend_rpm_function () {
 .
         *) pp_error "unknown function request: $1" ;;
     esac
+}
+
+#@ pp_backend_rpm_probe(): print the local platform's short name
+pp_backend_rpm_probe () {
+        echo "${pp_rpm_distro}-${pp_rpm_arch_std}"
 }
