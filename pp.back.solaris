@@ -441,3 +441,44 @@ pp_backend_solaris_function () {
     esac
 }
 
+#@ pp_solaris_dynlib_depend(): emits dependency from shared library info
+#   a list of files should be supplied on stdin. non-executable files
+#   are ignored. output is a set of dependency lines that should
+#   be added to %depend.$cpt
+pp_solaris_dynlib_depend () {
+	xargs ldd 2>/dev/null |
+	sed -e '/^[^ 	]*:$/d' -e 's,.*=>[	 ]*,,' -e 's,^[ 	]*,,' | 
+	sort -u | 
+	grep -v '^/usr/platform/' | (
+	  set -- ""; shift
+	  while read p; do
+	    set -- "$@" -p "$p"
+	    if [ $# -gt 32 ]; then
+		echo "$# is $#" >&2
+		pkgchk -l "$@"
+		set -- ""; shift
+	    fi
+	  done
+	  [ $# -gt 0 ] && pkgchk -l "$@"
+	)|
+	awk '/^Current status:/{p=0} p==1 {print $1} /^Referenced by/ {p=1}' |
+	sort -u |
+	xargs -l32 pkginfo -x |
+	awk 'NR % 2 == 1 { name=$1; } NR%2 == 0 { print name, $2 }'
+}
+
+#@ pp_solaris_add_dynlib_depends(): creates dependencies for each component
+pp_solaris_add_dynlib_depends () {
+    typeset tmp
+    tmp=$pp_wrkdir/tmp.dynlib
+
+    for _cmp in $pp_components; do
+	awk '{print destdir $6}' destdir="$pp_destdir" \
+		< $pp_wrkdir/%files.$_cmp |
+	pp_solaris_dynlib_depend > $tmp
+	if test -s $tmp; then
+	    cat $tmp >> $pp_wrkdir/%depend.$_cmp
+	fi
+	rm -f $tmp
+    done
+}
