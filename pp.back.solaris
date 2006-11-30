@@ -398,7 +398,7 @@ pp_backend_solaris_install_script () {
                 install)
                     test \$# -ge 1 || usage \$op
                     make_tmpfiles "\$@"
-                    verbose pkgadd -n -d \${PP_PKGDESTDIR:-.}/$pkgname \
+                    verbose /usr/sbin/pkgadd -n -d \${PP_PKGDESTDIR:-.}/$pkgname \
                         -r \$tmpresponse \
                         -a \$tmpnocheck \
                         ${pp_solaris_name:-$name}
@@ -406,7 +406,7 @@ pp_backend_solaris_install_script () {
                 uninstall)
                     test \$# -ge 1 || usage \$op
                     make_tmpfiles "\$@"
-                    verbose pkgrm -n \
+                    verbose /usr/sbin/pkgrm -n \
                         -a \$tmpnocheck \
                         ${pp_solaris_name:-$name}
                     ;;
