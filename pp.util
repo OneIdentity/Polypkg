@@ -9,7 +9,7 @@ pp_errors=false
 #@   $pp_col_redfg: terminal string to change foreground colour to red
 #@   $pp_col_bluefg: terminal string to change foreground colour to blue
 #@   $pp_col_reset: terminal string to reset colours to default
-if test -t; then
+if test -n "$TERM" -a -t 1; then
    pp_col_redfg=`tput setf 4` 2>/dev/null
    pp_col_bluefg=`tput setf 1` 2>/dev/null
    pp_col_reset=`tput op` 2>/dev/null
