@@ -324,7 +324,7 @@ pp_frontend () {
 
      test 0 != $pp_if_false && continue	# ignore lines %if'd out
 
-     pp_debug "section=$section($section_enabled) newsection=$newsection($newsection_enabled)"
+     pp_debug "section=$section (enabled=$section_enabled) newsection=$newsection (enabled=$newsection_enabled)"
 
      #-- finish processing a previous section
      if test x"$newsection" != x""; then

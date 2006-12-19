@@ -40,6 +40,11 @@ pp_backend_null_function () {
     echo false
 }
 
+#@ pp_backend_null_init_svc_vars(): initialise service vars
+pp_backend_null_init_svc_vars () {
+    :
+}
+
 #@ pp_backend_null_probe(): output local platform's short name
 pp_backend_null_function () {
     echo unknown-unknown

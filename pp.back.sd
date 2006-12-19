@@ -442,3 +442,8 @@ pp_backend_sd_function () {
 pp_backend_sd_probe () {
     echo "${pp_sd_os_std}-${pp_sd_arch_std}"
 }
+
+#@ pp_backend_sd_init_svc_vars(): initialise service vars
+pp_backend_sd_init_svc_vars () {
+    :
+}

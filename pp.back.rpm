@@ -51,7 +51,9 @@ pp_backend_rpm_init () {
 
 #@ pp_rpm_detect_arch(): sets $pp_rpm_arch to current RPM architecture
 pp_rpm_detect_arch () {
-    #-- Build a dummy spec file so we can query properties with rpm -q
+    pp_rpm_arch=auto
+
+    #-- Find the default native architecture that RPM is configured to use
     cat <<-. >$pp_wrkdir/dummy.spec
 	Name: dummy
 	Version: 1
@@ -63,9 +65,10 @@ pp_rpm_detect_arch () {
 	dummy
 .
     $pp_opt_debug && cat $pp_wrkdir/dummy.spec
-    pp_rpm_arch=`rpm -q --qf '%{arch}\n' --specfile $pp_wrkdir/dummy.spec`
+    pp_rpm_arch_local=`rpm -q --qf '%{arch}\n' --specfile $pp_wrkdir/dummy.spec`
     rm $pp_wrkdir/dummy.spec
 
+    #-- Ask the kernel what machine architecture is in use
     case "`uname -m`" in
 	i?86)	pp_rpm_arch_std=i386;;
 	x86_64)	pp_rpm_arch_std=x86_64;;
@@ -73,6 +76,10 @@ pp_rpm_detect_arch () {
 	ppc64)	pp_rpm_arch_std=ppc64;;
 	*)	pp_rpm_arch_std=unknown;;
     esac
+
+    #-- Later on, when files are processed, we use 'file' to determine
+    #   what platform ABIs are used. This is used when pp_rpm_arch == auto
+    pp_rpm_arch_seen=
 }
 
 #@ pp_rpm_detect_distro(): sets $pp_rpm_distro to a short distro name or ''
@@ -117,7 +124,7 @@ pp_rpm_label () {
 
 #@ pp_rpm_writefiles() < %files: Write body of a %files section in RPM form
 pp_rpm_writefiles () {
-    typeset _l t m o g f p st
+    typeset _l t m o g f p st fo
     while read t m o g f p st; do
         _l="$p"
 	test $t = d && _l="%dir ${_l%/}/"
@@ -130,6 +137,19 @@ pp_rpm_writefiles () {
         test x"$o" = x"-" && o="${pp_rpm_defattr_uid:-root}"
         test x"$g" = x"-" && g="${pp_rpm_defattr_gid:-root}"
 	_l="%attr($m,$o,$g) $_l"
+
+	if test "$t" = "f" -a x"$pp_rpm_arch" = x"auto"; then
+	    fo=`file "${pp_destdir}$p" 2>/dev/null`
+	    pp_debug "file: $fo"
+	    case "$fo" in
+		*": ELF 32-bit LSB executable, Intel 80386"*)
+		    pp_add_to_list pp_rpm_arch_seen i386;;
+		*": ELF 64-bit LSB executable, AMD x86-64"*)
+		    pp_add_to_list pp_rpm_arch_seen x86_64;;
+		*": ELF 32-bit MSB executable, PowerPC"*)
+		    pp_add_to_list pp_rpm_arch_seen ppc;;
+	    esac
+	fi
 
 	case $f in *v*) _l="%config $_l";; esac
 	echo "$_l"
@@ -308,13 +328,34 @@ pp_backend_rpm () {
 	mkdir $pp_wrkdir/RPMS
 	mkdir $pp_wrkdir/BUILD
 
+	if test x"$pp_rpm_arch" = x"auto"; then
+	    #-- Reduce the arch_seen list to exactly one item
+	    case "$pp_rpm_arch_seen" in
+		"i386 x86_64"|"x86_64 i386")
+		    pp_rpm_arch_seen=x86_64;;
+		*" "*)
+		    pp_warn "detected multiple targets: $pp_rpm_arch_seen"
+		    pp_rpm_arch_seen=unknown;;	    # not detected
+		"")
+		    pp_warn "detected no binaries: using target noarch"
+		    pp_rpm_arch_seen=noarch;;
+		*)
+		    pp_debug "detected architecture $pp_rpm_arch_seen"
+	    esac
+	    pp_rpm_arch="$pp_rpm_arch_seen"
+	fi
+
         . $pp_wrkdir/%fixup
 
 $pp_opt_debug && cat $specfile 
 
         pp_debug "creating: `pp_backend_rpm_names`"
 
+pp_debug "pp_rpm_arch_seen = <${pp_rpm_arch_seen}>"
+pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
+
 	HOME=$pp_wrkdir \
+	pp_verbose \
         rpmbuild -bb \
 		--buildroot="$pp_destdir/" \
                 --target="${pp_rpm_arch}" \

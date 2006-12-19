@@ -623,6 +623,11 @@ pp_backend_aix_function () {
     esac
 }
 
+#@ pp_backend_aix_init_svc_vars(): initialise service vars
+pp_backend_aix_init_svc_vars () {
+    :
+}
+
 #@ pp_backend_aix_probe(): print local host identifier
 pp_backend_aix_probe () {
 	echo "${pp_aix_os}-${pp_aix_arch_std}"

@@ -84,6 +84,11 @@ pp_backend_deb_function() {
     esac
 }
 
+#@ pp_backend_deb_init_svc_vars(): initialise service vars
+pp_backend_deb_init_svc_vars() {
+    :
+}
+
 #@ pp_backend_deb_probe(): output local platform's short id
 pp_backend_deb_probe() {
     echo unknown-unknown

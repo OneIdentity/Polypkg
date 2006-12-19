@@ -5,6 +5,8 @@ be converted into packaging commands on various different platforms.
 The style is to provide reasonable defaults for everything, but allow
 platform-specific overrides/explicits at every place.
 
+(Use portable shell <http://sourceware.org/autobook/autobook/autobook_220.html>)
+
 Platforms
 ---------
 The package systems we're interested in are

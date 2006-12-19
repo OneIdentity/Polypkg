@@ -49,6 +49,7 @@ pp_backend_solaris_init () {
 	pp_solaris_copyright=
 	pp_solaris_name=
 	pp_solaris_desc=
+	pp_solaris_package_arch=auto
 
         pp_solaris_detect_os
         pp_solaris_detect_arch
@@ -81,10 +82,12 @@ pp_solaris_detect_os () {
 }
 
 #@ pp_solaris_detect_arch(): set $pp_solaris_arch to short platform arch
-#   i386    = 32-bit intel
-#   amd64   = 64-bit intel
-#   sparc   = 32-bit sparc
-#   sparcv9 = 64-bit sparc
+# NOTE: this is the architecture EXECUTION capability. 
+# The TARGET arch of the package is detected during pp_solaris_proto()
+#   i386    = 32-bit intel (i386)
+#   amd64   = 64-bit intel (x86_64)
+#   sparc   = 32-bit sparc (sparc)
+#   sparcv9 = 64-bit sparc (sparc64)
 pp_solaris_detect_arch () {
 	pp_solaris_arch=`/usr/bin/optisa amd64 sparcv9 i386 sparc`
 	[ -z "$pp_solaris_arch" ] &&
@@ -179,6 +182,9 @@ pp_solaris_sum_space () {
 
 #@ pp_solaris_proto(class) < %files: generate prototype(4) file etc.
 pp_solaris_proto () {
+	typeset t m o g f p st
+	typeset abi
+
 	while read t m o g f p st; do
 	  if test x"$o" = x"-"; then 
             o="bin"
@@ -192,6 +198,19 @@ pp_solaris_proto () {
 		*v*) echo "v $1 $p=$pp_destdir$p $m $o $g";;
 		*)   echo "f $1 $p=$pp_destdir$p $m $o $g";;
 	       esac
+	       if test -r "$pp_destdir$p"; then
+		  #-- Use file to record ABI types seen 
+		  case "`file "$pp_destdir$p"`" in
+		    *"ELF 32"*80386*) abi=i386;;
+		    *"ELF 64"*AMD*) abi=x86_64;;
+		    *"ELF 32"*SPARC*) abi=sparc;;
+		    *"ELF 64"*SPARC*) abi=sparc64;;
+		    *) abi=;;
+		  esac
+		  if test -n "$abi"; then
+		    pp_add_to_list pp_solaris_abis_seen $abi
+		  fi
+	       fi
                ;;
 	    d) test x"$m" = x"-" && m=555
 	       echo "d $1 $p $m $o $g"
@@ -233,7 +252,6 @@ pp_backend_solaris () {
         esac
 
         #-- generate the package info file
-	echo "ARCH=$pp_solaris_arch" >> $pkginfo
 	echo "VERSION=$version" >> $pkginfo
 	echo "PKG=${pp_solaris_name:-$name}" >> $pkginfo
 	echo "CLASSES=$pp_components" >> $pkginfo
@@ -317,16 +335,41 @@ pp_backend_solaris () {
 
         #-- create the prototype file which lists the files to install
         # do this as late as possible because files could be added
+	pp_solaris_abis_seen=
 	for _cmp in $pp_components; do
 	  pp_solaris_proto $_cmp < $pp_wrkdir/%files.$_cmp
 	done >> $prototype
+
+	if test x"$pp_solaris_package_arch" = x"auto"; then
+	    if pp_contains "$pp_solaris_abis_seen" sparc64; then
+		pp_solaris_package_arch_std="sparc64"
+		echo "ARCH=sparcv9" >> $pkginfo
+	    elif pp_contains "$pp_solaris_abis_seen" sparc; then
+		pp_solaris_package_arch_std="sparc"
+		echo "ARCH=sparc" >> $pkginfo
+	    elif pp_contains "$pp_solaris_abis_seen" x86_64; then
+		pp_solaris_package_arch_std="x86_64"
+		echo "ARCH=amd64" >> $pkginfo
+	    elif pp_contains "$pp_solaris_abis_seen" i386; then
+		pp_solaris_package_arch_std="i386"
+		echo "ARCH=i386" >> $pkginfo
+	    else
+		pp_warn "No ELF files found: not supplying an ARCH type"
+		pp_solaris_package_arch_std="noarch"
+	    fi
+	else
+	    pp_solaris_package_arch_std="$pp_solaris_package_arch"
+	    echo "ARCH=$pp_solaris_package_arch" >> $pkginfo
+	fi
+
+	mkdir $pp_wrkdir/pkg
+
+	. $pp_wrkdir/%fixup
 
 if $pp_opt_debug; then
   echo "$pkginfo::"; cat $pkginfo
   echo "$prototype::"; cat $prototype
 fi >&2
-
-	mkdir $pp_wrkdir/pkg
 
 	pkgmk -a $pp_solaris_arch -d $pp_wrkdir/pkg \
 	      -f $prototype || { error "pkgmk failed"; return; }
@@ -343,7 +386,7 @@ pp_backend_solaris_cleanup () {
 
 #@ pp_backend_solaris_names(): print the name of the package files created
 pp_backend_solaris_names () {
-	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_os:+$pp_solaris_os-}$pp_solaris_arch.pkg
+	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_os:+$pp_solaris_os-}${pp_solaris_package_arch_std-$pp_solaris_arch}.pkg
 }
 
 #@ pp_backend_solaris_install_script(): generates a helper install script
