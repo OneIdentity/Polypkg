@@ -88,7 +88,7 @@ pp_rpm_detect_distro () {
     if test -f /etc/whitebox-release; then
        pp_rpm_distro=`awk '
           /^White Box Enterprise Linux release/ { print "wbel" $6; exit; }
-       ' /etc/fedora-release`
+       ' /etc/whitebox-release`
     elif test -f /etc/fedora-release; then
        pp_rpm_distro=`awk '
           /^Fedora Core release/ { print "fc" $4; exit; }
