@@ -125,6 +125,7 @@ pp_backend_deb_probe() {
     # If release is not numeric, use the codename
     case $release in
         [0-9]*.[0-9]*)
+            release=`echo $release | tr -d .`
 	;;
 	*)
 	    release=`lsb_release -cs`
