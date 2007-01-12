@@ -91,5 +91,45 @@ pp_backend_deb_init_svc_vars() {
 
 #@ pp_backend_deb_probe(): output local platform's short id
 pp_backend_deb_probe() {
-    echo unknown-unknown
+    typeset arch distro release
+
+    arch=`uname -m`
+    # i486/i586/i686 processors (usually) produce i386 binaries
+    case $arch in
+    	i*86)
+	    arch=i386
+	;;
+    esac
+
+    # /etc/debian_version exists on Debian & Ubuntu, so it's no use
+    # to us. Use lsb_release instead.
+    if [ ! lsb_release > /dev/null ]; then
+        echo unknown-$arch
+        return 0
+    fi
+
+    case `lsb_release -is` in
+        Debian)
+            distro=deb
+        ;;
+        Ubuntu)
+            distro=ubu
+        ;;
+        *)
+            distro=unknown
+        ;;
+    esac
+
+    release=`lsb_release -rs`
+
+    # If release is not numeric, use the codename
+    case $release in
+        [0-9]*.[0-9]*)
+	;;
+	*)
+	    release=`lsb_release -cs`
+	;;
+    esac
+
+    echo $distro$release-$arch
 }
