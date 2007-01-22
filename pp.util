@@ -406,7 +406,7 @@ pp_makevar () {
 
 #@ pp_getpwuid(uid): returns username for a LOCAL uid
 pp_getpwuid () {
-    awk -F: '$3 == uid { print $1; exit 0; } END { exit 1; }' uid="$1" \
+    awk -F: '$3 == uid { print $1; found=1; } END { if (!found) exit 1; }' uid="$1" \
 	< /etc/passwd || pp_error "no local username for uid $1"
 }
 
