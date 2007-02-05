@@ -46,6 +46,6 @@ pp_backend_null_init_svc_vars () {
 }
 
 #@ pp_backend_null_probe(): output local platform's short name
-pp_backend_null_function () {
+pp_backend_null_probe () {
     echo unknown-unknown
 }
