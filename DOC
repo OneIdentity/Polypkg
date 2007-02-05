@@ -109,6 +109,7 @@ Helper install script
            uninstall {cpt...|all}     -- uninstalls pkgs containing cpts
            start {svc...}             -- starts the service
            stop {svc...}              -- stops the service
+           print-platform             -- prints lowest platform for pkg
 
     The 'install' command performs an upgrade if another version of
     the software is already installed. Even if you are installing an
@@ -389,11 +390,13 @@ The %service section
 	Platform-independent variables expected to be set are:
 
 		cmd		Shell command to execute
-		pidfile		Path to the file containing the PID as
+		pidfile		Path to a file containing the PID as
 				the first word on the first line.
 		stop_signal	Signal number that gracefully stops 
 				the process [default 15]
 		user		User to run the service as [default root]
+		group		Insert into a virtual service group which
+				will shutdown/startup all member services.
 
 	Other platform-specific variables may be provided in this
 	section and are treated differently.

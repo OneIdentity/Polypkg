@@ -106,13 +106,16 @@ pp_parseopts () {
         #-- extra arguments of the form Foo=bar alter *global* vars
         while test $# -gt 0; do
             case "$1" in
+		-*)	pp_error "unexpected option '$1'"
+			shift;;
                 *=*)    _val="${1#*=}"
                         _var=${1%="$_val"}
                         _val=`echo "$_val"|sed -e 's/[$"\\]/\\&/g'`
                         pp_debug "setting $_var = \"$_val\""
                         pp_opt_init_vars="$pp_opt_init_vars$_var=\"$_val\";"
                         shift;;
-                *)      break;;
+                *)      pp_error "unexpected argument $1'"
+			shift;;
             esac
         done
 
@@ -164,6 +167,7 @@ pp_package () {
 	esac
 
         pp_files_ignore_others
+        pp_service_scan_groups
 
 	# some sanity checks after front-end processing
         if test x"$pp_platform" != x"null"; then

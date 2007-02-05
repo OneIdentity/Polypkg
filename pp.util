@@ -355,6 +355,8 @@ pp_install_script_common () {
                 echo "usage: \$0 start {svc...}" ;;
               "stop")
                 echo "usage: \$0 stop {svc...}" ;;
+              "print-platform")
+                echo "usage: \$0 print-platform" ;;
               *)
                 echo "usage: \$0 [-q] command [args]" 
                 echo "   list-services" 
@@ -364,6 +366,7 @@ pp_install_script_common () {
                 echo "   uninstall {cpt...|all}" 
                 echo "   start {svc...}" 
                 echo "   stop {svc...}" 
+                echo "   print-platform" 
                 ;;
               esac >&2
               exit 1

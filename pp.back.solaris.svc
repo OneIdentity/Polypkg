@@ -65,6 +65,76 @@ pp_solaris_smf () {
 .
 }
 
+#@ pp_solaris_make_service_group (group svcs): create a SysV service group 
+#  script and adds it to %files.run if not there already
+pp_solaris_make_service_group () {
+    typeset group out file svcs svc
+
+    group="$1"
+    svcs="$2"
+    file="/etc/init.d/$group"
+    out="$pp_destdir$file"
+
+    #-- return if the script is supplued already
+    pp_add_file_if_missing "$file" run 755 || return 0
+
+    echo "#! /sbin/sh" > $out
+    echo "# polypkg service group script for these services:" >> $out
+    echo "svcs=\"$svcs\"" >> $out
+
+    cat <<'.' >>$out
+
+	#-- starts services in order.. stops them all if any break
+	pp_start () {
+	    undo=
+	    for svc in $svcs; do
+		if /etc/init.d/$svc start; then
+		    undo="$svc $undo"
+		else
+		    if test -n "$undo"; then
+		        for svc in $undo; do
+			   /etc/init.d/$svc stop
+			done
+			return 1
+		    fi
+		fi
+	    done
+	    return 0
+	}
+
+	#-- stops services in reverse
+	pp_stop () {
+	    reverse=
+	    for svc in $svcs; do
+		reverse="$svc $reverse"
+	    done
+	    rc=0
+	    for svc in $reverse; do
+		/etc/init.d/$svc stop || rc=$?
+	    done
+	    return $rc
+	}
+
+	#-- returns true only if all services return true status
+	pp_status () {
+	    rc=0
+	    for svc in $reverse; do
+		/etc/init.d/$svc status || rc=$?
+	    done
+	    return $rc
+	}
+
+        case "$1" in
+            start)   pp_start;
+            stop)    pp_stop;;
+            status)  pp_status;;
+            restart) pp_stop && pp_start;;
+            *)       echo "usage: $0 {start|stop|restart|status}" >&2; exit 1;;
+        esac
+.
+}
+
+
 #@ pp_solaris_make_service (svc): create a SysV service script
 #   creates and adds the file /etc/init.d/$svc to %files.run if
 #   it isn't there already.
@@ -201,4 +271,3 @@ pp_solaris_install_service () {
     echo " :;; esac"
 
 }
-

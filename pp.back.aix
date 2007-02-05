@@ -267,7 +267,7 @@ pp_aix_add_service () {
         #-- add command text to create/remove the service
 	cat <<-. >> $pp_wrkdir/%post.run
            # install service '$svc'
-           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args}
+           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${group+-G "$group"}
 .
 
         #-- add code to start the service on reboot
@@ -496,7 +496,7 @@ pp_backend_aix_names () {
 
 #@ pp_backend_aix_install_script(): generate install script
 pp_backend_aix_install_script () {
-	typeset pkgname
+	typeset pkgname platform
         #
         # The script should take a first argument being the
         # operation; further arguments refer to components or services
@@ -507,8 +507,10 @@ pp_backend_aix_install_script () {
         # list-services             -- lists the services in the pkg
         # start service...          -- starts the name service
         # stop service...           -- stops the named services
+        # print-platform            -- prints the platform group
         #
         pkgname="`pp_backend_aix_names`"
+	platform="`pp_backend_aix_probe`"   # XXX should be derived from files
 
         fsets=
         for cmp in $pp_components; do
@@ -576,6 +578,9 @@ pp_backend_aix_install_script () {
                     done
                     exit \$ec
                     ;;
+                print-platform)
+                    echo "$platform"
+		    ;;
                 *)
                     usage;;
             esac

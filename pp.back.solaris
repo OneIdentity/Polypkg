@@ -162,8 +162,10 @@ pp_solaris_procedure () {
 pp_solaris_depend () {
     typeset _name _vers
     while read _name _vers; do
-        echo "P $_name $_name" 
-        test -n "$_vers" && echo " $_vers" 
+	if test -n "$_name"; then
+	    echo "P $_name $_name" 
+	    test -n "$_vers" && echo " $_vers" 
+	fi
     done
 }
 
@@ -227,7 +229,7 @@ pp_solaris_proto () {
 #-- Reads output files from the frontend and generates the single output
 #   package file under $pp_wrkdir/
 pp_backend_solaris () {
-        typeset _cmp _svc
+        typeset _cmp _svc _grp
 
 	prototype=$pp_wrkdir/prototype
 	: > $prototype
@@ -313,6 +315,12 @@ pp_backend_solaris () {
 .
             done
 
+        test -n "$pp_service_groups" && 
+	    for _grp in $pp_service_groups; do
+		pp_solaris_make_service_group \
+		    $_grp "`pp_service_get_svc_group $_grp`"
+	    done
+
         #-- if installf was used; we need to indicate a termination
         grep installf $pp_wrkdir/postinstall >/dev/null &&
             echo 'installf -f $PKGINST' >> $pp_wrkdir/postinstall
@@ -324,7 +332,17 @@ pp_backend_solaris () {
                  request preinstall postinstall \
                  preremove postremove; do
             if test -s $pp_wrkdir/$f; then
-		echo "exit 0" >> $pp_wrkdir/$f
+		case $f in
+		    *install|*remove|request)
+			# turn scripts into a proper shell scripts
+			mv $pp_wrkdir/$f $pp_wrkdir/$f.tmp
+			{ echo "#!/bin/sh"; 
+			  echo "# $f script for ${pp_solaris_name:-$name}-$version"
+			  cat $pp_wrkdir/$f.tmp; } > $pp_wrkdir/$f
+			chmod +x $pp_wrkdir/$f
+			rm -f $pp_wrkdir/$f.tmp
+			;;
+		esac
                 if $pp_opt_debug; then
                     pp_debug "contents of $f:"
                     cat $pp_wrkdir/$f >&2
@@ -391,7 +409,9 @@ pp_backend_solaris_names () {
 
 #@ pp_backend_solaris_install_script(): generates a helper install script
 pp_backend_solaris_install_script () {
-        typeset pkgname
+        typeset pkgname platform
+
+	platform="${pp_solaris_os-solaris}-${pp_solaris_package_arch_std-$pp_solaris_arch}"
 
         echo "#! /sbin/sh"
         pp_install_script_common
@@ -462,6 +482,9 @@ pp_backend_solaris_install_script () {
                     done
                     exit \$ec
                     ;;
+                print-platform)
+		    echo "$platform"
+		    ;;
                 *)
                     usage
                     ;;

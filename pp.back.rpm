@@ -286,6 +286,14 @@ pp_backend_rpm () {
             pp_rpm_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
         fi
 
+	# make convenience service groups
+        if test -n "$pp_service_groups"; then
+	    for grp in $pp_service_groups; do
+		pp_rpm_service_group_make_init_script \
+		    $grp "`pp_service_get_svc_group $grp`"
+	    done
+	fi
+
 	#-- Write the RPM %file sections
         #   (do this after services, since services adds to %files.run)
 	for cmp in $pp_components; do
@@ -385,6 +393,7 @@ pp_backend_rpm_cleanup () {
     :
 }
 
+#@ pp_backend_rpm_install_script(): generate the install script
 pp_backend_rpm_install_script () {
     typeset cmp _subname
 
@@ -462,6 +471,10 @@ pp_backend_rpm_install_script () {
                 done
                 exit \$ec
                 ;;
+            print-platform)
+                test \$# -eq 0 || usage \$op
+		echo "linux-${pp_rpm_arch}"
+		;;
             *)
                 usage
                 ;;

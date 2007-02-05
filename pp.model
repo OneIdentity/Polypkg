@@ -45,6 +45,7 @@ pp_service_init_vars () {
 	pidfile=
 	stop_signal=15		# SIGTERM
 	user=root
+	group=
 	pp_backend_init_svc_vars
 }
 
@@ -320,4 +321,32 @@ pp_files_ignore_others () {
         awk -f $pp_wrkdir/ign.awk < $f > $f.i || pp_error "awk"
         mv $f.i $f
     done
+}
+
+#@ pp_service_scan_groups(): scan services for groups
+#   Populates the list $pp_service_groups with all defined groups,
+#   and creates the files %svcgrp.$group each containing the
+#   names of services inside each that group, one per line.
+pp_service_scan_groups () {
+    typeset svc
+
+    #-- scan for "group" commands, and build a list of groups
+    pp_service_groups=
+    if test -n "$pp_services"; then
+        for svc in $pp_services; do
+	    group=
+	    . $pp_wrkdir/%service.$svc
+	    if test -n "$group"; then
+		pp_contains "$pp_services" "$group" && pp_error \
+		    "%service $svc: group name $group in use by a service"
+		pp_add_to_list 'pp_service_groups' "$group"
+		echo "$svc" >> $pp_wrkdir/%svcgrp.$group
+	    fi
+        done
+    fi
+}
+
+#@ pp_service_get_svc_group: prints the services with a group on one line
+pp_service_get_svc_group () {
+    (tr '\012' ' ' < $pp_wrkdir/%svcgrp.$1 ; echo) | sed -e 's/ $//'
 }

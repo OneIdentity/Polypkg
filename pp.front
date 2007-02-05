@@ -63,7 +63,8 @@ pp_frontend_init () {
 
     #-- if the user supplied extra arguments on the command line
     #   then load them now.
-    eval "$pp_opt_init_vars"
+    pp_debug "pp_opt_init_vars=$pp_opt_init_vars"
+    test -n "$pp_opt_init_vars" && eval "$pp_opt_init_vars"
 }
 
 #@ pp_is_qualifier(): returns true if the arg is a qualifier expression

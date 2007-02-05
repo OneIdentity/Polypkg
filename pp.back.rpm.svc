@@ -86,6 +86,97 @@ pp_backend_rpm_init_svc_vars () {
     stop_priority=50            #-- stop_priority = 100 - start_priority
 }
 
+#@ pp_rpm_service_group_make_init_script (grp svcs): makes a group script
+pp_rpm_service_group_make_init_script () {
+    typeset grp=$1
+    typeset svcs="$2"
+    typeset script=/etc/init.d/$grp
+    typeset out=$pp_destdir$script
+
+    pp_add_file_if_missing $script run 755 || return 0
+
+    cat <<-. >>$out
+	#!/bin/sh
+	svcs="$svcs"
+.
+
+    cat <<-'.' >>$out
+
+        #-- prints usage message
+        pp_usage () {
+            echo "usage: $0 {start|stop|status|restart|reload|condrestart|try-restart|force-reload}" >&2
+            return 2
+        }
+
+        #-- starts services in order.. stops them all if any break
+        pp_start () {
+            undo=
+            for svc in $svcs; do
+                if /etc/init.d/$svc start; then
+                    undo="$svc $undo"
+                else
+                    if test -n "$undo"; then
+                        for svc in $undo; do
+                           /etc/init.d/$svc stop
+                        done
+                        return 1
+                    fi
+                fi
+            done
+            return 0
+        }
+
+        #-- stops services in reverse
+        pp_stop () {
+            reverse=
+            for svc in $svcs; do
+                reverse="$svc $reverse"
+            done
+            rc=0
+            for svc in $reverse; do
+                /etc/init.d/$svc stop || rc=$?
+            done
+            return $rc
+        }
+
+        #-- returns true only if all services return true status
+        pp_status () {
+            rc=0
+            for svc in $reverse; do
+                /etc/init.d/$svc status || rc=$?
+            done
+            return $rc
+        }
+
+        pp_reload () {
+            rc=0
+            for svc in $svcs; do
+                /etc/init.d/$svc reload || rc=$?
+            done
+            return $rc
+        }
+
+        case "$1" in
+            start)          pp_start;;
+            stop)           pp_stop;;
+            restart)        pp_stop; pp_start;;
+            status)         pp_status;;
+            try-restart|condrestart)    
+                            if pp_status >/dev/null; then
+                                    pp_restart
+                            fi;;
+            reload)         pp_reload;;
+            force-reload)   if pp_status >/dev/null; then
+                                    pp_reload
+                            else
+                                    pp_restart
+                            fi;;
+            *)              pp_usage;;
+        esac
+.
+    chmod 755 $out
+}
+
 #@ pp_rpm_service_make_init_script(svc): generates a service init script 
 #   Assumes %service variables have been set before invocation
 #   Does nothing if an /etc/init.d/$svc script exists already.
@@ -281,6 +372,7 @@ pp_rpm_service_make_init_script () {
                             fi;;
             *)              pp_usage;;
         esac
+
 .
     chmod 755 $out
 }
