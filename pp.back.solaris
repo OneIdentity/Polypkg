@@ -20,7 +20,7 @@
 #    NAME=the foo bad system
 #    CATEGORY=system
 #    ARCH=sparc
-#    VERSION=foo release 2.0
+#    VERSION=1.2[.3...][,REV=YYYY.MM.DD[.HH.MM.SS]]
 #    CLASSES=none
 # prototype lines are
 #    [part] ftype class pathname[=srcpath] [mode owner group]
@@ -42,7 +42,7 @@ pp_backend_solaris_detect () {
 
 #@ pp_backend_solaris_init(): initialise the solaris vars
 pp_backend_solaris_init () {
-	pp_solaris_category="application"
+	pp_solaris_category=
 	pp_solaris_istates="s S 1 2 3"	# run-states when install is ok
 	pp_solaris_rstates="s S 1 2 3"	# run-states when remove is ok
 	pp_solaris_vendor="Quest Software, Inc."
@@ -259,7 +259,7 @@ pp_backend_solaris () {
 	echo "CLASSES=$pp_components" >> $pkginfo
 	echo "BASEDIR=/" >> $pkginfo
 	echo "NAME=$name $version" >> $pkginfo
-	echo "CATEGORY=$pp_solaris_category" >> $pkginfo
+	echo "CATEGORY=${pp_solaris_category-application}" >> $pkginfo
 
 	desc="${pp_solaris_desc:-$description}"
 	test -n "$desc" &&
