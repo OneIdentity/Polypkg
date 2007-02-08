@@ -15,6 +15,7 @@ PP_SRCS= \
 	 pp.back.deb \
 	 pp.back.rpm \
 	 pp.back.rpm.svc \
+	 pp.back.macos \
 	 pp.back.null \
 	 pp.quest
 

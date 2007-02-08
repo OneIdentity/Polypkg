@@ -1,0 +1,191 @@
+# Macintosh OS X backend
+#
+# References:
+# http://developer.apple.com/documentation/DeveloperTools/Conceptual/SoftwareDistribution/index.html
+# http://mirrors-3v.club-internet.fr/mirrors/ftp.osxgnu.org/pub/osxgnu/OSXPM/package
+# http://developer.apple.com/releasenotes/DeveloperTools/Installer.html
+# Packagmeaker Help files
+
+: NOTES <<.
+
+ # creating a dmg file for publishing on the web
+    hdiutil create -srcfolder /path/foo foo.dmg
+    hdiutil internet-enable -yes /path/foo.dmg
+ # Layout for packages
+    <name>-<cpy>/component/<file>
+    <name>-<cpt>/extras/postinstall
+    <name>-<cpt>/extras/postupgrade
+ # /Developer/Tools/packagemaker (man packagemaker)
+
+    Make a bunch of packages, and then build a 'distribution'
+    which is only understood by macos>10.4 
+
+ # Message files in the resource path (-r) used are
+    Welcome.{rtf,html,rtfd,txt} - limited text shown in Intro
+    ReadMe.{rtf,html,rtfd,txt} - scrollable/printable, after Intro
+    License.{rtf,html,rtfd,txt} - ditto, user must click 'Accept'
+    background.{jpg,tif,gif,pict,eps,pdf} 620x418 background image
+
+ # These scripts looked for in the resource path (-r)
+    InstallationCheck $pkgpath $defaultloc $targetvol
+	0:ok 32:warn 32+x:warn[1] 64:stop 96+x:stop[2]
+    VolumeCheck $volpath
+	0:ok 32:failure 32+x:failure[3]
+    preflight   $pkgpath $targetloc $targetvol    [priv]
+    preinstall  $pkgpath $targetloc $targetvol    [priv]
+    preupgrade  $pkgpath $targetloc $targetvol    [priv]
+    postinstall $pkgpath $targetloc $targetvol    [priv]
+    postupgrade $pkgpath $targetloc $targetvol    [priv]
+    postflight  $pkgpath $targetloc $targetvol    [priv]
+	0:ok else fail (for all scripts)
+
+    A detailed reason is deduced by finding an index x (16..31)
+    in the file InstallationCheck.strings or VolumeCheck.strings.
+
+    Scripts marked [priv] are executed with root privileges.
+    None of the [priv] scripts are used by metapackages.
+
+ # Default permissions
+    Permissions of existing directories should match those
+    of a clean install of the OS; typically root:admin 0775
+    New directories or files should be 0775 or 0664 with the
+    appropriate user:group.
+    Exceptions:
+	/etc	root:admin 0755
+	/var    root:admin 0755
+
+    <http://developer.apple.com/documentation/DeveloperTools/Conceptual/SoftwareDistribution4/Concepts/sd_pkg_flags.html>
+    Info.plist = {
+     CFBundleGetInfoString: "1.2.3, Quest Software, Inc.",
+     CFBundleIdentifier: "com.quest.vintela.rc.openssh",
+     CFBundleShortVersionString: "1.2.3",
+     IFMajorVersion: 1,
+     IFMinorVersion: 2,
+     IFPkgFlagAllowBackRev: false,
+     IFPkgFlagAuthorizationAction: "AdminAuthorization",
+     IFPkgFlagDefaultLocation: "/",
+     IFPkgFlagFollowLinks: true,
+     IFPkgFlagInstallFat: false,
+     IFPkgFlagInstalledSize: <integer>,
+     IFPkgFlagIsRequired: false,
+     IFPkgFlagOverwritePermissions: false,
+     IFPkgFlagRelocatable: false,
+     IFPkgFlagRestartAction: "NoRestart",
+     IFPkgFlagRootVolumeOnly: false,
+     IFPkgFlagUpdateInstalledLanguages: false,
+     IFPkgFormatVersion= 0.10000000149011612,
+     IFRequirementDicts: [ {
+       Level = "requires",
+       SpecArgument = "/opt/quest/lib/libvas.4.2.0.dylib",
+       SpecType = "file",
+       TestObject = true,
+       TestOperator = "eq", } ]
+    }
+
+    Description.plist = {
+     IFPkgDescriptionDescription = "this is the description text",
+     IFPkgDescriptionTitle = "quest-openssh"
+    }
+
+ # Startup scripts
+    'launchd' is a kind of combined inetd and rc/init.d system.
+    <http://developer.apple.com/documentation/MacOSX/Conceptual/BPSystemStartup/Articles/DesigningDaemons.html>
+    Create a /Library/LaunchDaemons/$daemonname.plist file
+    Examples found in /System/Library/LaunchDaemons/
+    See manual page launchd.plist(5) for details:
+
+    { Label: "com.quest.vintela.foo",                        # required
+      Program: "/sbin/program",
+      ProgramArguments: [ "/sbin/program", "arg1", "arg2" ], # required
+      RunAtLoad: true,
+      WatchPaths: [ "/etc/crontab" ],
+      QueueDirectories: [ "/var/cron/tabs" ],
+      inetdCompatibility: { Wait: false },                   # inetd-only 
+      OnDemand: false,                                       # recommended
+      SessionCreate: true,
+      UserName: "nobody",
+      InitGroups: true,
+      Sockets: {                                             # inetd only
+	Listeners: { 
+	   SockServiceName: "ssh",
+	   Bonjour: ["ssh", "sftp-ssh"], } },
+      Disabled: false,
+      StandardErrorPath: "/dev/null",
+    }
+.
+
+
+pp_platforms="$pp_platforms macos"
+
+#@ pp_backend_macos_detect(uname_s): return true if matches uname on macos
+pp_backend_macos_detect () {
+    [ x"$1" = x"Darwin" ]
+}
+
+#@ pp_backend_macos_init(): initialises platform variables for macos 
+pp_backend_macos_init () {
+    pp_macos_default_bundle_id_prefix="com.quest.vintela.rc."
+    pp_macos_bundle_id=
+}
+
+
+#@ pp_backend_macos(): processes output files to generate a package files
+pp_backend_macos () {
+    :
+
+    bundle_id=${pp_macos_bundle_id-$pp_macos_default_bundle_id_prefix$name}
+
+    mkdir $pp_wrkdir/dmg
+
+    pp_verbose "Building package"
+    /Developer/Tools/packagemaker \
+	-build \
+	-p $pp_wrkdir/dmg/$name-$version.pkg \
+	-f $pp_destdir \
+	-i $pp_wrkdir/Info.plist \
+	-d $pp_wrkdir/Description.plist
+
+    dmg=`pp_backend_macos_names`
+    pp_verbose "Converting package into disk image"
+    hdiutil create -srcfolder $pp_wrkdir/dmg $pp_wrkdir/$dmg
+    hdiutil internet-enable -yes $pp_wrkdir/$dmg
+}
+
+#@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
+pp_backend_macos_cleanup () {
+    :
+}
+
+#@ pp_backend_macos_names(): prints the paths to package files
+#    each path should start with $name-$version
+#    the package must be relative to the $pp_wrkdir directory
+pp_backend_macos_names () {
+    echo ${name}-${version}.dmg
+}
+
+#@ pp_backend_macos_install_script(component): generate helper install script
+pp_backend_macos_install_script () {
+    :
+}
+
+#@ pp_backend_macos_function(func): output one platform-dependent function
+pp_backend_macos_function () {
+    echo false
+}
+
+#@ pp_backend_macos_init_svc_vars(): initialise service vars
+pp_backend_macos_init_svc_vars () {
+    :
+}
+
+#@ pp_backend_macos_probe(): output local platform's short name
+pp_backend_macos_probe () {
+    typeset name vers arch
+    case `sw_vers -productName` in
+         "Mac OS X") name="macos";;
+	 *)          name="unknown";;
+    esac
+    vers=`sw_vers -productVersion | sed -e 's/^\([^.]*\)\.\([^.]*\).*/\1\2/'`
+    arch=`arch`
+    echo "$name$vers-$arch"
+}
