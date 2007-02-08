@@ -125,7 +125,7 @@ pp_solaris_make_service_group () {
 	}
 
         case "$1" in
-            start)   pp_start;
+            start)   pp_start;;
             stop)    pp_stop;;
             status)  pp_status;;
             restart) pp_stop && pp_start;;
