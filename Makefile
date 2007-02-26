@@ -1,3 +1,5 @@
+# (c) 2007 Quest Software, Inc. All rights reserved.
+
 PP_SHELL=	/bin/sh
 
 PP_SRCS= \
@@ -22,6 +24,9 @@ PP_SRCS= \
 all: pp check
 	cd example && $(MAKE)
 
+# Generate a pp that includes the sources with the '.' operator.
+# This is most handy for development because the source line numbers
+# will be correct in error messages.
 pp: $(PP_SRCS)
 	rm -f $@
 	(echo '#!$(PP_SHELL)';                \
@@ -34,9 +39,11 @@ pp: $(PP_SRCS)
 	) > $@
 	chmod 555 $@
 
+# Generate an exportable pp script. Source files have their comments
+# removed and are concatenated together to make the shippable pp script.
 pp-stripped: $(PP_SRCS)
 	(echo '#!$(PP_SHELL)';                \
-	 echo '# (c) 2006 Quest Software, Inc. All rights reserved'; \
+	 echo "# (c) `date +%Y` Quest Software, Inc. All rights reserved"; \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
 	 cat pp.licence; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
@@ -55,6 +62,8 @@ check: pp
 	    ${TEST_SHELL} -f tests/driver $$t || ex=1; \
 	done; exit $$ex
 
+# Create a tags file (used by vi). Shell functions are detected
+# by being preceeded by a descriptive comment starting with '#@'
 tags: $(PP_SRCS)
 	for f in $(PP_SRCS); do \
 	    : sed -n -e 's,^\(#@[ 	]*\$$*\([^(:/ ]*\)[^:]*:*\).*,\2	'$$f'	/^\1/,p' $$f; \
