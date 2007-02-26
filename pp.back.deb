@@ -2,13 +2,6 @@
 
 pp_platforms="$pp_platforms deb"
 
-myexit () {
- echo "Wanting to exit with $1"
- exit $1
-}
-
-#alias exit=myexit
-
 #@ pp_backend_deb_detect(uname_s): return true if matches uname on deb
 pp_backend_deb_detect () {
     test -f /etc/debian_version
@@ -40,7 +33,7 @@ pp_backend_deb_init () {
 pp_deb_check_required_programs () {
     typeset not_found required prog
     not_found=
-    required="dpkg ar tar install md5sum fakeroot"
+    required="dpkg ar tar install md5sum fakeroot dh_link"
     for prog in ${required}
     do
         test -x `which $prog` || not_found="${not_found} ${prog}"
@@ -110,14 +103,6 @@ EOF
     cat $pp_wrkdir/%post.run >> "$postinst"
   fi
 
-  # Add symlinks if any
-  if [ -f $pp_wrkdir/postinst-links ]
-  then
-    echo "# Create symlinks" >> "$postinst"
-    cat $pp_wrkdir/postinst-links >> "$postinst"
-    rm $pp_wrkdir/postinst-links
-  fi
-
   # Set perms and attempt to set owner/group
   chmod 755 "$postinst" || exit 1
 }
@@ -144,14 +129,6 @@ EOF
     cat $pp_wrkdir/%preun.run >> "$prerm"
   fi
  
-  # Add symlinks if any
-  if [ -f $pp_wrkdir/prerm-links ]
-  then
-    echo "# Create symlinks" >> $prerm
-    cat $pp_wrkdir/prerm-links >> $prerm
-  fi
-  rm $pp_wrkdir/prerm-links
-
   # Set perms and attempt to set owner/group
   chmod 755 "$prerm" || exit 1
 }
@@ -199,16 +176,24 @@ pp_deb_make_data_tgz() {
     cat $pp_wrkdir/%files.* | while read t m o g f p st; do
         case "$t" in
         # TODO owner/group
-        f) install -D -m ${m} $pp_destdir/$p $data/$p;
+        f) # Files 
+           install -D -m ${m} $pp_destdir/$p $data/$p;
            if [ x$f = xv ]
            then
                # File marked as "volatile". Assume this means it's a conffile
                echo "$p" >> $pp_wrkdir/conffiles
            fi;;
-        d) install -m ${m} -d $data/$p;;
-        s) # Do symlinks in post install
-           echo "ln -s $st $p" >> $pp_wrkdir/postinst-links;
-           echo "rm -f $p" >> $pp_wrkdir/prerm-links;;
+
+        d) # Directories 
+           install -m ${m} -d $data/$p;;
+
+        s) # Symlinks 
+           # Remove leading / from vars
+           rel_p=`echo $p | sed s,^/,,`
+           rel_st=`echo $st | sed s,^/,,`
+           # TODO: we are always doing absolute links here. We should follow the
+           # debian policy of relative links when in the same top-level directory
+           (cd $data; ln -sf $st $rel_p);;
 	    *) echo Unsupported data file type "$t"; exit 1;; 
 	esac
     done 
