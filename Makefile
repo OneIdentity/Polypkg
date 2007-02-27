@@ -15,6 +15,7 @@ PP_SRCS= \
 	 pp.back.solaris \
 	 pp.back.solaris.svc \
 	 pp.back.deb \
+	 pp.back.deb.svc \
 	 pp.back.rpm \
 	 pp.back.rpm.svc \
 	 pp.back.macos \
