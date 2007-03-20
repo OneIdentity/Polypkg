@@ -141,12 +141,14 @@ pp_rpm_writefiles () {
 	if test "$t" = "f" -a x"$pp_rpm_arch" = x"auto"; then
 	    fo=`file "${pp_destdir}$p" 2>/dev/null`
 	    pp_debug "file: $fo"
+	    #NB: The following should match executables and shared objects,
+	    #relocatable objects. It will not match .a files however.
 	    case "$fo" in
-		*": ELF 32-bit LSB executable, Intel 80386"*)
+		*": ELF 32-bit LSB "*", Intel 80386"*)
 		    pp_add_to_list pp_rpm_arch_seen i386;;
-		*": ELF 64-bit LSB executable, AMD x86-64"*)
+		*": ELF 64-bit LSB "*", AMD x86-64"*)
 		    pp_add_to_list pp_rpm_arch_seen x86_64;;
-		*": ELF 32-bit MSB executable, PowerPC"*)
+		*": ELF 32-bit MSB "*", PowerPC"*)
 		    pp_add_to_list pp_rpm_arch_seen ppc;;
 	    esac
 	fi
