@@ -28,6 +28,7 @@ skip () { echo "?    $NAME"; exit 0; }
 pp_front_end () {
     $PP --platform=null \
         --wrkdir=$TMPDIR \
+	--only-front \
         ${DEBUG:+--debug} \
         --no-clean \
         ${1+"$@"} \

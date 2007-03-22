@@ -9,6 +9,7 @@ pp_opt_install_script=
 pp_opt_list=false
 pp_opt_no_clean=false
 pp_opt_no_package=false
+pp_opt_only_front=false
 pp_opt_platform=
 pp_opt_probe=false
 pp_opt_wrkdir="${TMPDIR:-/var/tmp}/pp.work.$$"
@@ -38,7 +39,7 @@ pp_parseopts () {
         typeset a n _var _val
 	while test $# -gt 0; do
 
-	  # convert -[dilv] to --long-options
+	  # convert -[dilpv] to --long-options
 	  case "$1" in
 	    --?*=?*) n=`echo "$1" | sed -ne 's/^--\([^=]*\)=.*/\1/p'`
 	           a=`echo "$1" | sed -ne 's/^--[^=]*=\(.*\)/\1/p'`
@@ -84,6 +85,7 @@ pp_parseopts () {
 	    --list)            pp_opt_list=true;       shift;;
 	    --no-clean)        pp_opt_no_clean=true;   shift;;
 	    --no-package)      pp_opt_no_package=true; shift;;
+	    --only-front)      pp_opt_only_front=true; shift;;
 	    --platform)        pp_opt_platform="$2";   shift;shift;;
 	    --probe)           pp_opt_probe=true;      shift;;
 	    --wrkdir)          pp_opt_wrkdir="$2";     shift;shift;;
@@ -144,12 +146,12 @@ usage: $0 [options] [input.pp] [var=value ...]
 	fi
 }
 
-#@ pp_package(): drives the front-end, middle and backend 
-pp_package () {
+#@ pp_drive(): drives the front-end, middle and backend 
+pp_drive () {
 	# initialise the front and back ends
         pp_model_init
 	pp_frontend_init
-	pp_backend_init
+	$pp_opt_only_front || pp_backend_init
 
 	# run the front-end to generate the intermediate files
         # set $pp_input_dir to be the 'include dir' if needed
@@ -180,12 +182,15 @@ pp_package () {
 	    pp_die_if_errors "Errors during sanity checks"
         fi
 
+	# stop now if we're only running the front
+	$pp_opt_only_front && return
+
 	# run the back-end to generate the package
 	pp_debug "calling backend"
 	pp_backend
 	pp_die_if_errors "Errors during backend processing"
 
-	# copy the resulting package files to .
+	# copy the resulting package files to PP_PKGDESTDIR or .
 	for f in `pp_backend_names` -; do
            test x"$f" = x"-" && continue
 	   pp_debug "copying: $f to `pwd`"
@@ -198,7 +203,7 @@ pp_package () {
 	pp_die_if_errors "Errors during package copying"
 }
 
-#@ pp_install_script(): generate the install script 
+#@ pp_install_script(): generate the install helper script 
 pp_install_script () {
         pp_debug "writing install script to $pp_opt_install_script"
         rm -f $pp_opt_install_script
@@ -235,11 +240,13 @@ pp_main () {
         if $pp_opt_probe; then
 	    pp_backend_init
             pp_backend_probe
-            exit 0
+	else
+	    pp_drive
+	    if test -n "$pp_opt_install_script"; then
+		pp_install_script
+	    fi
         fi
 
-	pp_package
-	test -n "$pp_opt_install_script" && pp_install_script
 
 	exit 0
 }
