@@ -449,7 +449,7 @@ pp_backend_deb_probe() {
     # /etc/debian_version exists on Debian & Ubuntu, so it's no use
     # to us. Use lsb_release instead.
 
-    case `(/bin/lsb_release -is || echo no-lsb) 2>/dev/null` in
+    case `(lsb_release -is || echo no-lsb) 2>/dev/null` in
         Debian)
             distro=deb
 	    ;;
