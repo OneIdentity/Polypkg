@@ -259,7 +259,7 @@ pp_backend_solaris () {
 	echo "CLASSES=$pp_components" >> $pkginfo
 	echo "BASEDIR=/" >> $pkginfo
 	echo "NAME=$name $version" >> $pkginfo
-	echo "CATEGORY=${pp_solaris_category-application}" >> $pkginfo
+	echo "CATEGORY=${pp_solaris_category:-application}" >> $pkginfo
 
 	desc="${pp_solaris_desc:-$description}"
 	test -n "$desc" &&
