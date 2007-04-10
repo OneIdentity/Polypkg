@@ -218,8 +218,8 @@ pp_solaris_proto () {
 	       echo "d $1 $p $m $o $g"
                ;;
 	    s) test x"$m" = x"-" && m=777
-               test x"$m" == 777 ||
-                  pp_warn "$p: invalid mode $m for symlink"
+               test x"$m" = x"777" ||
+                  pp_warn "$p: invalid mode $m for symlink, should be 777 or -"
 	       echo "s $1 $p=$st $m $o $g"
                ;;
 	  esac
