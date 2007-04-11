@@ -469,11 +469,12 @@ pp_backend_deb_probe() {
 
     # If release is not numeric, use the codename
     case $release in
-        *[!.0-9]*)
+        *[!.0-9r]*)
 	    release=`lsb_release -cs`
 	    ;;
 	*)
-            release=`echo $release | tr -d .`
+	    # Remove trailing revision number and any dots
+            release=`echo $release | cut -dr -f1 | tr -d .`
 	    ;;
     esac
 
