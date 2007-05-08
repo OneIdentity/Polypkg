@@ -409,13 +409,13 @@ pp_makevar () {
 
 #@ pp_getpwuid(uid): returns username for a LOCAL uid
 pp_getpwuid () {
-    awk -F: '$3 == uid { print $1; found=1; } END { if (!found) exit 1; }' uid="$1" \
+    awk -F: '$3 == uid { if (!found) print $1; found=1; } END { if (!found) exit 1; }' uid="$1" \
 	< /etc/passwd || pp_error "no local username for uid $1"
 }
 
 #@ pp_getgruid(gid): returns group for a LOCAL gid
 pp_getgrgid () {
-    awk -F: '$3 == gid { print $1; found=1; } END { if (!found) exit 1; }' gid="$1" \
+    awk -F: '$3 == gid { if (!found) print $1; found=1; } END { if (!found) exit 1; }' gid="$1" \
 	< /etc/group || pp_error "no local group for gid $1"
 }
 
