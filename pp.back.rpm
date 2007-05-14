@@ -103,6 +103,7 @@ pp_rpm_detect_distro () {
        pp_rpm_distro=`awk '
           /^SuSE Linux [0-9]/ { print "suse" $3; exit; }
           /^SUSE LINUX [0-9]/ { print "suse" $3; exit; }
+          /^openSUSE [0-9]/   { print "suse" $2; exit; }
           /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
           /^SUSE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
        ' /etc/SuSE-release`
