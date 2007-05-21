@@ -181,7 +181,10 @@ pp_deb_fakeroot () {
 pp_deb_make_DEBIAN() {
     typeset cmp="${1:-run}"
     typeset data cmp_full_name
+    typeset old_umask
 
+    old_umask=`umask`
+    umask 0022
     cmp_full_name=`pp_deb_cmp_full_name $cmp`
     data=$pp_wrkdir/$cmp_full_name
 
@@ -211,6 +214,8 @@ pp_deb_make_DEBIAN() {
     pp_deb_make_package_maintainer_script "$data/DEBIAN/postrm" \
         "$pp_wrkdir/%postun.$cmp" "Post uninstall script for $cmp_full_name"\
         || exit $?
+
+    umask $old_umask
 }
 
 #@ pp_deb_make_data(name): Package up data files for .deb
