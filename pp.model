@@ -221,7 +221,7 @@ pp_debug "symlink target is $_tgt"
 
 	#-- convert '=' shortcuts into mode/owner/group from ls
 	case ":$_m:$_o:$_g:" in *:=:*)
-	    if /bin/ls -l1d "$_file" > $pp_wrkdir/ls.tmp; then
+	    if /bin/ls -ld "$_file" > $pp_wrkdir/ls.tmp; then
                 read _lm _ll _lo _lg _ls _lx < $pp_wrkdir/ls.tmp
                 test x"$_m" = x"=" && _m=`pp_mode_from_ls "$_lm"`
                 test x"$_o" = x"=" && _o="$_lo"

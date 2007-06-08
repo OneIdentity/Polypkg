@@ -66,7 +66,7 @@
      IFPkgFlagDefaultLocation: "/",
      IFPkgFlagFollowLinks: true,
      IFPkgFlagInstallFat: false,
-     IFPkgFlagInstalledSize: <integer>,
+     IFPkgFlagInstalledSize: <integer>,	    # this is added by packagemaker
      IFPkgFlagIsRequired: false,
      IFPkgFlagOverwritePermissions: false,
      IFPkgFlagRelocatable: false,
@@ -128,27 +128,101 @@ pp_backend_macos_init () {
     pp_macos_bundle_id=
 }
 
+#@ pp_macos_plist(cmds...): emits plist xml fragments
+pp_macos_plist () {
+    while test $# -gt 0; do
+     case "$1" in
+
+      start-plist) cat <<-.; shift ;;
+	<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" 
+		"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<plist version="1.0">
+.
+      end-plist) echo "</plist>"; shift;;
+
+      '(')   echo "<array>"; shift;;
+      ')')   echo "</array>"; shift;;
+      '{')   echo "<dict>"; shift;;
+      '}')   echo "</dict>"; shift;;
+      key)         shift; echo "<key>$1</key>"; shift;;
+      string)      shift; 
+		   echo "$1" | sed -e 's/&/&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;' \
+				   -e 's/^/<string>/;s/$/<\/string>/';
+		   shift;;
+      true)        echo "<true />"; shift;;
+      false)       echo "<false />"; shift;;
+      real)        shift; echo "<real>$1</real>"; shift;;
+      integer)     shift; echo "<integer>$1</integer>"; shift;;
+      date)        shift; echo "<date>$1</date>"; shift;; # ISO 8601 format
+      data)        shift; echo "<data>$1</data>"; shift;; # base64 encoded
+      *)	   pp_error "pp_macos_plist: bad argument '$1'"; shift;;
+     esac
+    done
+}
+
 
 #@ pp_backend_macos(): processes output files to generate a package files
 pp_backend_macos () {
-    :
+    typeset info_plist desc_plist
 
     bundle_id=${pp_macos_bundle_id-$pp_macos_default_bundle_id_prefix$name}
 
-    mkdir $pp_wrkdir/dmg
+    info_plist=$pp_wrkdir/Info.plist
+    desc_plist=$pp_wrkdir/Description.plist
 
-    pp_verbose "Building package"
-    /Developer/Tools/packagemaker \
-	-build \
+    #-- Create Info.plist
+    pp_macos_plist \
+	start-plist \{ \
+	key CFBundleGetInfoString      string "1.2.3, Quest Software, Inc." \
+	key CFBundleIdentifier	       string "com.quest.vintela.rc.openssh" \
+	key CFBundleShortVersionString string "1.2.3" \
+	key IFMajorVersion integer 1 \
+	key IFMinorVersion integer 2 \
+	key IFPkgFlagAllowBackRev false \
+	key IFPkgFlagAuthorizationAction string "AdminAuthorization" \
+	key IFPkgFlagDefaultLocation string "/" \
+	key IFPkgFlagFollowLinks true \
+	key IFPkgFlagInstallFat false \
+	key IFPkgFlagIsRequired false \
+	key IFPkgFlagOverwritePermissions false \
+	key IFPkgFlagRelocatable false \
+	key IFPkgFlagRestartAction string "NoRestart" \
+	key IFPkgFlagRootVolumeOnly false \
+	key IFPkgFlagUpdateInstalledLanguages false \
+	key IFPkgFormatVersion real 0.10000000149011612 \
+	key IFRequirementDicts \( \{ \
+	    key Level string "requires" \
+	    key SpecArgument string "/opt/quest/lib/libvas.4.2.0.dylib" \
+	    key SpecType string "file" \
+	    key TestObject true \
+	    key TestOperator string "eq" \
+	    \} \) \
+	\} end-plist > $info_plist
+
+    #-- Create Description.plist
+    pp_macos_plist \
+	start-plist \{ \
+	key IFPkgDescriptionDescription string "this is the description text" \
+	key IFPkgDescriptionTitle string "quest-openssh" \
+	\} end-plist > $desc_plist
+
+    #-- create a package
+    mkdir $pp_wrkdir/dmg $pp_wrkdir/build
+    pp_verbose /Developer/Tools/packagemaker \
+	-build -v \
 	-p $pp_wrkdir/dmg/$name-$version.pkg \
-	-f $pp_destdir \
-	-i $pp_wrkdir/Info.plist \
-	-d $pp_wrkdir/Description.plist
+	-f $pp_destdir -i $info_plist -d $desc_plist ||
+	    pp_error "packagemaker failed"
 
-    dmg=`pp_backend_macos_names`
-    pp_verbose "Converting package into disk image"
-    hdiutil create -srcfolder $pp_wrkdir/dmg $pp_wrkdir/$dmg
-    hdiutil internet-enable -yes $pp_wrkdir/$dmg
+    #-- convert the pkg file into a dmg file
+    if [ -d $pp_wrkdir/dmg/$name-$version.pkg ]; then
+	dmg=`pp_backend_macos_names`
+	pp_verbose hdiutil create -srcfolder $pp_wrkdir/dmg $pp_wrkdir/$dmg
+	pp_verbose hdiutil internet-enable -yes $pp_wrkdir/$dmg
+    else
+	pp_error "$pp_wrkdir/dmg/$name-$version.pkg: not created"
+    fi
 }
 
 #@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
