@@ -124,8 +124,11 @@ pp_backend_macos_detect () {
 
 #@ pp_backend_macos_init(): initialises platform variables for macos 
 pp_backend_macos_init () {
-    pp_macos_default_bundle_id_prefix="com.quest.vintela.rc."
+    pp_macos_default_bundle_id_prefix="com.quest.rc."
     pp_macos_bundle_id=
+    pp_macos_bundle_vendor=
+    pp_macos_bundle_version=
+    pp_macos_bundle_info_string=
 }
 
 #@ pp_macos_plist(cmds...): emits plist xml fragments
@@ -164,9 +167,19 @@ pp_macos_plist () {
 
 #@ pp_backend_macos(): processes output files to generate a package files
 pp_backend_macos () {
-    typeset info_plist desc_plist
+    typeset info_plist desc_plist bundle_vendor bundle_version
 
-    bundle_id=${pp_macos_bundle_id-$pp_macos_default_bundle_id_prefix$name}
+    bundle_vendor=${pp_macos_bundle_vendor:-"Quest Software, Inc."}
+
+    if test -z "$pp_macos_bundle_version"; then
+	bundle_version=`echo "$version.0.0.0" | sed -n -e 's/[^0-9.]//g' \
+	    -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+	if test x"$bundle_version" != x"$version"; then
+	    pp_warn "converted version from '$version' to '$bundle_version'"
+	fi
+    else
+	bundle_version="$pp_macos_bundle_version"
+    fi
 
     info_plist=$pp_wrkdir/Info.plist
     desc_plist=$pp_wrkdir/Description.plist
@@ -174,9 +187,11 @@ pp_backend_macos () {
     #-- Create Info.plist
     pp_macos_plist \
 	start-plist \{ \
-	key CFBundleGetInfoString      string "1.2.3, Quest Software, Inc." \
-	key CFBundleIdentifier	       string "com.quest.vintela.rc.openssh" \
-	key CFBundleShortVersionString string "1.2.3" \
+	key CFBundleGetInfoString string \
+	    "${pp_macos_bundle_info_string:-$version $bundle_vendor}" \
+	key CFBundleIdentifier string \
+	    "${pp_macos_bundle_id:-$pp_macos_default_bundle_id_prefix$name}" \
+	key CFBundleShortVersionString string "$bundle_version" \
 	key IFMajorVersion integer 1 \
 	key IFMinorVersion integer 2 \
 	key IFPkgFlagAllowBackRev false \
@@ -190,15 +205,18 @@ pp_backend_macos () {
 	key IFPkgFlagRestartAction string "NoRestart" \
 	key IFPkgFlagRootVolumeOnly false \
 	key IFPkgFlagUpdateInstalledLanguages false \
-	key IFPkgFormatVersion real 0.10000000149011612 \
+	key IFPkgFormatVersion real 0.10000000149011612 > $info_plist
+
+    pp_macos_plist \
 	key IFRequirementDicts \( \{ \
 	    key Level string "requires" \
 	    key SpecArgument string "/opt/quest/lib/libvas.4.2.0.dylib" \
 	    key SpecType string "file" \
 	    key TestObject true \
 	    key TestOperator string "eq" \
-	    \} \) \
-	\} end-plist > $info_plist
+	    \} \) >> $info_plist
+
+    pp_macos_plist \} end-plist >> $info_plist
 
     #-- Create Description.plist
     pp_macos_plist \
