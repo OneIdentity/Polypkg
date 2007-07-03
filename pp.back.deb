@@ -196,7 +196,7 @@ pp_deb_make_DEBIAN() {
 
     # Copy in conffiles
     if test -f $pp_wrkdir/%conffiles.$cmp; then
-	cp $pp_wrkdir/%conffiles.$cmp $data/DEBIAN/
+	cp $pp_wrkdir/%conffiles.$cmp $data/DEBIAN/conffiles
     fi
 
     # Create postinst
