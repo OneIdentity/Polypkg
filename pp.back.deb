@@ -325,7 +325,7 @@ pp_backend_deb_cleanup () {
 #@ pp_deb_name(component): prints the names of the package files
 pp_deb_name () {
     typeset cmp="${1:-run}"
-    echo `pp_deb_cmp_full_name $cmp`"-${pp_deb_version:-$version}-${pp_deb_release:-1}.${pp_deb_arch}.deb"
+    echo `pp_deb_cmp_full_name $cmp`"_${pp_deb_version:-$version}-${pp_deb_release:-1}_${pp_deb_arch}.deb"
 }
 #
 #@ pp_backend_deb_names: prints the names of the package files
