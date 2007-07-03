@@ -275,13 +275,14 @@ pp_deb_makedeb () {
     # Create package dir
     mkdir -p $package_build_dir
 
-    # Make control files
-    pp_deb_make_DEBIAN $cmp ||
-	pp_die "Could not make DEBIAN control files for $cmp"
-
     # Copy in data
     pp_deb_make_data $cmp || 
 	pp_die "Could not make DEBIAN data files for $cmp"
+
+    # Make control files
+    # must be done after copying data so conffiles are found
+    pp_deb_make_DEBIAN $cmp ||
+	pp_die "Could not make DEBIAN control files for $cmp"
 
     # Create md5sums
     pp_deb_make_md5sums $cmp `(cd $package_build_dir; 
