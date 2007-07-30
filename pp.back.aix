@@ -1,6 +1,7 @@
 #
 # AIX backend
 # http://publib.boulder.ibm.com/infocenter/pseries/v5r3/topic/com.ibm.aix.genprogc/doc/genprogc/pkging_sw4_install.htm
+# When debugging, set the environment variable INST_DEBUG=DEBUG for installp.
 #
 
 pp_platforms="$pp_platforms aix"
