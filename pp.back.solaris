@@ -338,7 +338,8 @@ pp_backend_solaris () {
 			mv $pp_wrkdir/$f $pp_wrkdir/$f.tmp
 			{ echo "#!/bin/sh"; 
 			  echo "# $f script for ${pp_solaris_name:-$name}-$version"
-			  cat $pp_wrkdir/$f.tmp; } > $pp_wrkdir/$f
+			  cat $pp_wrkdir/$f.tmp
+			  echo "exit 0"; } > $pp_wrkdir/$f
 			chmod +x $pp_wrkdir/$f
 			rm -f $pp_wrkdir/$f.tmp
 			;;
