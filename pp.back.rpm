@@ -277,7 +277,8 @@ pp_backend_rpm () {
 .
 	done >>$specfile
 
-        #-- NB: we don't write ant %prep, %build or %install RPM sections 
+        #-- NB: we don't put any %prep, %build or %install RPM sections 
+	#   into the spec file.
 
         #-- add service start/stop code
         if test -n "$pp_services"; then
@@ -416,6 +417,14 @@ pp_backend_rpm_install_script () {
     cat <<.
 
         cmp_to_pkgname () {
+	    typeset oi name
+	    if test x"\$1" = x"--only-installed"; then
+		#-- only print if installation detected
+		oi=false
+		shift
+	    else
+		oi=true
+	    fi
             test x"\$*" = x"all" && 
                 set -- $pp_components
             for cmp
@@ -424,11 +433,14 @@ pp_backend_rpm_install_script () {
 .
     for cmp in $pp_components; do
         _subname=`pp_rpm_subname $cmp -`
-         echo "$cmp) echo ${pp_rpm_name:-$name}${_subname};;"
+         echo "$cmp) name=${pp_rpm_name:-$name}${_subname};;"
     done
     cat <<.
                 *) usage;;
                 esac
+		if \$oi || rpm -q "\$name" >/dev/null 2>/dev/null; then
+		    echo "\$name"
+		fi
             done
         }
 
@@ -473,7 +485,7 @@ pp_backend_rpm_install_script () {
                 ;;
             uninstall)
                 test \$# -ge 1 || usage \$op
-                verbose rpm -e \`cmp_to_pkgname "\$@"\`
+                verbose rpm -e \`cmp_to_pkgname --only-installed "\$@"\`
                 ;;
             start|stop)
                 test \$# -ge 1 || usage \$op
