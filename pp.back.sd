@@ -290,14 +290,15 @@ pp_sd_make_service () {
         done
 }
 
-
 #@ pp_sd_control (name files...) creates and emits a control script
 #  based on section "Control Script Format" in [1] 
 pp_sd_control () {
     typeset ctrl script
+    typeset cpt
 
     ctrl="$1"; shift
-    script="$pp_wrkdir/control.$ctrl"
+    cpt="$1"; shift
+    script="$pp_wrkdir/control.$ctrl.$cpt"
     cat <<. >$script
 #! /sbin/sh
 ########
@@ -356,16 +357,25 @@ pp_backend_sd () {
                 title           $cpt
 .
 
+	#-- make sure services are shut down during uninstall
+        if test $cpt = run -a -n "$pp_services"; then
+            for svc in $pp_services; do
+                pp_prepend $pp_wrkdir/%preun.$cpt <<-.
+			/sbin/init.d/$svc stop
+.
+            done
+        fi
+
         #-- we put the post/preun code into configure/unconfigure
         # and not postinstall/preremove, because configure/unconfigure
         # scripts are run on the hosts where the package is installed,
         # not loaded (a subtle difference).
         test -s $pp_wrkdir/%post.$cpt &&
-            pp_sd_control configure $pp_wrkdir/%post.$cpt >> $psf
+            pp_sd_control configure $cpt $pp_wrkdir/%post.$cpt >> $psf
         test -s $pp_wrkdir/%preun.$cpt &&
-            pp_sd_control unconfigure $pp_wrkdir/%preun.$cpt >> $psf
+            pp_sd_control unconfigure $cpt $pp_wrkdir/%preun.$cpt >> $psf
         test -s $pp_wrkdir/%check.$cpt &&
-            pp_sd_control checkinstall $pp_wrkdir/%check.$cpt >> $psf
+            pp_sd_control checkinstall $cpt $pp_wrkdir/%check.$cpt >> $psf
 
         if test $cpt = run -a -n "$pp_services"; then
             for svc in $pp_services; do
