@@ -427,12 +427,20 @@ pp_backend_deb_function() {
 
     case "$1" in
         pp_mkgroup) 
+	    # could use groupadd --force but its not avail on deb 3.1
             cat<<'.';;
-            /usr/sbin/groupadd --force $1
+	    if /usr/sbin/groupmod $1 2>/dev/null; then :; else
+                /usr/sbin/groupadd $1
+	    fi
 .
         pp_mkuser) 
+	    # deb 3.1's useradd changed API in 4.0. Gah!
             cat<<'.';;
-            /usr/sbin/useradd --shell /bin/false --system $@ 
+	    if /usr/sbin/useradd --help 2>&1 | grep -q .--system; then
+                /usr/sbin/useradd -s /bin/false --system $@ 
+	    else
+                /usr/sbin/useradd -s /bin/false $@ 
+	    fi
 .
         pp_havelib) cat<<'.';;
             typeset dir
