@@ -25,7 +25,7 @@ test -n "$PP_DEBUG" && pp_opt_debug=true
 pp_main_cleanup () {
 	pp_debug "main_cleanup"
         pp_remove_later_now
-	if $pp_opt_no_clean -o x"$pp_platform" = x"unknown"; then
+	if $pp_opt_no_clean || test x"$pp_platform" = x"unknown"; then
 	    : no cleanup
 	else
 	    pp_backend_${pp_platform}_cleanup
