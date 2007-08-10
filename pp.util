@@ -134,7 +134,9 @@ pp_contains_any () {
 pp_add_to_list () {
     if eval test -z \"\$$1\"; then
 	eval $1='"$2"'
-    elif ! eval pp_contains '"$'$1'"' '"$2"'; then
+    elif eval pp_contains '"$'$1'"' '"$2"'; then
+	: already there
+    else
 	eval $1='"$'$1' $2"'
     fi
 }
