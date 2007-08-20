@@ -197,9 +197,6 @@ pp_backend_rpm () {
             return 1
         fi
 
-	test -z "$pp_rpm_description" && 
-            pp_rpm_description="This is the $name package"
-
 	#-- Write the header components of the RPM spec file
 	cat <<-. >>$specfile
 		Name: ${pp_rpm_name:-$name}
