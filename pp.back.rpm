@@ -74,6 +74,7 @@ pp_rpm_detect_arch () {
 	x86_64)	pp_rpm_arch_std=x86_64;;
 	ppc)	pp_rpm_arch_std=ppc;;
 	ppc64)	pp_rpm_arch_std=ppc64;;
+	ia64)	pp_rpm_arch_std=ia64;;
 	*)	pp_rpm_arch_std=unknown;;
     esac
 
@@ -151,6 +152,8 @@ pp_rpm_writefiles () {
 		    pp_add_to_list pp_rpm_arch_seen x86_64;;
 		*": ELF 32-bit MSB "*", PowerPC"*)
 		    pp_add_to_list pp_rpm_arch_seen ppc;;
+		*": ELF 64-bit LSB "*", IA-64"*)
+		    pp_add_to_list pp_rpm_arch_seen ia64;;
 	    esac
 	fi
 
