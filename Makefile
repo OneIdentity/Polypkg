@@ -73,4 +73,10 @@ tags: $(PP_SRCS)
 	done |sort > $@
 
 install: pp-stripped
+	PPVER=`./pp-stripped --version | cut -d. -f 4`; \
+	    case $$PPVER in \
+		*M*|*:*) \
+		    echo "Refusing to install unclean version $$PPVER" >&2; \
+		    exit 1;; \
+	    esac
 	cp -f pp-stripped /data/rc/pub/rc/polypkg/pp
