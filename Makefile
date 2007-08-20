@@ -75,7 +75,7 @@ tags: $(PP_SRCS)
 install: pp-stripped
 	PPVER=`./pp-stripped --version | cut -d. -f 4`; \
 	    case $$PPVER in \
-		*M*|*:*) \
+		*M*|*_*) \
 		    echo "Refusing to install unclean version $$PPVER" >&2; \
 		    exit 1;; \
 	    esac
