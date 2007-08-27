@@ -178,7 +178,7 @@ pp_debug "config file is $config_file"
 
         pp_stop () {
             if test ! -s "$pidfile"; then
-                echo "ERROR: $pidfile MISSING"
+                echo "Unable to stop $svc (no pid file)"
                 return 1
             else
                 read pid < "$pidfile" 
@@ -187,6 +187,7 @@ pp_debug "config file is $config_file"
 			rm -f "$pidfile"
 			return 0
 		    else
+			echo "Unable to stop $svc"
 			return 1
 		    fi
 		else
