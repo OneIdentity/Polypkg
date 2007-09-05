@@ -73,7 +73,7 @@ tags: $(PP_SRCS)
 	done |sort > $@
 
 install: pp-stripped
-	PPVER=`./pp-stripped --version | cut -d. -f 4`; \
+	@PPVER=`./pp-stripped --version | cut -d. -f 4`; \
 	    case $$PPVER in \
 		*M*|*_*) \
 		    echo "Refusing to install unclean version $$PPVER" >&2; \
