@@ -408,13 +408,13 @@ pp_backend_sd () {
     test -s $pp_wrkdir/%fixup && . $pp_wrkdir/%fixup
 
     outfile=`pp_backend_sd_names`
-    if pp_verbose ${pp_sd_sudo} swpackage \
+    if pp_verbose ${pp_sd_sudo} /usr/sbin/swpackage \
         -s $psf \
         -x run_as_superuser=false \
         -x media_type=tape \
         @ $pp_wrkdir/$outfile
     then
-        pp_verbose ${pp_sd_sudo} swlist -l file -s $pp_wrkdir/$outfile
+        pp_verbose ${pp_sd_sudo} /usr/sbin/swlist -l file -s $pp_wrkdir/$outfile
     else
         pp_error "swpackage failed"
     fi
