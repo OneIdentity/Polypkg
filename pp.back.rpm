@@ -485,7 +485,12 @@ pp_backend_rpm_install_script () {
                 ;;
             uninstall)
                 test \$# -ge 1 || usage \$op
-                verbose rpm -e \`cmp_to_pkgname --only-installed "\$@"\`
+                pkgs=\`cmp_to_pkgname --only-installed "\$@"\`
+                if test -z "\$pkgs"; then
+                    verbosemsg "nothing to uninstall"
+                else
+                    verbose rpm -e \$pkgs
+                fi
                 ;;
             start|stop)
                 test \$# -ge 1 || usage \$op
