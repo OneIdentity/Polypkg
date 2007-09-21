@@ -593,19 +593,36 @@ pp_backend_aix_function () {
     case "$1" in
     pp_mkgroup) cat <<'.';;
             # group
-            lsgroup $1 >/dev/null ||
-              mkgroup -A $1
+	    if test $# -ge 1; then
+              if lsgroup "$1" >/dev/null; then :; else
+		echo "Creating group $1"
+                mkgroup -A "$1"
+	      fi
+	    else
+	      echo "pp_mkgroup: missing arg" >&2
+	    fi
 .
-    pp_mkuser) cat <<'.';;
+    pp_mkuser) 
+	    cat <<'.';;
             # [-d dir] [-g group] user
             typeset home group
-            home= group=
-            if test x"$1" = x"-d"; then home="$2"; shift; shift; fi
-            if test x"$1" = x"-g"; then group="$2"; shift; shift; fi
-            lsuser "$1" >/dev/null ||
-              mkuser login=false rlogin=false account_locked=true \
-                    home=${home-/nohome.$1} ${group+pgrp=$group} \
-                    $1
+	    while test $# -gt 0; do case "$1" in
+	       --) shift; break;;
+	       -d) shift; home="$1"; shift;;
+	       -g) shift; group="$1"; shift;;
+	       -*) echo "pp_mkuser: bad option '$1'" >&2; shift;;
+	       *) break;;
+	    esac; done
+	    if test $# -ge 1; then
+              if lsuser "$1" >/dev/null; then :; else
+	        echo "Creating user $1"
+                mkuser login=false rlogin=false account_locked=true \
+                    home=${home:-/nohome.$1} ${group:+pgrp=$group} \
+                    "$1"
+	      fi
+	    else
+	     echo "pp_mkuser: missing arg" >&2
+	    fi
 .
     pp_havelib) cat <<'.';;
             # libname major[.minor] [path]
