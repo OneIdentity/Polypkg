@@ -17,6 +17,7 @@ pp_opt_verbose=false
 pp_opt_version=false
 pp_opt_input="-"
 pp_opt_init_vars=""
+pp_opt_eval=
 
 test -n "$PP_NO_CLEAN" && pp_opt_no_clean=true
 test -n "$PP_DEBUG" && pp_opt_debug=true
@@ -30,8 +31,10 @@ pp_main_cleanup () {
 	else
 	    pp_backend_${pp_platform}_cleanup
 	    $pp_errors && pp_die "Errors during cleanup"
-	    pp_debug "removing $pp_wrkdir"
-	    rm -rf "$pp_wrkdir"
+	    if test -d "$pp_wrkdir"; then
+		pp_debug "removing $pp_wrkdir"
+		rm -rf "$pp_wrkdir"
+	    fi
 	fi
 }
 
@@ -75,14 +78,15 @@ pp_parseopts () {
 	  esac
 
 	  case "$1" in
-	    --destdir|--platform|--wrkdir)
-		test $# -ge 2 || pp_error "missing arguments to $1";;
+	    --destdir|--eval|--install-script|--platform|--wrkdir)
+		test $# -ge 2 || pp_error "missing argument to $1";;
 	  esac
 
 	  case "$1" in
 	    --) 				       shift;break;;
 	    --debug)           pp_opt_debug=true;      shift;;
 	    --destdir)         pp_opt_destdir="$2";    shift;shift;;
+	    --eval)            pp_opt_eval="$2";       shift;shift;; # undoc
 	    --install-script)  pp_opt_install_script="$2"; shift;shift;;
 	    --list)            pp_opt_list=true;       shift;;
 	    --no-clean)        pp_opt_no_clean=true;   shift;;
@@ -232,23 +236,24 @@ pp_main () {
 
 	pp_wrkdir="$pp_opt_wrkdir"
 	pp_debug "pp_wrkdir = $pp_wrkdir"
+	rm -rf "$pp_wrkdir"
+	mkdir -p "$pp_wrkdir"
 
 	pp_destdir="$pp_opt_destdir"
 	pp_debug "pp_destdir = $pp_destdir"
 
-	rm -rf "$pp_wrkdir"
-        mkdir -p "$pp_wrkdir"
-
         if $pp_opt_probe; then
 	    pp_backend_init
             pp_backend_probe
+	elif test -n "$pp_opt_eval"; then
+	    #-- execute a shell command
+	    eval "$pp_opt_eval" || exit
 	else
 	    pp_drive
 	    if test -n "$pp_opt_install_script"; then
 		pp_install_script
 	    fi
         fi
-
 
 	exit 0
 }
