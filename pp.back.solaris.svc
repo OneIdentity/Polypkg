@@ -1,4 +1,5 @@
 # http://www.sun.com/bigadmin/content/selfheal/sdev_intro.html
+# http://opensolaris.org/os/community/smf/faq
 
 #@ pp_backend_solaris_init_svc_vars(): initialise service var defaults
 pp_backend_solaris_init_svc_vars () {
