@@ -20,6 +20,7 @@ pp_rpm_service_install_common () {
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
                 /sbin/chkconfig --add $svc
+                /sbin/chkconfig $svc on
             else
                 # manual install
                 set -- `sed -n -e 's/^# Default-Start://p' /etc/init.d/$svc`
