@@ -9,7 +9,7 @@ pp_errors=false
 #@   $pp_col_redfg: terminal string to change foreground colour to red
 #@   $pp_col_bluefg: terminal string to change foreground colour to blue
 #@   $pp_col_reset: terminal string to reset colours to default
-if test -n "$TERM" -a -t 1; then
+if test -n "$TERM" -a -t 1 && (tput op) >/dev/null 2>/dev/null; then
    pp_col_redfg=`tput setf 4` 2>/dev/null
    pp_col_bluefg=`tput setf 1` 2>/dev/null
    pp_col_reset=`tput op` 2>/dev/null
@@ -377,8 +377,10 @@ pp_install_script_common () {
             if test x"\$1" = x"-q"; then
                 shift
                 verbose () { "\$@"; }
+                verbosemsg () { : ; }
             else
                 verbose () { echo "+ \$*"; "\$@"; }
+                verbosemsg () { echo "\$*"; }
             fi
 .
 }
@@ -421,3 +423,38 @@ pp_getgrgid () {
 	< /etc/group || pp_error "no local group for gid $1"
 }
 
+#@ pp_backend_function_getopt(): emits code for pp_getopt
+pp_backend_function_getopt () {
+    cat <<'..'
+# Portable getopt; normalises command line arguments
+# Usage: eval `pp_getopt abc: "$@"`
+pp_getopt () {
+     _pp_optstring="$1"; shift; eval `_pp_getopt "$_pp_optstring"`
+}
+_pp_getopt_meta=s,[\\\\\"\'\`\$\&\;\(\)\{\}\#\%\ \	],\\\\\&,g
+_pp_protect () { 
+    sed "$_pp_getopt_meta" <<. | tr '\012' ' ' 
+$*
+.
+}
+_pp_protect2 () { 
+    sed "s,^..,,$pp_getopt_meta" <<. | tr '\012' ' '
+$*
+.
+}
+_pp_nonl () { 
+    tr '\012' ' ' <<.
+$*
+.
+}
+_pp_getopt () {
+    _pp_nonl '_pp_nonl set --; while test $# -gt 0; do case "$1" in "--") shift; break;;'
+    sed 's/\([^: 	]:*\)/<@<\1>@>/g;
+	 s/<@<\(.\):>@>/"-\1")  _pp_nonl -"\1"; _pp_protect "$2"; shift; shift;; "-\1"*) _pp_nonl -"\1"; _pp_protect2 "$1"; shift;;/g;s/<@<\(.\)>@>/ "-\1")  _pp_nonl -"\1"; shift;; "-\1"*) _pp_nonl -"\1"; _pp_tmp="$1"; shift; set -- -`_pp_protect2 "$_pp_tmp"` "$@";;/g' <<.
+$1
+.
+    _pp_nonl '-*) echo "$1: unknown option">&2; return 1;; *) break;; esac; done; _pp_nonl --; while test $# -gt 0; do _pp_nonl "$1"; shift; done; echo'
+    echo
+}
+..
+}
