@@ -164,6 +164,8 @@ pp_drive () {
 	pp_debug "calling frontend on $pp_opt_input"
 	case "$pp_opt_input" in 
 	    -)   pp_input_dir=.
+		 test -t 1<&0 && 
+		    pp_warn "reading directives from standard input"
                  pp_frontend
                  ;;
             */*) pp_input_dir=${pp_opt_input%/*}
