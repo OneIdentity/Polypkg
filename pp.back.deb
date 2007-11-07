@@ -1,4 +1,6 @@
 # Debian backend
+# http://www.debian.org/doc/debian-policy/
+# http://www.debian.org/doc/manuals/reference/ch-package.en.html
 
 pp_platforms="$pp_platforms deb"
 
@@ -7,7 +9,7 @@ pp_backend_deb_detect () {
     test -f /etc/debian_version
 }
 
-#@ pp_deb_cmp_full_name(component hyphen): translate cpt into a linux subpackage name
+#@ pp_deb_cmp_full_name(component hyphen): translate cpt into a Debian pkg name
 pp_deb_cmp_full_name () {
     typeset prefix
     prefix="${pp_deb_name:-$name}"
@@ -28,7 +30,7 @@ pp_backend_deb_init () {
     pp_deb_release=
     pp_deb_arch=
     pp_deb_arch_std=
-    pp_deb_maintainer=
+    pp_deb_maintainer=support@quest.com
     pp_deb_copyright=
     pp_deb_distro=
     pp_deb_control_description=
@@ -51,11 +53,28 @@ pp_backend_deb_init () {
 
 #@ pp_deb_check_required_programs(): looks for required programs
 pp_deb_check_required_programs () {
+    typeset p needed notfound ok
+    needed= notfound=
     for prog in dpkg dpkg-deb install md5sum fakeroot
     do
-        which $prog 2>/dev/null >/dev/null ||
-	    pp_error "$prog: required program not found"
+        if which $prog 2>/dev/null >/dev/null; then
+	    pp_debug "$prog: found"
+	else
+	    pp_debug "$prog: not found"
+	    case "$prog" in
+		dpkg|dpkg-deb)	p=dpkg;;
+		install|md5sum) p=coreutils;;
+		fakeroot)	p=fakeroot;;
+		*)		pp_die "unexpected dpkg tool $prog";;
+	    esac
+	    notfound="$notfound $prog"
+	    pp_contains "$needed" "$p" || needed="$needed $p"
+	fi
     done
+    if [ -n "$notfound" ]; then
+	pp_error "cannot find these programs: $notfound"
+	pp_error "please install these packages: $needed"
+    fi
 }
 
 #@ pp_deb_munge_description()<file: converts the description to a format that 
@@ -141,11 +160,11 @@ pp_deb_handle_services() {
             # Create init script (unless one exists)
             pp_deb_service_make_init_script $svc
 
-            # Make sure the init script is marked as a conffile
-            echo "/etc/init.d/$svc" >> $pp_wrkdir/%conffiles.run
-
             #-- append %post code to install the svc
-            echo "update-rc.d $svc defaults" >> $pp_wrkdir/%post.run
+            cat<<-. >> $pp_wrkdir/%post.run
+		# Install the service links
+		/usr/sbin/update-rc.d $svc defaults
+.
 
             #-- prepend %preun code to stop svc
             cat<<-. | pp_prepend $pp_wrkdir/%preun.run
@@ -155,13 +174,8 @@ pp_deb_handle_services() {
 		else
 		    /etc/init.d/$svc stop
 		fi
-.
-            #-- prepend %postun code to uninstall svc
-            cat <<-. | pp_prepend $pp_wrkdir/%postun.run
-		# remove $svc service links when purging
-		if [ "\$1" = purge ]; then
-		    /usr/sbin/update-rc.d $svc remove
-		fi
+		# Remove the service links
+		/usr/sbin/update-rc.d $svc remove
 .
         done
         #pp_deb_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
@@ -207,12 +221,6 @@ pp_deb_make_DEBIAN() {
     # Create prerm
     pp_deb_make_package_maintainer_script "$data/DEBIAN/prerm" \
         "$pp_wrkdir/%preun.$cmp" "Pre-uninstall script for $cmp_full_name"\
-        || exit $?
-
-    # Create postrm
-    # TODO: remove this? as there is no %postun section with polypkg
-    pp_deb_make_package_maintainer_script "$data/DEBIAN/postrm" \
-        "$pp_wrkdir/%postun.$cmp" "Post uninstall script for $cmp_full_name"\
         || exit $?
 
     umask $old_umask
