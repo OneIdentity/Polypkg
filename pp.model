@@ -74,10 +74,12 @@ pp_files_expand () {
 
     test $# -eq 0 && return
 
-    pp_debug "pp_files_expand: $*"
+    pp_debug "pp_files_expand: path is: $1"
 
     case "$1" in "#"*) return;; esac
     _p="$1"; shift
+
+    pp_debug "pp_files_expand: other arguments: $*"
 
     #-- the mode must be an octal number of at least three digits
     _mode="="
@@ -125,12 +127,12 @@ pp_files_expand () {
     #-- process speciall suffixes
     tree=
     case "$_p" in
-        *"/**")  _p=${_p%"/**"}; tree="**";;
-        *".%so") _p=${_p%".%so"}"$pp_shlib_suffix"
+        *"/**")  _p="${_p%"/**"}"; tree="**";;
+        *".%so") _p="${_p%".%so"}$pp_shlib_suffix";;
     esac
 
     #-- expand the path using the shell glob
-    pp_debug "expanding .$_p ..."
+    pp_debug "expanding .$_p ... with $pp_expand_path"
     (cd ${pp_destdir} && $pp_expand_path ".$_p") > $pp_wrkdir/tmp.files.exp
 
     #-- expand path/** by rewriting the glob output file
@@ -221,7 +223,9 @@ pp_debug "symlink target is $_tgt"
 
 	#-- convert '=' shortcuts into mode/owner/group from ls
 	case ":$_m:$_o:$_g:" in *:=:*)
-	    if /bin/ls -ld "$_file" > $pp_wrkdir/ls.tmp; then
+	    if LS_OPTIONS=--color=never /bin/ls -ld "$_file" \
+		    > $pp_wrkdir/ls.tmp
+	    then
                 read _lm _ll _lo _lg _ls _lx < $pp_wrkdir/ls.tmp
                 test x"$_m" = x"=" && _m=`pp_mode_from_ls "$_lm"`
                 test x"$_o" = x"=" && _o="$_lo"
@@ -247,9 +251,9 @@ pp_debug "symlink target is $_tgt"
 	#-- setuid/gid files must be given an explicit owner/group (or =)
 	case "$_o:$_g:$_m" in
 	    -:*:[4657][1357]??|-:*:[4657]?[1357]?|-:*:[4657]??[1357])
-		pp_error "$_path: setuid program missing explicit owner";;
+		pp_error "$_path: setuid file ($_m) missing explicit owner";;
 	    *:-:[2367][1357]??|*:-:[2367]?[1357]?|*:-:[2367]??[1357])
-		pp_error "$_path: setgid program missing explicit group";;
+		pp_error "$_path: setgid file ($_m) missing explicit group";;
 	esac
 
 	# convert numeric uids into usernames; only works for /etc/passwd
