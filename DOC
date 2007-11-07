@@ -412,59 +412,68 @@ The %service section
 	text. The shell text is sourced and then platform-specific
 	changes are made to the other output files before %fixup
 
-The %depend section
+The %require section
 
-	The dependency section lists the names of packages that
-	a component will depend on. The %depend directive is followed
-	by a component name ('run' is assumed if it is omitted).
+	* UNIMPLEMENTED *
 
-	    %depend [component] [qualifier]
+	The dependency section lists the names of interfaces that
+	a component requires in order to function. 
 
-	The body of a depend section consists of names and 
-	minimum version numbers of (other PolyPackage) packages.
-	Blank lines, or lines start starting with '#' are ignored.
-	The lines can contain shell variable expansion.
+	Backends will generate most of a package's requirements
+	automatically. This section is provided only for requirements
+	which polypkg fails to detect.
 
-		name version
+	The %require directive is followed by a component name; 'run'
+	is assumed if it is omitted.
 
-	Lines starting with a the special symbol "+" indicate 
-	platform-specific dependency information. See the platform
-        backend documentation for details.
+	    %require [component] [qualifier]
 
-        The %depend section, like other non-%set sections is subject to 
+	The body of a require section consists of interface names
+	as describe below under 'Interface names'.  Blank lines, 
+	or lines starting with '#' are ignored.  The lines can 
+	contain shell variable expansion.
+
+	Lines starting with "+" indicate platform-specific dependency 
+	information. See the platform backend documentation for details.
+
+        The %require section, like other non-%set sections is subject to 
         immediate %{} and %() expansion.
 
-	Backends will insert dependencies on packages that provide
-	shared libraries automatically.
-
-    Output of a %depend section
-
-    	The result of processing all the %depend sections results
-	in file called %depend.run etc which contain lines of either
-	of the forms
-
-		name version
-		+ text
-
-	Multiple %depend sections for a component are concatenated
+	Multiple %require sections for a component are concatenated
 	together. Lines beginning with # and blank lines are removed.
 	Whitespace at the beginning of lines is ignored.
 
-	Note that some %depend.* files are created regardless of whether 
-	a %depend section has been specified for them or not. If the 
-	components doc, dbg and dev have been named in a %files 
-	section, then the following %depend sections declarations are 
-	implied:
+    Output of a %require section
 
-		%depend doc
-		  $name $version
+    	The result of processing all the %require and %file sections results
+	in files called %require.run etc which contain lines of either
+	of the forms
 
-		%depend dbg
-		  $name $version
+		kind:interface
+		+ text
 
-		%depend dev
-		  $name $version
+The %provide section
 
+	* UNIMPLEMENTED *
+
+	This optional section is a counterpart to %require. 
+	It is used to indicate interfaces provided by the package.
+	You only need to use this section for provided interfaces that 
+	polypkg was unable to discover. 
+	
+	It is most useful for specifying virtual packages.
+
+	Like the %require section, lines starting with '+' are passed 
+	through to the backend, which may ignore them.
+
+    Output of a %provide section
+
+	The result of processing all the %provide and %files sections
+	results in files called %provide.run, etc. which contain lines of
+	either of the forms
+
+		kind:interfaces
+		+ text
 
 The %check section
 
@@ -519,4 +528,75 @@ The %ignore section
 	polypkg. This could be useful for comments.
 
                 %ignore
+
+
+Output filenames
+
+    The output from polypkg is one or more package files, and optionally
+    a helper script (inst) that can be used to manipulate the package file(s)
+    through a uniform interface.
+
+    Package filenames default to the following:
+
+	rpm	    <name>[-<cpt>]-<version>-1.<arch>.rpm
+	deb	    <name>[-<cpt>]_<version>-1_<arch>.deb
+	aix	    <name>.<version>.bff
+	sd	    <name>-<version>.depot
+	solaris	    <name>-<version>.pkg
+	macos	    <name>-<version>.dmg
+
+
+Interface names
+
+    * UNIMPLEMENTED *
+
+    polypkg can compute the full canonical dependency list of a package,
+    and record it in the helper script. Polypkg uses the %depend section,
+    and/or analyses the files in the package to build this list.
+
+    Dependencies (and provisions) are specified as a set of interfaces names.
+    All interface names are of the form as:
+
+	<kind>:<identifier>
+
+    Examples of 'primitive' interface names are:
+
+	isa:sparc.1	        - Processor executes Sparc1 instructions
+	isa:x86_64	        - Processor executes AMD64/EM64T instrs
+	exe:elf32.EM_386        - OS loads ELF32 exes with e_type=EM_386
+	exe:elf64.EM_X86_64     - OS loads ELF64 exes with e_type=EM_X86_64
+	ld:libc.so.1	        - Dynamic loader that can load libc.so.1
+	file:/bin/sh	        - The file /bin/sh
+	pkg:rpm:openssl-0.9.8g  - Particular openSSL RPM package 
+
+    Interfaces normally have no linear order. That is, you can't express
+    "versions after x.y.z". All version info must be explicit and match
+    exactly. Expressed interfaces are not optional. Disjunction is not 
+    supported.
+
+    Polypkg will scan the files in %files to generate a list of required
+    interfaces. The list can be supplemented by entries in the %depend
+    section, or explicit checks can be added to the %check section.
+
+    Virtual interfaces are of the form virtual:<identifier> and are not
+    checked by polypkg. However, you 
+
+    Polypkg will generate package metadata that tests for the existence
+    of all dependencies. Usually this is created as an extra %check script,
+    but it may be split between the %check script and the packaging system,
+    should it be capable of testing for some of the native dependencies.
+
+    Polypkg's helper script can be run in a mode to list all the primitive
+    interfaces required by the package, and all the interfaces provided, 
+    should the package be installed.
+
+	inst.sh --required-interfaces   > ifc.list
+	inst.sh --provided-interfaces   > ifc.list
+
+    Polypkg can be run in a mode where it can check for all the interfaces
+    supplied on standard input. Any missing interfaces are printed to standard
+    output, and cause the script to exit with an error at the end.
+
+	pp --check-interfaces  < ifc.list
+
 
