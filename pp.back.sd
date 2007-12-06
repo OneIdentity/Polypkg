@@ -429,7 +429,7 @@ pp_backend_sd_cleanup () {
 #    each path should start with $name-$version
 #    the package must be relative to the $pp_wrkdir directory
 pp_backend_sd_names () {
-    echo "$name-$version${pp_sd_os:+-hpux$pp_sd_os}.depot"
+    echo "$name-$version.depot"
 }
 
 #@ pp_backend_sd_install_script(): generate a helper install script

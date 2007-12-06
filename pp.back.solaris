@@ -405,7 +405,7 @@ pp_backend_solaris_cleanup () {
 
 #@ pp_backend_solaris_names(): print the name of the package files created
 pp_backend_solaris_names () {
-	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_os:+$pp_solaris_os-}${pp_solaris_package_arch_std-$pp_solaris_arch}.pkg
+	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_package_arch_std-$pp_solaris_arch}.pkg
 }
 
 #@ pp_backend_solaris_install_script(): generates a helper install script

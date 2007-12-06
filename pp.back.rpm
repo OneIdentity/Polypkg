@@ -204,7 +204,7 @@ pp_backend_rpm () {
 	cat <<-. >>$specfile
 		Name: ${pp_rpm_name:-$name}
 		Version: ${pp_rpm_version:-$version}
-		Release: ${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}
+		Release: ${pp_rpm_release:-1}
 		Summary: ${pp_rpm_summary:-$summary}
 		Group:   ${pp_rpm_group}
 		License: ${pp_rpm_license}
@@ -393,13 +393,17 @@ pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
 	done
 }
 
+#@ pp_rpm_output_name($cpt): print the package names for the subpackage
+pp_rpm_output_name () {
+    echo "${pp_rpm_name:-$name}`pp_rpm_subname "$1" -`-${pp_rpm_version:-$version}-${pp_rpm_release:-1}.${pp_rpm_arch}.rpm"
+}
+
 #@ pp_backend_rpm_names(): print the package names generated
 #   the names always start with $name-$version
 pp_backend_rpm_names () {
     typeset cmp _subname
     for cmp in $pp_components; do
-        _subname=`pp_rpm_subname $cmp -`
-        echo "${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm"
+	pp_rpm_output_name $cmp
     done
 }
 
@@ -453,8 +457,7 @@ pp_backend_rpm_install_script () {
                 case \$cmp in
 .
     for cmp in $pp_components; do
-        _subname=`pp_rpm_subname $cmp -`
-        echo "$cmp) echo \${PP_PKGDESTDIR:-.}/${pp_rpm_name:-$name}${_subname}-${pp_rpm_version:-$version}-${pp_rpm_release:-1${pp_rpm_distro:+.$pp_rpm_distro}}.${pp_rpm_arch}.rpm;;"
+        echo "$cmp) echo \${PP_PKGDESTDIR:-.}/`pp_rpm_output_name $cmp` ;;"
     done
     cat <<.
                 *) usage;;

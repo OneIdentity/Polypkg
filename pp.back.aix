@@ -492,7 +492,7 @@ pp_backend_aix_cleanup () {
 #-- prints the output package name without the $pp_wrkdir prefix.
 #   the name always starts with $name-$version
 pp_backend_aix_names () {
-	echo "$name-${pp_aix_version:-`pp_aix_version_fix "$version"`}-`pp_backend_aix_probe`.bff"
+	echo "$name.${pp_aix_version:-`pp_aix_version_fix "$version"`}.bff"
 }
 
 #@ pp_backend_aix_install_script(): generate install script
