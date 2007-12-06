@@ -175,7 +175,7 @@ pp_deb_handle_services() {
 		    /etc/init.d/$svc stop
 		fi
 		# Remove the service links
-		/usr/sbin/update-rc.d $svc remove
+		/usr/sbin/update-rc.d -f $svc remove
 .
         done
         #pp_deb_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
