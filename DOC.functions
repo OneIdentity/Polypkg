@@ -4,41 +4,49 @@ Common functions
 
 pp_mkgroup group
 
-    Creates a local group, usually in /etc/groups, with no members.
-    If the group already exists, this function performs no action.
-    The function returns success if creation succeeded.
+    Creates a local group (usually in /etc/groups) with no members.
 
-pp_mkuser [-d homedir] [-g group] user
+    If the group already exists, this function performs no action.
+    Otherwise this function returns success if the group
+    creation succeeded.
+
+pp_mkuser user [group [homedir [shell]]]
 
     Creates a local user entry. If the user already exists,
-    no action is performed.
+    no action is performed and the function returns immediately.
 
-    -d homedir
-        Specifies the home directory of the user that is
-        created. The directory itself is not created.
+    If the group isn't specified, or is provided as '', then 
+    the group name defaults to the same as the username.
 
-    -g group
-        Specifies the default group when a user is created.
-        If not specified, then a system default is chosen.
+    pp_mkgroup is implicitly called by pp_mkuser to create the group.
 
-    The created user's shell is set to indicate a disabled
-    account; typically it is set to /bin/false.
+    If the homedir isn't specified (or specified as ''), then
+    it defaults to "/nonexistent", or the platform equivalent.  
+    The home directory is not created, nor populated.
 
-    The function returns success if the user already existed, or 
-    if the creation succeeded.
+    If the shell is not specified, or specified as '', then
+    it defaults to the platform's standard for indicating a
+    disabled account (typically /bin/false).
 
-pp_havelib name [major[.minor] [directory...]]
+    The function returns success if the user creation succeeded.
+
+pp_havelib name [major[.minor]] [searchpath]
+
     This function returns true if a program dynamically 
     linked with -l<name> will have a chance of finding 
-    its dependent library (eg lib<name>.so).
+    its dependent library (ie, on some platforms, lib<name>.so).
 
-    If the major[.minor] is provided, then the found library
-    must match that version. 
+    The shared library search can be restricted to a particular 
+    major/minor number by specifying the major[.minor] argument.
+    If no restriction is required, the mahor[.minor] argument can
+    be omitted or specified as ''.
 
-    Extra directories provided are added to the 'standard' 
-    directory search list of the platform.
+    The platform's standard library path is searched. Extra directories 
+    for searching be provided with a colon-separated list of directories.
 
-
-
+    Note that this function is sensitive to the package being generated;
+    for example, if the target package is going to be labeled x86_64 and 
+    the platform supports both 32 and 64 bit libraries, then only the
+    64 bit system library paths are searched.
 
 [ Remember to update documentation in pp.back ]
