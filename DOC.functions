@@ -4,7 +4,7 @@ Common functions
 
 pp_mkgroup group
 
-    Creates a local group (usually in /etc/groups) with no members.
+    Creates a local group (usually in /etc/group) with no members.
 
     If the group already exists, this function performs no action.
     Otherwise this function returns success if the group
