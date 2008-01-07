@@ -527,6 +527,15 @@ pp_backend_sd_probe () {
     echo "${pp_sd_os_std}-${pp_sd_arch_std}"
 }
 
+#@ pp_backend_sd_vas_platforms() : print the equivalent VAS platforms
+pp_backend_sd_vas_platforms () {
+    case "`pp_backend_sd_probe`" in
+	hpux*-hppa) echo hpux-pa;;
+	hpux*-ia64) echo hpux-ia64;;
+	*)	    pp_die "unknown system `pp_backend_sd_probe`";;
+    esac
+}
+
 #@ pp_backend_sd_init_svc_vars(): initialise service vars
 pp_backend_sd_init_svc_vars () {
     :

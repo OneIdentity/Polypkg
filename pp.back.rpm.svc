@@ -19,7 +19,22 @@ pp_rpm_service_install_common () {
                 /usr/lib/lsb/install_initd /etc/init.d/$svc
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
-                /sbin/chkconfig --add $svc
+                /sbin/chkconfig --add $svc 
+                /sbin/chkconfig $svc off
+            else
+		: # manual links under /etc/init.d
+            fi
+        }
+
+        _pp_enable_service () {
+            typeset svc level
+            svc="$1"
+            if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
+            then
+                # LSB-style install
+		: not sure how to enable
+            elif [ -x /sbin/chkconfig ]; then
+                # Red Hat/chkconfig-style install
                 /sbin/chkconfig $svc on
             else
                 # manual install
@@ -60,6 +75,7 @@ pp_rpm_service_install () {
     pp_rpm_service_make_init_script $1 >/dev/null ||
         pp_error "could not create init script for service $1"
     echo "_pp_install_service $1"
+    test $enable = yes && echo "_pp_enable_service $1"
 }
 
 #@ pp_rpm_service_remove(svc): emit code to stop/remove a service

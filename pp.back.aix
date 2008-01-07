@@ -655,3 +655,19 @@ pp_backend_aix_init_svc_vars () {
 pp_backend_aix_probe () {
 	echo "${pp_aix_os}-${pp_aix_arch_std}"
 }
+
+#@ pp_backend_aix_vas_platforms(): print the VAS platform identifiers
+#  that might work on this system
+pp_backend_aix_vas_platforms () {
+    case "${pp_aix_arch_std}" in
+	ppc*)	:;;
+	*)	pp_die "unknown architecture ${pp_aix_arch_std}";;
+    esac
+    case "${pp_aix_os}" in
+	aix43)	echo "aix-43";;
+	aix51)	echo "aix-51 aix-43";;
+	aix52)	echo "aix-51 aix-43";;
+	aix53)	echo "aix-53 aix-51 aix-43";;
+	*)	pp_die "unknown system ${pp_aix_os}";;
+    esac
+}

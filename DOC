@@ -72,6 +72,7 @@ Invocation
 	   -p --platform=platform      -- defaults to local platform
 	      --probe                  -- print host identifier and exit
 	      --wrkdir=path            -- defaults to $TMPDIR or /tmp
+	      --vas-platforms          -- print VAS platform equivalent IDs
 	   -v --verbose                -- write info to stderr
 	      --version                -- write version and exit
 

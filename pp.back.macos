@@ -281,3 +281,8 @@ pp_backend_macos_probe () {
     arch=`arch`
     echo "$name$vers-$arch"
 }
+
+#@ pp_backend_macos_vas_platforms(): print the VAS platform identifiers
+pp_backend_macos_vas_platforms () {
+    echo "OSX"    # XXX non-really sure what they do.. it should be "macos"
+}

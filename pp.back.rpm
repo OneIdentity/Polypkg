@@ -411,6 +411,17 @@ pp_backend_rpm_cleanup () {
     :
 }
 
+#@ pp_rpm_print_requires(): prints the required features of the package
+pp_rpm_print_requires () {
+    typeset _subname _name
+
+    echo "CPU:$pp_rpm_arch"
+    ## XXX should be lines of the form (from file/ldd/objdump)
+    #    EXEC:/bin/sh
+    #    RTLD:libc.so.4:open
+    rpm -q --requires -p $pp_wrkdir/`pp_rpm_output_name $1` |sed -e '/^rpmlib(/d;s/ //g;s/^/RPM:/' | sort -u
+}
+
 #@ pp_backend_rpm_install_script(): generate the install script
 pp_backend_rpm_install_script () {
     typeset cmp _subname
@@ -464,7 +475,24 @@ pp_backend_rpm_install_script () {
                 esac
             done
         }
-
+	
+	print_requires () {
+            test x"\$*" = x"all" && 
+                set -- $pp_components
+            for cmp
+            do
+                case \$cmp in
+.
+    for cmp in $pp_components; do
+        echo "$cmp) cat <<'._end'"
+	pp_rpm_print_requires $cmp
+        echo "._end"; echo ';;'
+    done
+    cat <<.
+                *) usage;;
+                esac
+            done
+        }
 
         test \$# -eq 0 && usage
         op="\$1"; shift
@@ -508,6 +536,10 @@ pp_backend_rpm_install_script () {
                 test \$# -eq 0 || usage \$op
 		echo "linux-${pp_rpm_arch}"
 		;;
+            print-requires)
+                test \$# -ge 1 || usage \$op
+                print_requires "\$@"
+		;;
             *)
                 usage
                 ;;
@@ -539,4 +571,17 @@ pp_backend_rpm_function () {
 #@ pp_backend_rpm_probe(): print the local platform's short name
 pp_backend_rpm_probe () {
         echo "${pp_rpm_distro}-${pp_rpm_arch_std}"
+}
+
+#@ pp_backend_rpm_vas_platforms(): print the VAS platform identifiers
+pp_backend_rpm_vas_platforms () {
+    case "$pp_rpm_arch_std" in
+	x86_64)	echo "linux-x86_64.rpm";;
+	*86)	echo "linux-x86 linux-x86_64";;
+	s390)	echo "linux-s390";;
+	s390x)	echo "linux-s390x linux-s390";;
+	ppc*)	echo "linux-glibc23-ppc64 linux-glibc22-ppc64";;
+	ia64)	echo "linux-ia64";;
+	*)	pp_die "unknown architecture $pp_rpm_arch_std";;
+    esac
 }

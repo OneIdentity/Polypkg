@@ -561,3 +561,17 @@ pp_solaris_add_dynlib_depends () {
 pp_backend_solaris_probe () {
     echo "${pp_solaris_os}-${pp_solaris_arch_std}"
 }
+
+#@ pp_backend_solaris_vas_platforms(): print the VAS platform identifiers
+pp_backend_solaris_vas_platforms () {
+    case `pp_backend_solaris_probe` in
+	sol10-sparc* | sol9-sparc* | sol8-sparc*)	
+			echo solaris8-sparc solaris7-sparc solaris26-sparc;;
+	sol7-sparc*)	echo                solaris7-sparc solaris26-sparc;;
+	sol26-sparc*)	echo                               solaris26-sparc;;
+	sol8-*86)	echo solaris8-x86;;
+	sol10-*86 | sol10-x86_64)	
+			echo solaris10-x64 solaris8-x86;;
+	*)		pp_die "unknown system `pp_backend_solaris_probe`";;
+    esac
+}
