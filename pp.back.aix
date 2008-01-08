@@ -477,10 +477,10 @@ fi >&2
 
         outbff=`pp_backend_aix_names`
         pp_debug "creating: $pp_wrkdir/$outbff"
-	(cd $pp_destdir && pp_verbose  backup -i -q -p -f -) \
+	(cd $pp_destdir && pp_verbose  /usr/sbin/backup -i -q -p -f -) \
           < $pp_wrkdir/bff.list \
 	  > $pp_wrkdir/$outbff || pp_error "backup failed"
-        ${SUDO:-sudo} installp -l -d $pp_wrkdir/$outbff
+        ${SUDO:-sudo} /usr/sbin/installp -l -d $pp_wrkdir/$outbff
 }
 
 #@ pp_backend_aix_cleanup(): removes leftover files
@@ -562,13 +562,14 @@ pp_backend_aix_install_script () {
                     ;;
                 install)
                     test \$# -ge 1 || usage \$op
-                    verbose installp -acX -V0 -F \
+                    verbose /usr/sbin/installp -acX -V0 -F \
                         -d \${PP_PKGDESTDIR:-.}/$pkgname \
                         \`cpt_to_fileset "\$@"\`
                     ;;
                 uninstall)
                     test \$# -ge 1 || usage \$op
-                    verbose installp -u -e/dev/null -V0 \`cpt_to_fileset "\$@"\`
+                    verbose /usr/sbin/installp -u -e/dev/null \
+			-V0 \`cpt_to_fileset "\$@"\`
                     ;;
                 start|stop)
                     test \$# -ge 1 || usage \$op
