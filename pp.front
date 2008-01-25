@@ -59,7 +59,7 @@ pp_frontend_init () {
     version=
     summary="no summary"
     description="No description"
-    copyright="(c) 2006 Quest Software, Inc. All rights reserved"
+    copyright="(c) 2008 Quest Software, Inc. All rights reserved"
 
     #-- if the user supplied extra arguments on the command line
     #   then load them now.
@@ -119,7 +119,7 @@ pp_eval_qualifier () {
 #   The variables $pp_if_false and $pp_if_true are counters for if nesting.
 #   If $pp_if_false is non-zero then processing should be suppressed.
 pp_frontend_if () {
-    typeset ifcmd
+    typeset ifcmd ifret
     ifcmd="$1";
     shift
     case "$ifcmd" in
@@ -128,11 +128,14 @@ pp_frontend_if () {
 		    true |1) pp_incr pp_if_true;;
 		    false|0) pp_incr pp_if_false;;
                     *)
+			ifret=true
                         if pp_is_qualifier "$*"; then
-                            pp_eval_qualifier "$*"
+                            pp_eval_qualifier "$*" || ifret=false
                         else
-                            eval test "$@"
-                        fi && pp_incr pp_if_true || pp_incr pp_if_false
+			    eval test "$@" || ifret=false
+			    pp_debug "evaluating test $* -> $ifret"
+			fi
+			pp_incr pp_if_$ifret
                         ;;
 		esac
 	     else
