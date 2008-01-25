@@ -507,7 +507,7 @@ pp_backend_deb_probe() {
 #@ pp_backend_deb_vas_platforms(): print the VAS platform identifiers
 pp_backend_deb_vas_platforms () {
     case "$pp_deb_arch_std" in
-	x86_64)	echo "linux-x86_64.deb linux-x86.deb";;
+	x86_64)	echo "linux-x86_64.deb";; # DO NOT add linux-x86.deb here!!
 	*86)	echo "linux-x86.deb";;
 	*)	pp_die "unknown architecture ${pp_deb_arch_std}";;
     esac
