@@ -576,10 +576,10 @@ pp_backend_rpm_probe () {
 #@ pp_backend_rpm_vas_platforms(): print the VAS platform identifiers
 pp_backend_rpm_vas_platforms () {
     case "$pp_rpm_arch_std" in
-	x86_64)	echo "linux-x86_64.rpm";;
-	*86)	echo "linux-x86 linux-x86_64";;
+	x86_64)	echo "linux-x86_64.rpm linux-x86.rpm";;
+	*86)	echo "linux-x86.rpm";;
 	s390)	echo "linux-s390";;
-	s390x)	echo "linux-s390x linux-s390";;
+	s390x)	echo "linux-s390x";;
 	ppc*)	echo "linux-glibc23-ppc64 linux-glibc22-ppc64";;
 	ia64)	echo "linux-ia64";;
 	*)	pp_die "unknown architecture $pp_rpm_arch_std";;
