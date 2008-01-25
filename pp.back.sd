@@ -239,7 +239,7 @@ pp_debug "config file is $config_file"
 
 #@ pp_sd_make_service($svc): create the service files and links
 pp_sd_make_service () {
-        typeset level priority startlevels stoplevels
+        typeset level startpriority stoppriority startlevels stoplevels
         typeset svc svcvar
 
         svc="$1"
@@ -252,8 +252,10 @@ pp_sd_make_service () {
         fi
 
         # symlink the script, depending on the priorities chosen
-        eval priority='${pp_sd_priority_'$svcvar'}'
-        test -z "$priority" && priority="${pp_sd_priority:-50}"
+        eval startpriority='${pp_sd_startpriority_'$svcvar'}'
+        eval stoppriority='${pp_sd_stoppriority_'$svcvar'}'
+        test -z "$startpriority" && startpriority="${pp_sd_startpriority:-50}"
+        test -z "$stoppriority" && stoppriority="${pp_sd_stoppriority:-50}"
 
         eval startlevels='${pp_sd_startlevels_'$svcvar'}'
         test -z "$startlevels" && startlevels="$pp_sd_startlevels"
@@ -265,10 +267,15 @@ pp_sd_make_service () {
         pp_sd_service_script $svc
 
         # fix the priority up
-        case "$priority" in 
+        case "$startpriority" in 
             ???) :;;
-            ??) priority=0$priority;;
-            ?) priority=00$priority;;
+            ??) startpriority=0$startpriority;;
+            ?) startpriority=00$startpriority;;
+        esac
+        case "$stoppriority" in 
+            ???) :;;
+            ??) stoppriority=0$stoppriority;;
+            ?) stoppriority=00$stoppriority;;
         esac
 
         if test x"$stoplevels" = x"auto"; then
@@ -282,12 +289,12 @@ pp_sd_make_service () {
         test -z "$startlevels" || for level in $startlevels; do
             echo "                file -t s" \
                     "/sbin/init.d/$svc" \
-                    "/sbin/rc$level.d/S$priority$svc"
+                    "/sbin/rc$level.d/S$startpriority$svc"
         done
         test -z "$stoplevels" || for level in $stoplevels; do
             echo "                file -t s" \
                     "/sbin/init.d/$svc" \
-                    "/sbin/rc$level.d/K$priority$svc" 
+                    "/sbin/rc$level.d/K$stoppriority$svc" 
         done
 }
 
@@ -350,6 +357,14 @@ pp_backend_sd () {
     test -n "$description" && cat <<. >>$psf
             description     "$description"
 .
+
+    # make convenience service groups
+    if test -n "$pp_service_groups"; then
+	for grp in $pp_service_groups; do
+	    pp_sd_service_group_script \
+		$grp "`pp_service_get_svc_group $grp`"
+	done
+    fi
 
     for cpt in $pp_components; do
         cat <<. >>$psf
@@ -469,13 +484,13 @@ pp_backend_sd_install_script () {
                 ;;
             install)
                 test \$# -ge 1 || usage \$op
-                verbose swinstall -x verbose=0 \
+                verbose /usr/sbin/swinstall -x verbose=0 \
                     -s \${PP_PKGDESTDIR:-\`pwd\`}/$pkgname \
                     \`cpt_to_tags "\$@"\`
                 ;;
             uninstall)
                 test \$# -ge 1 || usage \$op
-                verbose swremove -x verbose=0 \
+                verbose /usr/sbin/swremove -x verbose=0 \
                     \`cpt_to_tags "\$@"\`
                 ;;
             start|stop)
