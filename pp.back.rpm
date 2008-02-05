@@ -75,6 +75,8 @@ pp_rpm_detect_arch () {
 	ppc)	pp_rpm_arch_std=ppc;;
 	ppc64)	pp_rpm_arch_std=ppc64;;
 	ia64)	pp_rpm_arch_std=ia64;;
+	s390)	pp_rpm_arch_std=s390;;
+	s390x)	pp_rpm_arch_std=s390x;;
 	*)	pp_rpm_arch_std=unknown;;
     esac
 
@@ -154,6 +156,10 @@ pp_rpm_writefiles () {
 		    pp_add_to_list pp_rpm_arch_seen ppc;;
 		*": ELF 64-bit LSB "*", IA-64"*)
 		    pp_add_to_list pp_rpm_arch_seen ia64;;
+		*": ELF 32-bit MSB "*", IBM S/390"*)
+		    pp_add_to_list pp_rpm_arch_seen s390;;
+		*": ELF 64-bit LSB "*", IBM S/390"*)
+		    pp_add_to_list pp_rpm_arch_seen s390x;;
 	    esac
 	fi
 
