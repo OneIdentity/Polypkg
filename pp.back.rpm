@@ -95,6 +95,7 @@ pp_rpm_detect_distro () {
     elif test -f /etc/fedora-release; then
        pp_rpm_distro=`awk '
           /^Fedora Core release/ { print "fc" $4; exit; }
+          /^Fedora release/ { print "f" $3; exit; }
        ' /etc/fedora-release`
     elif test -f /etc/redhat-release; then
        pp_rpm_distro=`awk '
