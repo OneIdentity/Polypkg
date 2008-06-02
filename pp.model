@@ -276,6 +276,13 @@ pp_files_check_duplicates () {
     typeset _path
     if test -s $pp_wrkdir/all.files; then
         sort < $pp_wrkdir/all.files | uniq -d > $pp_wrkdir/duplicate.files
+	if test -f $pp_wrkdir/ign.awk; then
+	    # Remove ignored files
+	    mv $pp_wrkdir/duplicate.files $pp_wrkdir/duplicate.files.ign
+	    sed -e 's/^/_ _ _ _ _ /' < $pp_wrkdir/duplicate.files.ign |
+		awk -f $pp_wrkdir/ign.awk |
+		sed -e 's/^_ _ _ _ _ //' > $pp_wrkdir/duplicate.files
+	fi
         while read _path; do
             pp_warn "$_path: file declared more than once"
         done <$pp_wrkdir/duplicate.files
@@ -320,14 +327,15 @@ pp_files_ignore_others () {
     pp_debug "stripping ignore files"
 
     while read p; do
-        echo '$6 == "'"$p"'" { skip unless $5 ~ /i/; }'
+        echo '$6 == "'"$p"'" && $5 !~ /i/ { next }'
     done < $pp_wrkdir/ign.files > $pp_wrkdir/ign.awk
+    echo '{ print }' >> $pp_wrkdir/ign.awk
 
     $pp_opt_debug && cat $pp_wrkdir/ign.awk
 
     for f in $pp_wrkdir/%files.*; do
-        awk -f $pp_wrkdir/ign.awk < $f > $f.i || pp_error "awk"
-        mv $f.i $f
+	mv $f $f.ign
+        awk -f $pp_wrkdir/ign.awk < $f.ign > $f || pp_error "awk"
     done
 }
 
