@@ -129,7 +129,7 @@ pp_rpm_label () {
 
 #@ pp_rpm_writefiles() < %files: Write body of a %files section in RPM form
 pp_rpm_writefiles () {
-    typeset _l t m o g f p st fo
+    typeset _l t m o g f p st fo farch
     while read t m o g f p st; do
         _l="$p"
 	test $t = d && _l="%dir ${_l%/}/"
@@ -145,23 +145,26 @@ pp_rpm_writefiles () {
 
 	if test "$t" = "f" -a x"$pp_rpm_arch" = x"auto"; then
 	    fo=`file "${pp_destdir}$p" 2>/dev/null`
-	    pp_debug "file: $fo"
 	    #NB: The following should match executables and shared objects,
 	    #relocatable objects. It will not match .a files however.
 	    case "$fo" in
 		*": ELF 32-bit LSB "*", Intel 80386"*)
-		    pp_add_to_list pp_rpm_arch_seen i386;;
+		    farch=i386;;
 		*": ELF 64-bit LSB "*", AMD x86-64"*)
-		    pp_add_to_list pp_rpm_arch_seen x86_64;;
+		    farch=x86_64;;
 		*": ELF 32-bit MSB "*", PowerPC"*)
-		    pp_add_to_list pp_rpm_arch_seen ppc;;
+		    farch=ppc;;
 		*": ELF 64-bit LSB "*", IA-64"*)
-		    pp_add_to_list pp_rpm_arch_seen ia64;;
+		    farch=ia64;;
 		*": ELF 32-bit MSB "*", IBM S/390"*)
-		    pp_add_to_list pp_rpm_arch_seen s390;;
+		    farch=s390;;
 		*": ELF 64-bit LSB "*", IBM S/390"*)
-		    pp_add_to_list pp_rpm_arch_seen s390x;;
+		    farch=s390x;;
+		*)
+		    farch=noarch;;
 	    esac
+	    pp_debug "file: $fo -> $farch"
+	    test x"$farch" = x"noarch" || pp_add_to_list pp_rpm_arch_seen $farch
 	fi
 
 	case $f in *v*) _l="%config $_l";; esac
