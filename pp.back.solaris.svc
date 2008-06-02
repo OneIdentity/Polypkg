@@ -119,7 +119,7 @@ pp_solaris_make_service_group () {
 	#-- returns true only if all services return true status
 	pp_status () {
 	    rc=0
-	    for svc in $reverse; do
+	    for svc in $svcs; do
 		/etc/init.d/$svc status || rc=$?
 	    done
 	    return $rc
