@@ -158,16 +158,14 @@ pp_solaris_make_service () {
     #   and forks the daemon
     _cmd="$cmd";
     if test -z "$pidfile"; then
-	# We wrap the start command with something to write the PID file
+	# The service does not define a pidfile, so we have to make
+	# our own up. On Solaris systems where there is no /var/run
+	# we must use /tmp to guarantee the pid files are removed after
+	# a system crash.
 	cat <<. >>$out
-	    # Figure out the piddir
-	    if test -z "$piddir"; then
-		pp_piddir="/var/run"
-		test -d $pp_piddir || pp_piddir="/tmp"
-		pidfile="$pp_piddir/$svc.pid"
-	    else
-		pidfile="$piddir/$svc.pid"
-	    fi
+	    pp_piddir="/var/run"
+	    test -d "\$pp_piddir/." || pp_piddir="/tmp"
+	    pidfile="\$pp_piddir/$svc.pid"
 .
         _cmd="$cmd & echo \$! > \$pidfile"
     else
