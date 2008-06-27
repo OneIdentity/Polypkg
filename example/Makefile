@@ -3,6 +3,7 @@ srcdir= 	.
 
 prefix= 	/usr
 bindir= 	$(prefix)/bin
+libdir= 	$(prefix)/lib
 sbindir=	$(prefix)/sbin
 sysconfdir=	/etc
 
@@ -12,6 +13,11 @@ PP=		../pp
 PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) \
 		--install-script=inst.sh
 #PPFLAGS+=	--platform=aix
+PPFLAGS+=	prefix=$(prefix)
+PPFLAGS+=	bindir=$(bindir) 
+PPFLAGS+=	sbindir=$(sbindir)
+PPFLAGS+=	libdir=$(libdir)
+PPFLAGS+=	sysconfdir=$(sysconfdir)
 
 package: $(PP) install hello.pp
 	$(PP) $(PPFLAGS) $(srcdir)/hello.pp 2>&1
@@ -34,6 +40,7 @@ install: hello hello.conf
 	chmod 755 $(DESTDIR)$(bindir)/hello-config
 	rm -f $(DESTDIR)$(bindir)/goodbye
 	ln -s hello $(DESTDIR)$(bindir)/goodbye
+	mkdir -p $(libdir)/hello
 
 clean:
 	rm -rf $(DESTDIR) inst.sh

@@ -15,13 +15,14 @@
   echo This is the UNINSTALL script
 
 %service hellod
-  cmd=/usr/sbin/hellod
+  cmd=${sbindir}/hellod
 
 %files
-  /usr/bin/hello
-  /usr/bin/goodbye
-  /usr/sbin/hellod
-  /etc/hello.conf  644 volatile
+  ${bindir}/hello
+  ${bindir}/goodbye
+  ${sbindir}/hellod
+  ${sysconfdir}/hello.conf  644 volatile
+  ${libdir}/hello/
 
 %files dev
-  /usr/bin/hello-config
+  ${bindir}/hello-config
