@@ -22,6 +22,7 @@ pp_opt_eval=
 
 test -n "$PP_NO_CLEAN" && pp_opt_no_clean=true
 test -n "$PP_DEBUG" && pp_opt_debug=true
+test -n "$PP_VERBOSE" && pp_opt_verbose=true
 
 #@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
 pp_main_cleanup () {
@@ -33,8 +34,12 @@ pp_main_cleanup () {
 	    pp_backend_${pp_platform}_cleanup
 	    $pp_errors && pp_die "Errors during cleanup"
 	    if test -d "$pp_wrkdir"; then
-		pp_debug "removing $pp_wrkdir"
-		rm -rf "$pp_wrkdir"
+		if $pp_opt_debug; then
+		    pp_debug "not removing $pp_wrkdir"
+		else
+		    pp_verbose "removing $pp_wrkdir"
+		    rm -rf "$pp_wrkdir"
+		fi
 	    fi
 	fi
 }

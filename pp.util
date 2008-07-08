@@ -41,7 +41,7 @@ pp_error () {
 
 #@ pp_die(msg): prints an error message and dies with exit code 1
 pp_die () {
-	pp_error "pp: $@"
+	pp_error "$@"
 	exit 1
 }
 

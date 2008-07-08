@@ -169,11 +169,157 @@ pp_macos_plist () {
     done
 }
 
+#@ pp_macos_rewrite_cpio (filelists): filters a cpio stream changing uid/gid
+pp_macos_rewrite_cpio () {
+    typeset script
+    script=$pp_wrkdir/cpio-rewrite.pl
+    # rely on the fact that OS X comes with perl. It is a little easier to
+    # re-write a binary stream with perl than it is with posix :)
+    #
+    # A CPIO header block has octal fields at the following offset/lengths:
+    #   0  6 magic
+    #   6  6 dev
+    #  12  6 ino 
+    #  18  6 mode 
+    #  24  6 uid
+    #  30  6 gid
+    #  36  6 nlink
+    #  42  6 rdev
+    #  48 11 mtime
+    #  59  6 namesize
+    #  65 11 filesize
+    #  76    --
+    cat <<-'.' >$script
+	while (<DATA>) {
+		my ($type,$mode,$uid,$gid,$flags,$name) = 
+		    m/^(.) (\d+) (\S+) (\S+) (\S+) (.*)/;
+		$uid = 0 if $uid eq "-";
+		$gid = 0 if $gid eq "-";
+		if ($uid ne "=" and $uid =~ m/\D/) {
+			my @pw = getpwnam($uid) or die "bad username '$uid'";
+			$uid = $pw[2];
+		}
+		if ($gid ne "=" and $gid =~ m/\D/) {
+			my @gr = getgrnam($gid) or die "bad group '$gid'";
+			$gid = $gr[2];
+		}
+		$name = ".".$name."\0";
+		$ok{$name} = 1;
+		$uid{$name} = sprintf("%06o",int($uid)) unless $uid eq "=";
+		$gid{$name} = sprintf("%06o",int($gid)) unless $gid eq "=";
+		$mode{$name} = sprintf("%06o",oct($mode)) unless $mode eq "=";
+	}
+	$ok{"TRAILER!!!\0"} = 1;
+	while (!eof STDIN) {
+		read STDIN, $header, 76;
+		die "bad magic" unless $header =~ m/^070707/;
+		$namesize = oct(substr($header,59,6));
+		$filesize = oct(substr($header,65,11));
+		read STDIN, $name, $namesize;
+		# convert uid and gid to 0
+		substr($header, 24, 6) = $uid{$name} if defined($uid{$name});
+		substr($header, 30, 6) = $gid{$name} if defined($gid{$name});
+		substr($header, 18, 6) = $mode{$name} if defined($mode{$name});
+		print ($header, $name) if $ok{$name};
+		# copy-through the file data
+		while ($filesize > 0) {
+			my $seg = 8192;
+			$seg = $filesize if $filesize < $seg;
+			undef $data;
+			read STDIN, $data, $seg;
+			print $data if $ok{$name};
+			$filesize -= $seg;
+		}
+	}
+	exit(0);
+	__DATA__
+.
+    # Append to the script the %files data
+    cat "$@" </dev/null >> $script
+    /usr/bin/perl $script || pp_error "pp_macos_rewrite_cpio error";
+}
+
+#@ pp_rpm_files_bom() < %files: convert file list into input for mkbom
+pp_macos_files_bom () {
+    typeset _l t m o g f p st owner
+    while read t m o g f p st; do
+	# make sure that $m is padded up to 4 digits long
+	case "$m" in
+	    ?) m="000$m";;
+	    ??) m="00$m";;
+	    ???) m="0$m";;
+	    ?????*) pp_fatal "pp_macos_writebom: mode '$m' too long";;
+	esac
+
+	# convert owner,group into owner/group in octal
+	case $o in -)	o=0;; esac
+	case $g in -)	g=0;; esac
+	owner=`pp_d2o $o`/`pp_d2o $g`
+
+	case $t in
+	    f)
+		echo ".$p	10$m	$owner	`
+		    /usr/bin/cksum < "${pp_destdir}$p" | 
+		    awk '{print $2 "	" $1}'`";;
+	    d)
+		echo ".${p%/}	4$m	$owner";;
+	    s)
+		rl=`usr/bin/readlink "${pp_destdir}$p"`
+		test x"$rl" = x"$st" || 
+		    pp_error "symlink mismatch $rl != $st"
+		echo ".$p	12$m	$owner	`
+		    /usr/bin/readlink -n "${pp_destdir}$p" |
+		    /usr/bin/cksum |
+		    awk '{print $2 "	" $1}'`	$st";;
+	esac
+    done
+}
+
+#@ pp_macos_bom_fix_parents ($bomsrc) : inserts missing parents into bom src
+pp_macos_bom_fix_parents () {
+    perl -pe '
+	sub dirname { my $d=shift; $d=~s,/[^/]*$,,; $d; }
+	sub chk { my $d=shift;
+		  &chk(&dirname($d)) if $d =~ m,/,;
+		  unless ($seen{$d}++) {
+		      print "$d\t40755\t0/0\n";
+		  }
+		}
+	m/^\S+/;
+	&chk(&dirname($&));'
+}
+
+#pp_macos_files_size() < %files: compute the occupation size in kB
+# Note that each installed file (and directory) has its size rounded up to 4k
+pp_macos_files_size () {
+    typeset _l t m o g f p st owner
+    while read t m o g f p st; do
+	case $t in
+	    f)	wc -c < "${pp_destdir}$p";;
+	    s)	echo 4095;;
+	    d)	;; # always seems to be zero
+	esac
+    done | awk '{n+=1+int($1/4096)} END {print n*4}'
+}
+
+#@ pp_o2d($oct): prints the decimal form of octal number $oct to stdout
+pp_o2d () {
+    awk 'BEGIN { x=0; '`echo "$1" | 
+	sed -e 's/./x=x*8+&;/g'`'print x;}' </dev/null
+}
+#@ pp_d2o($dec): prints the octal form of decimal expression $dec to stdout
+pp_d2o () {
+    case "$1" in
+	[0-7]) echo $1;;
+	*) awk 'BEGIN { printf("%o\n", 0+('"$1"'));}' < /dev/null;;
+    esac
+}
 
 #@ pp_backend_macos(): processes output files to generate a package files
 pp_backend_macos () {
-    typeset info_plist desc_plist bundle_vendor bundle_version
-    typeset resources
+    typeset dmgdir pkgdir Contents Resources lprojdir
+    typeset Info_plist Description_plist 
+    typeset bundle_vendor bundle_version size
 
     bundle_vendor=${pp_macos_bundle_vendor:-"Quest Software, Inc."}
 
@@ -187,10 +333,23 @@ pp_backend_macos () {
 	bundle_version="$pp_macos_bundle_version"
     fi
 
-    info_plist=$pp_wrkdir/Info.plist
-    desc_plist=$pp_wrkdir/Description.plist
+    # build the package layout
+    dmgdir=$pp_wrkdir/dmg
+    pkgdir=$dmgdir/$name-$version.pkg
+    Contents=$pkgdir/Contents
+    Resources=$Contents/Resources
+    lprojdir=$Resources/en.lproj
+    mkdir $dmgdir $pkgdir $Contents $Resources $lprojdir || 
+	pp_fatal "Can't make package temporary directories"
+
+    echo major: 1 > $Resources/package_version
+    echo minor: 0 >> $Resources/package_version
+
+    # compute the installed size
+    size=`cat $pp_wrkdir/%files.* | pp_macos_files_size`
 
     #-- Create Info.plist
+    Info_plist=$Contents/Info.plist
     pp_macos_plist \
 	start-plist \{ \
 	key CFBundleGetInfoString string \
@@ -205,14 +364,16 @@ pp_backend_macos () {
 	key IFPkgFlagDefaultLocation string "/" \
 	key IFPkgFlagFollowLinks true \
 	key IFPkgFlagInstallFat false \
+	key IFPkgFlagInstalledSize integer $size \
 	key IFPkgFlagIsRequired false \
 	key IFPkgFlagOverwritePermissions false \
 	key IFPkgFlagRelocatable false \
 	key IFPkgFlagRestartAction string "NoRestart" \
 	key IFPkgFlagRootVolumeOnly false \
 	key IFPkgFlagUpdateInstalledLanguages false \
-	key IFPkgFormatVersion real 0.10000000149011612 > $info_plist
+	key IFPkgFormatVersion real 0.10000000149011612 > $Info_plist
 
+    # insert requirements(VAS)
     pp_macos_plist \
 	key IFRequirementDicts \[ \
 	  \{ \
@@ -222,53 +383,67 @@ pp_backend_macos () {
 	    key TestObject   true \
 	    key TestOperator string "eq" \
 	  \} \
-	\] >> $info_plist
+	\] >> $Info_plist
 
-    pp_macos_plist \} end-plist >> $info_plist
+    # finish Info.plist
+    pp_macos_plist \} end-plist >> $Info_plist
 
-    #-- Create Description.plist
+    # write en.lproj/Description.plist
+    Description_plist=$lprojdir/Description.plist
     pp_macos_plist \
-	start-plist \{ \
-	key IFPkgDescriptionDescription string "$description" \
-	key IFPkgDescriptionTitle       string "$name $version" \
-	\} end-plist > $desc_plist
+ 	start-plist \{ \
+	    key IFPkgDescriptionDescription string "$description" \
+	    key IFPkgDescriptionTitle       string "$name $version" \
+ 	\} end-plist > $Description_plist
 
-    #-- create post-install script
-    resources=$pp_wrkdir/resources
-    mkdir $resources
+    # write Resources/postinstall
     for cmp in $pp_components; do
 	if test -s $pp_wrkdir/%post.$cmp; then
-	    if test ! -s $resources/postinstall; then
-		echo "#!/bin/sh" > $resources/postinstall
-		chmod +x $resources/postinstall
+	    if test ! -s $Resources/postinstall; then
+		echo "#!/bin/sh" > $Resources/postinstall
+		chmod +x $Resources/postinstall
 	    fi
-	    cat $pp_wrkdir/%post.$cmp >> $resources/postinstall
-	    echo : >> $resources/postinstall
+	    cat $pp_wrkdir/%post.$cmp >> $Resources/postinstall
+	    echo : >> $Resources/postinstall
 	fi
     done
 
-    #-- create a package
-    mkdir $pp_wrkdir/dmg $pp_wrkdir/build 
-    pp_verbose $pp_macos_prog_packagemaker \
-	-build -v \
-	-p $pp_wrkdir/dmg/$name-$version.pkg \
-	-e $resources \
-	-h $pp_macos_pkg_domain \
-	-f $pp_destdir -i $info_plist -d $desc_plist \
-	$pp_macos_pkg_extra_flags \
-	||
-	    pp_error "packagemaker failed"
+    # Create the bill-of-materials (Archive.bom)
+    cat $pp_wrkdir/%files.* | pp_macos_files_bom | sort |
+	pp_macos_bom_fix_parents > $pp_wrkdir/tmp.bomls
+    /usr/bin/mkbom -i $pp_wrkdir/tmp.bomls $Contents/Archive.bom
 
-    #-- convert the pkg file into a dmg file
-    if [ -d $pp_wrkdir/dmg/$name-$version.pkg ]; then
+    # Create the cpio archive (Archive.pax.gz)
+    (cd $pp_destdir && /bin/pax -w -f - .) | 
+	gzip -9 -c > $Contents/Archive.pax.gz
+
+    # create a package using packagemaker
+#    pp_verbose $pp_macos_prog_packagemaker \
+#	--root $pp_destdir \
+#	--verbose \
+#	--info $Info_plist \
+#	--title "$name-$version" \
+#	--out $dmgdir/$name-$version.pkg \
+#	--scripts $scriptdir \
+#	--domain $pp_macos_pkg_domain \
+#	--target 10.3 \
+#	$pp_macos_pkg_extra_flags \
+#	|| pp_error "packagemaker failed"
+
+    #-- convert the pkg file into a disk image (dmg file)
+    if [ -d $dmgdir/$name-$version.pkg ]; then
 	dmg=`pp_backend_macos_names`
-	pp_verbose hdiutil create -srcfolder $pp_wrkdir/dmg \
-	    -uid 99 -gid 99 -copyuid 99 -mode 555 $pp_wrkdir/$dmg
-	pp_verbose hdiutil internet-enable -yes $pp_wrkdir/$dmg
+	{ pp_verbose hdiutil create \
+	    -srcfolder $dmgdir \
+	    -mode 555 \
+	    $pp_wrkdir/$dmg &&
+	pp_verbose hdiutil internet-enable -yes $pp_wrkdir/$dmg; } ||
+	    pp_error "unable to build disk image"
     else
-	pp_error "$pp_wrkdir/dmg/$name-$version.pkg: not created"
+	pp_error "$dmgdir/$name-$version.pkg: not created"
     fi
 }
+# -uid 99 -gid 99 -copyuid 99
 
 #@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
 pp_backend_macos_cleanup () {
