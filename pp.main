@@ -37,8 +37,7 @@ pp_main_cleanup () {
 		if $pp_opt_debug; then
 		    pp_debug "not removing $pp_wrkdir"
 		else
-		    pp_verbose "removing $pp_wrkdir"
-		    rm -rf "$pp_wrkdir"
+		    pp_verbose rm -rf "$pp_wrkdir"
 		fi
 	    fi
 	fi
