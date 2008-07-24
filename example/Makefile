@@ -13,17 +13,18 @@ PP=		../pp
 PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) \
 		--install-script=inst.sh
 #PPFLAGS+=	--platform=aix
-PPFLAGS+=	prefix=$(prefix)
-PPFLAGS+=	bindir=$(bindir) 
-PPFLAGS+=	sbindir=$(sbindir)
-PPFLAGS+=	libdir=$(libdir)
-PPFLAGS+=	sysconfdir=$(sysconfdir)
+PPVARS=
+PPVARS+=	prefix=$(prefix)
+PPVARS+=	bindir=$(bindir) 
+PPVARS+=	sbindir=$(sbindir)
+PPVARS+=	libdir=$(libdir)
+PPVARS+=	sysconfdir=$(sysconfdir)
 
 package: $(PP) install hello.pp
-	$(PP) $(PPFLAGS) $(srcdir)/hello.pp 2>&1
+	$(PP) $(PPFLAGS) $(srcdir)/hello.pp $(PPVARS) 2>&1
 
 installpkg:
-	SUDO= $(PP) $(PPFLAGS) $(srcdir)/hello.pp
+	SUDO= $(PP) $(PPFLAGS) $(srcdir)/hello.pp $(PPVARS)
 	./inst.sh list-components
 	./inst.sh list-services
 
