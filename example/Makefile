@@ -40,7 +40,7 @@ install: hello hello.conf
 	chmod 755 $(DESTDIR)$(bindir)/hello-config
 	rm -f $(DESTDIR)$(bindir)/goodbye
 	ln -s hello $(DESTDIR)$(bindir)/goodbye
-	mkdir -p $(libdir)/hello
+	mkdir -p $(DESTDIR)$(libdir)/hello
 
 clean:
 	rm -rf $(DESTDIR) inst.sh
