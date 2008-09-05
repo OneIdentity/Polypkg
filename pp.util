@@ -140,12 +140,25 @@ pp_add_to_list () {
 	eval $1='"$'$1' $2"'
     fi
 }
-	
+
+#@ pp_mode_strip_altaccess(str): given a string `ls` mode pattern, remove a
+#   trailing '+' if there is one. '+' indicates an "alternate access mode",
+#   usually an ACL.
+pp_mode_strip_altaccess () {
+    case "$1" in
+	??????????+)
+	    echo `echo "$1" | cut -b -10`;;
+	*)
+	    echo "$1";;
+    esac
+}
 
 #@ pp_mode_from_ls(str): converts an ls mode pattern into an octal mode number
 #   e.g. "-rw-rw-r--" becomes "664"
 pp_mode_from_ls () {
    typeset umode gmode omode smode
+
+   set -- `pp_mode_strip_altaccess "$1"`
 
    case "$1" in
 	?--[-X]??????) umode=0;;
