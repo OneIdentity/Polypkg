@@ -334,7 +334,7 @@ pp_backend_macos () {
     fi
 
     # build the package layout
-    dmgdir=$pp_wrkdir/dmg
+    dmgdir=$pp_wrkdir/$name-Installer
     pkgdir=$dmgdir/$name-$version.pkg
     Contents=$pkgdir/Contents
     Resources=$Contents/Resources

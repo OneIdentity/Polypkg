@@ -268,7 +268,7 @@ pp_aix_add_service () {
         #-- add command text to create/remove the service
 	cat <<-. >> $pp_wrkdir/%post.run
            # install service '$svc'
-           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${group+-G "$group"}
+           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${group:+-G "$group"}
 .
 
         #-- add code to start the service on reboot
