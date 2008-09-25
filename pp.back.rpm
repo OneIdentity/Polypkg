@@ -150,7 +150,8 @@ pp_rpm_writefiles () {
 	    case "$fo" in
 		*": ELF 32-bit LSB "*", Intel 80386"*)
 		    farch=i386;;
-		*": ELF 64-bit LSB "*", AMD x86-64"*)
+		*": ELF 64-bit LSB "*", AMD x86-64"*|\
+		*": ELF 64-bit LSB "*", x86-64"*)
 		    farch=x86_64;;
 		*": ELF 32-bit MSB "*", PowerPC"*)
 		    farch=ppc;;
