@@ -399,8 +399,18 @@ pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
             pp_error "Problem creating RPM packages"
 
 	for f in `pp_backend_rpm_names`; do
-	    ln $pp_wrkdir/RPMS/${pp_rpm_arch}/$f $pp_wrkdir/$f ||
-                pp_error "Problem predicting RPM filenames: $f"
+	    # The package might be in an arch-specific subdir
+	    pkgfile=not-found
+	    for dir in $pp_wrkdir/RPMS/${pp_rpm_arch} $pp_wrkdir/RPMS; do
+		if test -f $dir/$f; then
+		    pkgfile=$dir/$f
+		fi
+	    done
+	    if test x"$pkgfile" = x"not-found"; then
+                pp_error "Problem predicting RPM filename: $f"
+	    else
+		ln $pkgfile $pp_wrkdir/$f
+	    fi
 	done
 }
 
