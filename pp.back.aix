@@ -26,6 +26,7 @@ pp_backend_aix_init () {
             *) pp_readlink_fn=pp_ls_readlink;;  # XXX
         esac
 
+	pp_aix_abis_seen=
 }
 
 pp_aix_detect_arch () {
@@ -217,6 +218,21 @@ pp_aix_inventory () {
 	   echo " target = $st"
 	   ;;
       esac
+
+      #-- Record ABI types seen
+      case "$t" in
+        f) if test -r "$pp_destdir$p"; then
+	    case "`file "$pp_destdir$p"`" in
+		*": executable (RISC System/6000)"*) abi=ppc;;
+		*": 64-bit XCOFF executable"*)       abi=ppc64;;
+		*) abi=;;
+	    esac
+	    if test -n "$abi"; then
+		pp_add_to_list pp_aix_abis_seen $abi
+	    fi
+	   fi;;
+      esac
+
     done
 }
 
@@ -472,6 +488,29 @@ fi >&2
 	  test -s $root_wrkdir/liblpp.a && echo .$instroot/liblpp.a
 	  cat $user_wrkdir/$name.*.al   # includes the relocated root files!
 	} > $pp_wrkdir/bff.list
+
+	if test -n "$pp_aix_abis_seen" -a x"$pp_aix_arch_std" = x"auto"; then
+	    case "$pp_aix_abis_seen" in
+		"ppc ppc64"|"ppc64 ppc")
+		    pp_aix_arch_std=ppc64
+		    ;;
+		ppc|ppc64)
+		    pp_aix_arch_std=$pp_aix_abis_seen
+		    ;;
+		*" "*)
+		    pp_warn "multiple architectures detected: $pp_aix_abis_seen"
+		    pp_aix_arch_std=unknown
+		    ;;
+		"")
+		    pp_warn "no binary executables detected; using noarch"
+		    pp_aix_arch_std=noarch
+		    ;;
+		*)
+		    pp_warn "unknown architecture detected $pp_aix_abis_seen"
+		    pp_aix_arch_std=$pp_aix_abis_seen
+		    ;;
+	    esac
+	fi
         
 	. $pp_wrkdir/%fixup
 
@@ -669,6 +708,7 @@ pp_backend_aix_vas_platforms () {
 	aix51)	echo "aix-51 aix-43";;
 	aix52)	echo "aix-51 aix-43";;
 	aix53)	echo "aix-53 aix-51 aix-43";;
+	aix61)	echo "aix-53 aix-51 aix-43";;
 	*)	pp_die "unknown system ${pp_aix_os}";;
     esac
 }
