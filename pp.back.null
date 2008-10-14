@@ -49,3 +49,8 @@ pp_backend_null_init_svc_vars () {
 pp_backend_null_probe () {
     echo unknown-unknown
 }
+
+#@ pp_backend_null_vas_platforms(): output vas platforms that will run here
+pp_backend_null_vas_platforms () {
+:
+}
