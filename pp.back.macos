@@ -112,6 +112,19 @@
       Disabled: false,
       StandardErrorPath: "/dev/null",
     }
+
+
+    How to add a new user
+	dscl . -create /Users/$user
+	dscl . -create /Users/$user UserShell /bin/bash
+	dscl . -create /Users/$user RealName "$user"
+	dscl . -create /Users/$user UniqueID $uid
+	dscl . -create /Users/$user PrimaryGroupID $gid
+	dscl . -create /Users/$user NFSHomeDirectory /Users/$user
+	dscl . -passwd /Users/$user "$passwd"
+	mkdir /Users/$user
+	chown $uid.$gid /Users/$user
+
 .
 
 
@@ -459,7 +472,63 @@ pp_backend_macos_names () {
 
 #@ pp_backend_macos_install_script(component): generate helper install script
 pp_backend_macos_install_script () {
-    :
+    echo '#!/bin/sh'
+    typeset pkgname platform
+
+    pkgname="`pp_backend_macos_names`"
+    platform="`pp_backend_macos_probe`"
+    pp_install_script_common
+
+    cat <<.
+	test \$# -eq 0 && usage
+	op="\$1"; shift
+
+	case "\$op" in
+	list-components)
+	    test \$# -eq 0 || usage \$op
+	    echo "$pp_components"
+	    ;;
+	list-services)
+	    test \$# -eq 0 || usage \$op
+	    echo "$pp_services"
+	    ;;
+	list-files)
+	    test \$# -ge 1 || usage \$op
+	    echo \${PP_PKGDESTDIR:-.}/"$pkgname"
+	    ;;
+	install)
+	    test \$# -ge 1 || usage \$op
+	    vol=/Volumes/pp\$\$
+	    pkg=\$vol/${name}-${version}.pkg
+	    hdiutil attach -readonly -mountpoint \$vol \
+		\${PP_PKGDESTDIR:-.}/"$pkgname"
+	    trap "hdiutil detach \$vol" 0
+	    installer -pkginfo -pkg \$pkg
+	    installer -verbose -pkg \$pkg -target /
+	    ;;
+	uninstall)
+	    test \$# -ge 1 || usage \$op
+	    # XXX
+	    echo "Uninstall not implemented" >&2
+	    exit 1;;
+	start|stop)
+	    test \$# -ge 1 || usage \$op
+	    ec=0
+	    for svc
+	    do
+		# XXX
+		echo "\${op} not implemented" >&2
+		ec=1
+	    done
+	    exit \$ec
+	    ;;
+	print-platform)
+	    echo "$platform"
+	    ;;
+	*)
+	    usage;;
+	esac
+.
 }
 
 #@ pp_backend_macos_function(func): output one platform-dependent function
@@ -486,5 +555,5 @@ pp_backend_macos_probe () {
 
 #@ pp_backend_macos_vas_platforms(): print the VAS platform identifiers
 pp_backend_macos_vas_platforms () {
-    echo "OSX"    # XXX non-really sure what they do.. it should be "macos"
+    echo "osx"    # XXX non-really sure what they do.. it should be "macos"
 }
