@@ -1,0 +1,89 @@
+# IRIX inst backend
+#
+# executables are either going to be mips3 or mips4 and N32 or elf64.
+# so the package format is going to be mips3n32
+# inst(1M) is the tool for installing packages
+# gendist(1M) is the tool for making packages.
+#   It takes a tree of files, a spec file and an idb file
+#   The spec file is a text description like this:
+#     include file
+#     define variable value
+#     product xx
+#        attribute ...
+#        image yy
+#          attribute ...
+#          subsystem zzz
+#            attribute ...
+#          endsubsys
+#        endimage
+#     endproduct
+#
+#   Attributes include
+#      id "<title-string>"
+#      version <number>
+#      mach "<machtag>"
+#
+#   The idb file contains one line for each file or directory with
+#   optioanl extra attributes
+#      config([update|suggest|noupdate])
+#      symval(<symlink-target>)
+#      postop(cmd)
+# 
+
+pp_platforms="$pp_platforms inst"
+
+#@ pp_backend_inst_detect(uname_s): return true if matches uname on inst
+pp_backend_inst_detect () {
+    case "$1" in
+	IRIX*)	return 0;;
+	*)	return 1;;
+    esac
+}
+
+#@ pp_backend_inst_init(): initialises platform variables for inst 
+pp_backend_inst_init () {
+    :
+}
+
+
+#@ pp_backend_inst(): processes output files to generate a package files
+pp_backend_inst () {
+    :
+}
+
+#@ pp_backend_inst_cleanup(): removes any files created outside $pp_wrkdir
+pp_backend_inst_cleanup () {
+    :
+}
+
+#@ pp_backend_inst_names(): prints the paths to package files
+#    each path should start with $name-$version
+#    the package must be relative to the $pp_wrkdir directory
+pp_backend_inst_names () {
+    :
+}
+
+#@ pp_backend_inst_install_script(component): generate helper install script
+pp_backend_inst_install_script () {
+    :
+}
+
+#@ pp_backend_inst_function(func): output one platform-dependent function
+pp_backend_inst_function () {
+    echo false
+}
+
+#@ pp_backend_inst_init_svc_vars(): initialise service vars
+pp_backend_inst_init_svc_vars () {
+    :
+}
+
+#@ pp_backend_inst_probe(): output local platform's short name
+pp_backend_inst_probe () {
+    cpu=`hinv|sed -n '/^CPU/{s/000 /k /;s/^CPU: //;s/ Process.*//;s/^MIPS //;p;q;}'|tr A-Z a-z` 
+    echo irix`uname -r`-$cpu
+}
+
+pp_backend_inst_vas_platforms () {
+:
+}
