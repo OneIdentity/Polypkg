@@ -38,7 +38,7 @@ pp_backend_macos_function () {
 	    /usr/bin/dscl . -create /Users/"$1" NFSHomeDirectory \
 				    "${3:-/var/empty}"
 	    /usr/bin/dscl . -create /Users/"$1" UserShell \
-				    "${4-/usr/bin/false}"
+				    "${4:-/usr/bin/false}"
 	    /usr/bin/dscl . -create /Users/"$1" RealName "$1"
 	    /usr/bin/dscl . -create /Users/"$1" UniqueID $pp_tmp_uid
 	    /usr/bin/dscl . -create /Users/"$1" Password '*'

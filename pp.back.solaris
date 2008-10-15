@@ -405,14 +405,14 @@ pp_backend_solaris_cleanup () {
 
 #@ pp_backend_solaris_names(): print the name of the package files created
 pp_backend_solaris_names () {
-	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_package_arch_std-$pp_solaris_arch}.pkg
+	echo ${pp_solaris_name:-$name}-$version-${pp_solaris_package_arch_std:-$pp_solaris_arch}.pkg
 }
 
 #@ pp_backend_solaris_install_script(): generates a helper install script
 pp_backend_solaris_install_script () {
         typeset pkgname platform
 
-	platform="${pp_solaris_os-solaris}-${pp_solaris_package_arch_std-$pp_solaris_arch}"
+	platform="${pp_solaris_os:-solaris}-${pp_solaris_package_arch_std:-$pp_solaris_arch}"
 
         echo "#! /sbin/sh"
         pp_install_script_common
@@ -491,28 +491,6 @@ pp_backend_solaris_install_script () {
                     ;;
             esac
 .
-}
-
-#@ pp_backend_solaris_function(func): output platform-specific function
-pp_backend_solaris_function () {
-    case "$1" in
-        pp_mkgroup) cat <<'.';;
-            grep "^$1:" /etc/group >/dev/null ||
-                /usr/sbin/groupadd $1
-.
-        pp_mkuser) cat <<'.';;
-            eval _user=\$$#
-            grep "^$_user:" /etc/passwd >/dev/null ||
-                /usr/sbin/useradd -s /usr/bin/false "$@"
-.
-        pp_havelib) cat <<'.';;
-            for _dir in `echo "/usr/lib${3+:$3}" | tr : ' '`; do
-                test -r "$_dir/lib$1.so{$2+.$2}" && return 0
-            done
-            return 1
-.
-        *) pp_error "unknown function request: $1";;
-    esac
 }
 
 #@ pp_solaris_dynlib_depend(): emits dependency from shared library info

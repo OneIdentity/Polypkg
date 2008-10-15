@@ -270,7 +270,7 @@ pp_create_dir_if_missing () {
 		mkdir "$pp_destdir$1" && 
                     pp_note_file_used "$1/"
 		pp_remove_later "$1" &&
-		chmod ${2-755} "$pp_destdir$1" 
+		chmod ${2:-755} "$pp_destdir$1" 
 	    fi;;
     esac
 }

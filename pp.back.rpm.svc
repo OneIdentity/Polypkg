@@ -273,18 +273,18 @@ pp_rpm_service_make_init_script () {
         #-- use system message logging, if available
         if [ -f /lib/lsb/init-functions -a ! -r /etc/redhat-release ]; then
             . /lib/lsb/init-functions
-            pp_success_msg () { log_success_msg ${1+"$@"}; }
-            pp_failure_msg () { log_failure_msg ${1+"$@"}; }
-            pp_warning_msg () { log_warning_msg ${1+"$@"}; }
+            pp_success_msg () { log_success_msg "$@"; }
+            pp_failure_msg () { log_failure_msg "$@"; }
+            pp_warning_msg () { log_warning_msg "$@"; }
         elif [ -f /etc/init.d/functions ]; then
             . /etc/init.d/functions
-            pp_success_msg () { echo -n "$*"; success ${1+"$@"}; echo; }
-            pp_failure_msg () { echo -n "$*"; failure ${1+"$@"}; echo; }
-            pp_warning_msg () { echo -n "$*"; warning ${1+"$@"}; echo; }
+            pp_success_msg () { echo -n "$*"; success "$@"; echo; }
+            pp_failure_msg () { echo -n "$*"; failure "$@"; echo; }
+            pp_warning_msg () { echo -n "$*"; warning "$@"; echo; }
         else
-            pp_success_msg () { echo ${1+"$@":} OK; }
-            pp_failure_msg () { echo ${1+"$@":} FAIL; }
-            pp_warning_msg () { echo ${1+"$@":} WARNING; }
+            pp_success_msg () { echo ${1:+"$*:"} OK; }
+            pp_failure_msg () { echo ${1:+"$*:"} FAIL; }
+            pp_warning_msg () { echo ${1:+"$*:"} WARNING; }
         fi
 
         #-- prints a status message
