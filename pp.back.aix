@@ -628,64 +628,6 @@ pp_backend_aix_install_script () {
 .
 }
 
-#@ pp_backend_aix_function(func): output one platform-dependent function
-pp_backend_aix_function () {
-    case "$1" in
-    pp_mkgroup) cat <<'.';;
-            # group
-	    if test $# -ge 1; then
-              if lsgroup "$1" >/dev/null; then :; else
-		echo "Creating group $1"
-                mkgroup -A "$1"
-	      fi
-	    else
-	      echo "pp_mkgroup: missing arg" >&2
-	    fi
-.
-    pp_mkuser) 
-	    cat <<'.';;
-            # [-d dir] [-g group] user
-            typeset home group
-	    while test $# -gt 0; do case "$1" in
-	       --) shift; break;;
-	       -d) shift; home="$1"; shift;;
-	       -g) shift; group="$1"; shift;;
-	       -*) echo "pp_mkuser: bad option '$1'" >&2; shift;;
-	       *) break;;
-	    esac; done
-	    if test $# -ge 1; then
-              if lsuser "$1" >/dev/null; then :; else
-	        echo "Creating user $1"
-                mkuser login=false rlogin=false account_locked=true \
-                    home=${home:-/nohome.$1} ${group:+pgrp=$group} \
-                    "$1"
-	      fi
-	    else
-	     echo "pp_mkuser: missing arg" >&2
-	    fi
-.
-    pp_havelib) cat <<'.';;
-            # libname major[.minor] [path]
-            # Returns true if the shared library can be found
-            # 'path' should a colon-separated list of directories
-            # major may be an empty string if a path is required.
-            typeset name dir
-            case "$2" in
-                "")    name="lib$1.so";;
-                *.*.*) name="lib$1.so.$2";;
-                *.*)   name="lib$1.so.$2.0";;
-                *)     name="lib$1.so.$2";;
-            esac
-            for dir in `echo "/usr/lib:/lib${3+:$3}" | tr : ' '`; do
-                test -r "$dir/$name" -a -r "$dir/lib$1.so" && return 0
-            done
-            return 1
-.
-    *)
-            pp_error "unknown function request: $1" ;;
-    esac
-}
-
 #@ pp_backend_aix_init_svc_vars(): initialise service vars
 pp_backend_aix_init_svc_vars () {
     :

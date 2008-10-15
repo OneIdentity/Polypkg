@@ -2,13 +2,17 @@
 Common functions
 ----------------
 
+In script sections, the following platform-specific shell functions can 
+be included by invoking:
+     %(pp_functions <function-name> ...)
+It is safe to include a function multiple times.
+
 pp_mkgroup group
 
-    Creates a local group (usually in /etc/group) with no members.
+    Creates a local group (usually in /etc/group) with no members,
+    unless it already exists.
 
-    If the group already exists, this function performs no action.
-    Otherwise this function returns success if the group
-    creation succeeded.
+    Returns success if the group creation succeeded or previously existed.
 
 pp_mkuser user [group [homedir [shell]]]
 
@@ -18,17 +22,18 @@ pp_mkuser user [group [homedir [shell]]]
     If the group isn't specified, or is provided as '', then 
     the group name defaults to the same as the username.
 
-    pp_mkgroup is implicitly called by pp_mkuser to create the group.
+    If the group doesn't exist, pp_mkgroup will be called to create it.
 
     If the homedir isn't specified (or specified as ''), then
     it defaults to "/nonexistent", or the platform equivalent.  
-    The home directory is not created, nor populated.
+    The actual home directory is not created, nor populated.
 
-    If the shell is not specified, or specified as '', then
+    If the shell is not specified, or is specified as '', then
     it defaults to the platform's standard for indicating a
     disabled account (typically /bin/false).
 
-    The function returns success if the user creation succeeded.
+    The function returns success if the user creation succeeded, or
+    the user previously existed.
 
 pp_havelib name [major[.minor]] [searchpath]
 

@@ -1,0 +1,4 @@
+#@ pp_backend_macos_function(func): output one platform-dependent function
+pp_backend_macos_function () {
+    echo false
+}

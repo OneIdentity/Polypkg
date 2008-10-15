@@ -531,11 +531,6 @@ pp_backend_macos_install_script () {
 .
 }
 
-#@ pp_backend_macos_function(func): output one platform-dependent function
-pp_backend_macos_function () {
-    echo false
-}
-
 #@ pp_backend_macos_init_svc_vars(): initialise service vars
 pp_backend_macos_init_svc_vars () {
     :

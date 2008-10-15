@@ -11,15 +11,20 @@ PP_SRCS= \
 	 pp.expand \
 	 pp.model \
 	 pp.back \
-         pp.back.aix \
-         pp.back.sd \
+	 pp.back.aix \
+	 pp.back.aix.func \
+	 pp.back.sd \
+	 pp.back.sd.func \
 	 pp.back.solaris \
 	 pp.back.solaris.svc \
 	 pp.back.deb \
 	 pp.back.deb.svc \
+	 pp.back.deb.func \
 	 pp.back.rpm \
 	 pp.back.rpm.svc \
+	 pp.back.rpm.func \
 	 pp.back.macos \
+	 pp.back.macos.func \
 	 pp.back.inst \
 	 pp.back.null \
 	 pp.quest
