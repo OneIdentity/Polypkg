@@ -54,32 +54,32 @@ pp_parseopts () {
 	    --?*=?*) n=`echo "$1" | sed -ne 's/^--\([^=]*\)=.*/\1/p'`
 	           a=`echo "$1" | sed -ne 's/^--[^=]*=\(.*\)/\1/p'`
 		   shift
-		   set -- "--$n" "$a" ${1+"$@"};;
+		   set -- "--$n" "$a" "$@";;
 	    --?*) : ;;
 
-	    -d)  shift; set -- "--debug" ${1+"$@"};;
+	    -d)  shift; set -- "--debug" "$@";;
 	    -d*) a=`echo "$1" | sed -ne 's/^-.//'` 
-		 shift; set -- "--debug" ${1+"$@"};;
+		 shift; set -- "--debug" "$@";;
 
-	    -i) shift; set -- "--install-script" ${1+"$@"};;
+	    -i) shift; set -- "--install-script" "$@";;
 	    -i*) a=`echo "$1" | sed -ne 's/^-.//'`
-		 shift; set -- "--install-script" "$a" ${1+"$@"};;
+		 shift; set -- "--install-script" "$a" "$@";;
 
-	    -l)  shift; set -- "--list" ${1+"$@"};;
+	    -l)  shift; set -- "--list" "$@";;
 	    -l*) a=`echo "$1" | sed -ne 's/^-.//'` 
-		 shift; set -- "--list" ${1+"$@"};;
+		 shift; set -- "--list" "$@";;
 
-	    -p) shift; set -- "--platform" ${1+"$@"};;
+	    -p) shift; set -- "--platform" "$@";;
 	    -p*) a=`echo "$1" | sed -ne 's/^-.//'`
-		 shift; set -- "--platform" "$a" ${1+"$@"};;
+		 shift; set -- "--platform" "$a" "$@";;
 
-	    -v)  shift; set -- "--verbose" ${1+"$@"};;
+	    -v)  shift; set -- "--verbose" "$@";;
 	    -v*) a=`echo "$1" | sed -ne 's/^-.//'` 
-		 shift; set -- "--verbose" ${1+"$@"};;
+		 shift; set -- "--verbose" "$@";;
 
-	    -\?)  shift; set -- "--help" ${1+"$@"};;
+	    -\?)  shift; set -- "--help" "$@";;
 	    -\?*) a=`echo "$1" | sed -ne 's/^-.//'` 
-		 shift; set -- "--help" ${1+"$@"};;
+		 shift; set -- "--help" "$@";;
 	  esac
 
 	  case "$1" in
@@ -229,8 +229,8 @@ pp_install_script () {
 #@ pp_main(): main driver function
 pp_main () {
 
-	pp_set_expand_converter_or_reexec ${1+"$@"}
-	pp_parseopts ${1+"$@"}
+	pp_set_expand_converter_or_reexec "$@"
+	pp_parseopts "$@"
 
         if $pp_opt_version; then
             #-- print version and exit 

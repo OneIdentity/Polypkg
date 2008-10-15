@@ -47,7 +47,7 @@ pp_die () {
 
 #@ pp_die_if_errors(msg): dies with an error if previous errors had occurred
 pp_die_if_errors () {
-	$pp_errors && pp_die ${1+"$@"}
+	$pp_errors && pp_die "$@"
 }
 
 #@ pp_debug(msg): writes a message only if the --debug option was given

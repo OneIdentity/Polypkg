@@ -33,7 +33,7 @@ pp_set_expand_converter_or_reexec () {
 			pp_expand_test_usr_bin) 2>/dev/null
 	    then
                 pp_debug "switching to shell $shell"
-		pp_expand_rexec=true exec $shell "$0" ${1+"$@"}
+		pp_expand_rexec=true exec $shell "$0" "$@"
 	    fi
 	done
 	pp_die "cannot find a shell that does brace expansion"

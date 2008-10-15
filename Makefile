@@ -48,7 +48,7 @@ pp: $(PP_SRCS)
 	 for p in $(PP_SRCS); do          \
 	    echo '. "$$d/'$$p'" &&';        \
 	 done;                            \
-	 echo 'pp_main $${1+"$$@"}'       \
+	 echo 'pp_main "$$@"'       \
 	) > $@
 	chmod 555 $@
 

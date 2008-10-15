@@ -232,7 +232,7 @@ pp_frontend () {
         case "$1" in 
 	   %if|%else|%endif) 
                 pp_debug "processing if directive $1"
-	   	pp_frontend_if ${1+"$@"}
+	   	pp_frontend_if "$@"
 		continue;;
 	esac
 	test 0 -ne $pp_if_false && continue	# ignore lines %if'd out

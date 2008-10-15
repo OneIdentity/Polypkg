@@ -26,7 +26,7 @@ pp_have_component () {
 
 #@ pp_have_all_components(component...): return true if all components defined
 pp_have_all_components () {
-	pp_contains_all "$pp_components" ${1+"$@"}
+	pp_contains_all "$pp_components" "$@"
 }
 
 #@ pp_add_component(component): adds component to $pp_components

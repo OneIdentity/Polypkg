@@ -54,5 +54,5 @@
 for _sufx in _init '' _names _cleanup _install_script \
     _init_svc_vars _function _probe _vas_platforms
 do
- eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \${1+\"\$@\"}; }"
+ eval "pp_backend$_sufx () { pp_debug pp_backend$_sufx; pp_backend_\${pp_platform}$_sufx \"\$@\"; }"
 done
