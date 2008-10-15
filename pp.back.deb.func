@@ -1,31 +1,30 @@
 #@ pp_backend_deb_function(): output a platform-dependent function
 pp_backend_deb_function() {
-
-    case "$1" in
-        pp_mkgroup) 
-	    # could use groupadd --force but its not avail on deb 3.1
-            cat<<'.';;
-	    if /usr/sbin/groupmod $1 2>/dev/null; then :; else
-                /usr/sbin/groupadd $1
-	    fi
+    case $1 in
+        pp_mkgroup) cat<<'.';;
+	    /usr/sbin/groupmod "$1" 2>/dev/null && return 0
+            /usr/sbin/groupadd "$1"
 .
-        pp_mkuser) 
+        pp_mkuser:depends) echo pp_mkgroup;;
+        pp_mkuser) cat<<'.';;
+	    pp_tmp_system=
 	    # deb 3.1's useradd changed API in 4.0. Gah!
-            cat<<'.';;
-	    if /usr/sbin/useradd --help 2>&1 | grep -q .--system; then
-                /usr/sbin/useradd -s /bin/false --system $@ 
-	    else
-                /usr/sbin/useradd -s /bin/false $@ 
-	    fi
+	    /usr/sbin/useradd --help 2>&1 | /bin/grep -q .--system &&
+		pp_tmp_system=--system
+	    pp_mkgroup "${2:-$1}" || return 1
+	    /usr/sbin/useradd \
+		-g "${2:-$1}" \
+		-d "${3:-/nonexistent}" \
+		-s "${4:-/bin/false}" \
+		$pp_tmp_system \
+		$@ 
 .
         pp_havelib) cat<<'.';;
-            typeset dir
-            for dir in `echo "/usr/lib:/lib${3+:$3}" | tr : ' '`; do
-                test -r "$dir/lib$1.so{$2+.$2}" && return 0
+            for pp_tmp_dir in `echo "/usr/lib:/lib${3:+:$3}" | tr : ' '`; do
+                test -r "$pp_tmp_dir/lib$1.so{$2:+.$2}" && return 0
             done
             return 1
 .
-        *)
-            pp_error "unknown function request: $1";;
+    *) false;;
     esac
 }

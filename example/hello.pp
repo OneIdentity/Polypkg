@@ -10,6 +10,7 @@
 
 %post
   echo This is the POST-INSTALL script
+  %(pp_functions pp_mkuser)
 
 %preun
   echo This is the UNINSTALL script

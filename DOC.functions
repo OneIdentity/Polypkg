@@ -1,11 +1,21 @@
 
+In script sections, platform-specific shell functions can be included by 
+invoking:
+
+     %(pp_functions <function-name> ...)
+
+It is safe to include a function multiple times within the one call to 
+pp_functions, and dependencies on other functions will be resolved. 
+
+Notes to implementors:
+    When implementing these functions, note that arguments are already 
+    checked for functions defined in this file.
+    Also, avoid the use of typeset and any ksh-isms. Assume ancient shell.
+    Use variable names starting with pp_tmp_
+
+
 Common functions
 ----------------
-
-In script sections, the following platform-specific shell functions can 
-be included by invoking:
-     %(pp_functions <function-name> ...)
-It is safe to include a function multiple times.
 
 pp_mkgroup group
 
@@ -22,7 +32,7 @@ pp_mkuser user [group [homedir [shell]]]
     If the group isn't specified, or is provided as '', then 
     the group name defaults to the same as the username.
 
-    If the group doesn't exist, pp_mkgroup will be called to create it.
+    If the group doesn't exist, it is created.
 
     If the homedir isn't specified (or specified as ''), then
     it defaults to "/nonexistent", or the platform equivalent.  

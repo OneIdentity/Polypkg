@@ -1,23 +1,25 @@
 #@ pp_backend_sd_function(func): output platform-dependent function
 pp_backend_sd_function () {
-    case "$1" in
+    case $1 in
         pp_mkgroup) cat <<'.';;
-            grep "^$1:" /etc/group >/dev/null ||
-                /usr/sbin/groupadd $1
+	    /usr/sbin/groupmod "$1" 2>/dev/null ||
+		/usr/sbin/groupadd "$1"
 .
+        pp_mkuser:depends) echo pp_mkgroup;;
         pp_mkuser) cat <<'.';;
-            typeset user
-            eval user=\$$#
-            grep "^$user:" /etc/passwd >/dev/null ||
-                /usr/sbin/useradd -s /usr/bin/false "$@"
+	    pp_mkgroup "${2:-$1}" || return 1
+	    /usr/sbin/useradd \
+		-g "${2:-$1}" \
+		-d "${3:-/nonexistent}" \
+		-s "${4:-/bin/false}" \
+		"$1"
 .
         pp_havelib) cat <<'.';;
-            typeset dir
-            for dir in `echo /usr/lib${3+:$3} | tr : ' '`; do
-                test -r "$dir/lib$1.${2-sl}" && return 0
+            for pp_tmp_dir in `echo /usr/lib${3:+:$3} | tr : ' '`; do
+                test -r "$pp_tmp_dir/lib$1${2:+.$2}.sl" && return 0
             done
             return 1
 .
-        *) pp_error "unknown function request: $1";;
+        *) false;;
     esac
 }

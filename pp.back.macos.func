@@ -1,4 +1,57 @@
 #@ pp_backend_macos_function(func): output one platform-dependent function
 pp_backend_macos_function () {
-    echo false
+    case $1 in
+	INIT) cat<<'.';;
+	    # Find an unused value in the given path
+	    # args: path attribute minid [maxid]
+	    _pp_macos_search_unused () {
+		pp_tmp_val=$3
+		while :; do
+		    test $pp_tmp_val -ge ${4:-999999} && return 1
+		    /usr/bin/dscl . -search "$1" "$2" $pp_tmp_val |
+			grep . > /dev/null || break
+		    pp_tmp_val=`expr $pp_tmp_val + 1`
+		done
+		echo $pp_tmp_val
+	    }
+.
+        pp_mkgroup) cat<<'.';;
+	    set -e
+	    /usr/bin/dscl . -read /Groups/"$1" >/dev/null 2>&1 && return
+	    pp_tmp_gid=`_pp_macos_search_unused /Groups PrimaryGroupID 100`
+	    /usr/bin/dscl . -create /Groups/"$1"
+	    /usr/bin/dscl . -create /Groups/"$1" PrimaryGroupID $pp_tmp_gid
+	    /usr/bin/dscl . -create /Groups/"$1" RealName "Group $1"
+	    /usr/bin/dscl . -create /Groups/"$1" GroupMembership ""
+	    /usr/bin/dscl . -create /Groups/"$1" Password '*'
+.
+        pp_mkuser:depends) echo pp_mkgroup;;
+        pp_mkuser) cat<<'.';;
+	    set -e
+	    /usr/bin/dscl . -read /Users/"$1" >/dev/null 2>&1 && return
+	    pp_tmp_uid=`_pp_macos_search_unused /Users UniqueID 100`
+	    pp_mkgroup "${2:-$1}"
+	    pp_tmp_gid=`/usr/bin/dscl . -read /Groups/"${2:-$1}" \
+		PrimaryGroupID | awk '{print $2}'`
+	    /usr/bin/dscl . -create /Users/"$1"
+	    /usr/bin/dscl . -create /Users/"$1" PrimaryGroupID $pp_tmp_gid
+	    /usr/bin/dscl . -create /Users/"$1" NFSHomeDirectory \
+				    "${3:-/var/empty}"
+	    /usr/bin/dscl . -create /Users/"$1" UserShell \
+				    "${4-/usr/bin/false}"
+	    /usr/bin/dscl . -create /Users/"$1" RealName "$1"
+	    /usr/bin/dscl . -create /Users/"$1" UniqueID $pp_tmp_uid
+	    /usr/bin/dscl . -create /Users/"$1" Password '*'
+#	    /usr/bin/dscl . -passwd /Users/$user "$passwd"
+.
+        pp_havelib) cat<<'.';;
+	    # (use otool -L to find dependent libraries)
+            for pp_tmp_dir in `echo "${3:+$3:}/usr/local/lib:/lib:/usr/lib" |
+		    tr : ' '`; do
+                test -r "$pp_tmp_dir/lib$1{$2:+.$2}.dylib" && return 0
+            done
+            return 1
+.
+	*) false;;
+    esac
 }

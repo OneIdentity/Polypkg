@@ -141,6 +141,17 @@ pp_add_to_list () {
     fi
 }
 
+#@ pp_unique(word...): removes duplicates from the input
+pp_unique () {
+    typeset result element
+    result=
+    for element
+    do
+	pp_add_to_list result $element
+    done
+    echo $result
+}
+
 #@ pp_mode_strip_altaccess(str): given a string `ls` mode pattern, remove a
 #   trailing '+' if there is one. '+' indicates an "alternate access mode",
 #   usually an ACL.
@@ -401,14 +412,32 @@ pp_install_script_common () {
 
 #@ pp_functions(func...): emit platform-dependent function definitions
 pp_functions () {
-    typeset func
-    for func
+    typeset func deps allfuncs
+    allfuncs=
+    while test $# -gt 0; do
+	pp_add_to_list allfuncs "$1"
+	deps=`pp_backend_function "$1:depends"`
+	shift
+	set -- `pp_unique "$@" $deps`
+    done
+
+    for func in $allfuncs
     do
         pp_debug "generating function code for '$1'"
         echo ""
         echo "$func () {"
-        pp_backend_function "$func" ||
-            echo "false"
+	case "$func" in
+	    pp_mkgroup|pp_mkuser|pp_havelib) echo <<.;;
+		if test \$# -lt 1; then
+		    echo "$func: not enough arguments" >&2
+		    return 1
+		fi
+.
+	esac
+        pp_backend_function "$func" || cat <<.
+		echo "$func: not implemented" >&2
+		return 1
+.
         echo "}"
     done
 }
