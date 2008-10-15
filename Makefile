@@ -56,12 +56,23 @@ pp-stripped: $(PP_SRCS)
 	 cat pp.licence; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
 	 echo 'pp_main $${1+"$$@"}';	\
-	 ) > $@
+	) > $@
 	chmod +x $@
 
 clean:
-	rm -f pp pp-stripped tags
+	rm -f pp pp-stripped tags pp.ln
 	cd example && $(MAKE) clean
+
+# Generate a symlink-able pp script.
+# This is useful when fixing bugs in pp, and testing out pp through
+# another product's Make cycle. Just make a symlink from product/pp to pp.ln
+# and any updates from make in this directory will be immediately available
+# to the symlink without having to re-install pp.
+pp.ln: pp
+	(echo '#!/bin/sh';			\
+	 echo "exec `pwd -P`/pp \"\$$@\"";	\
+	) > $@
+	chmod +x $@
 
 TEST_SHELL=sh
 
@@ -74,7 +85,6 @@ check: pp
 # by being preceeded by a descriptive comment starting with '#@'
 tags: $(PP_SRCS)
 	for f in $(PP_SRCS); do \
-	    : sed -n -e 's,^\(#@[ 	]*\$$*\([^(:/ ]*\)[^:]*:*\).*,\2	'$$f'	/^\1/,p' $$f; \
 	    sed -n -e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)[ 	]*(\))[ 	]*{.*,\2	'$$f'	/^\1/,p' \
 		-e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)=\).*,\2	'$$f'	/^\1/,p' $$f; \
 	done |sort > $@
