@@ -8,6 +8,7 @@ pp_backend_deb_function() {
         pp_mkuser:depends) echo pp_mkgroup;;
         pp_mkuser) cat<<'.';;
 	    pp_tmp_system=
+	    id -u "$1" >/dev/null 2>/dev/null && return 0
 	    # deb 3.1's useradd changed API in 4.0. Gah!
 	    /usr/sbin/useradd --help 2>&1 | /bin/grep -q .--system &&
 		pp_tmp_system=--system
@@ -17,7 +18,7 @@ pp_backend_deb_function() {
 		-d "${3:-/nonexistent}" \
 		-s "${4:-/bin/false}" \
 		$pp_tmp_system \
-		$@ 
+		"$1"
 .
         pp_havelib) cat<<'.';;
             for pp_tmp_dir in `echo "/usr/lib:/lib${3:+:$3}" | tr : ' '`; do
