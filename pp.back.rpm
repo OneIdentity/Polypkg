@@ -159,7 +159,7 @@ pp_rpm_writefiles () {
 		    farch=ia64;;
 		*": ELF 32-bit MSB "*", IBM S/390"*)
 		    farch=s390;;
-		*": ELF 64-bit LSB "*", IBM S/390"*)
+		*": ELF 64-bit MSB "*", IBM S/390"*)
 		    farch=s390x;;
 		*)
 		    farch=noarch;;
