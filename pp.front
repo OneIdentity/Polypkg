@@ -141,7 +141,7 @@ pp_frontend_if () {
 	     else
 		pp_incr pp_if_false
 	     fi;;
-	%else)  test $# = 0 || warn "ignoring argument to %else"
+	%else)  test $# = 0 || pp_warn "ignoring argument to %else"
 		if test $pp_if_false -gt 1; then
 		  : no change
 		elif test $pp_if_false = 1; then
@@ -153,7 +153,7 @@ pp_frontend_if () {
 		  pp_incr pp_if_false
 		  pp_decr pp_if_true
 		fi;;
-	%endif) test $# = 0 || warn "ignoring argument to %endif"
+	%endif) test $# = 0 || pp_warn "ignoring argument to %endif"
 		if test $pp_if_false -gt 0; then
 		  pp_decr pp_if_false
 		elif test $pp_if_true -gt 0; then
