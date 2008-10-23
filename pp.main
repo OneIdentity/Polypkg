@@ -228,6 +228,12 @@ pp_install_script () {
 
 #@ pp_main(): main driver function
 pp_main () {
+	# If PP_DEV_PATH is set, then jump to that script. 
+	# (Useful when working on polypkg source that isn't installed)
+	if test -n "$PP_DEV_PATH" -a x"$PP_DEV_PATH" != x"$0"; then
+	    pp_warn "switching from $0 to $PP_DEV_PATH ..."
+	    exec "$PP_DEV_PATH" "$@" || exit 1
+	fi
 
 	pp_set_expand_converter_or_reexec "$@"
 	pp_parseopts "$@"

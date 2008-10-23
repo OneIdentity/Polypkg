@@ -65,19 +65,8 @@ pp-stripped: $(PP_SRCS)
 	chmod +x $@
 
 clean:
-	rm -f pp pp-stripped tags pp.ln
+	rm -f pp pp-stripped tags
 	cd example && $(MAKE) clean
-
-# Generate a symlink-able pp script.
-# This is useful when fixing bugs in pp, and testing out pp through
-# another product's Make cycle. Just make a symlink from product/pp to pp.ln
-# and any updates from make in this directory will be immediately available
-# to the symlink without having to re-install pp.
-pp.ln: pp
-	(echo '#!/bin/sh';			\
-	 echo "exec `pwd -P`/pp \"\$$@\"";	\
-	) > $@
-	chmod +x $@
 
 TEST_SHELL=sh
 
