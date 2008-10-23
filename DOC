@@ -542,7 +542,9 @@ The %depend section
 	adding any separator characters (such as ",").
 
 	At time of writing only the deb backend implements this kind of
-	explicit dependency. Its syntax is subject to change.
+	explicit dependency. Its syntax is subject to change. See
+	http://www.debian.org/doc/debian-policy/ch-relationships.html#s-depsyntax
+	for the syntax.
 
 
 Output filenames
