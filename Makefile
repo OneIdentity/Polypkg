@@ -31,11 +31,6 @@ PP_SRCS= \
 
 all: pp check
 	cd example && $(MAKE)
-	@if test -x $(INSTALLED_PP); then \
-	    echo "Polypkg versions:"; \
-	    echo " installed (public): "`$(INSTALLED_PP) --version | cut -d' ' -f2`; \
-	    echo " local:              "`./$< --version | cut -d' ' -f2`; \
-	fi
 
 # Generate a pp that includes the sources with the '.' operator.
 # This is most handy for development because the source line numbers
@@ -84,6 +79,11 @@ tags: $(PP_SRCS)
 	done |sort > $@
 
 install: pp-stripped
+	@if test -x $(INSTALLED_PP); then \
+	    echo "Polypkg versions:"; \
+	    echo " installed (public): "`$(INSTALLED_PP) --version | cut -d' ' -f2`; \
+	    echo " local:              "`./$< --version | cut -d' ' -f2`; \
+	fi
 	@PPVER=`./pp-stripped --version | cut -d. -f 4`; \
 	    case $$PPVER in \
 		*M*|*_*) \
