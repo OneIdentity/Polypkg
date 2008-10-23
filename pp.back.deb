@@ -94,6 +94,11 @@ pp_deb_detect_arch () {
    pp_deb_arch_std=`uname -m`
 }
 
+#@ pp_deb_list_depends(cmp): List of dependencies for a given component
+pp_deb_list_depends () {
+	echo `cat $pp_wrkdir/%depend."$1"`
+}
+
 #@ pp_deb_make_control(cmp) > control: creates a debian control file
 pp_deb_make_control() {
     package_name=`pp_deb_cmp_full_name "$1"`
@@ -104,6 +109,7 @@ pp_deb_make_control() {
 	Priority: optional
 	Architecture: ${pp_deb_arch}
 	Maintainer: ${pp_deb_maintainer:-$maintainer} 
+	Depends: `pp_deb_list_depends "$1"`
 	Description: ${pp_deb_summary:-$summary}
 	${pp_deb_control_description}
 .

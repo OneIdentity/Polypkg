@@ -530,6 +530,20 @@ The %ignore section
 
                 %ignore
 
+The %depend section
+
+	The package's dependencies as they will appear verbatim in the
+	package's control file. A component can be specified, otherwise
+	the "run" component is assumed.
+
+	Dependencies are specified in the %depend section up until the
+	next section. Dependencies should be specified on a single line,
+	but may be split - each line is simply concatenated *without*
+	adding any separator characters (such as ",").
+
+	At time of writing only the deb backend implements this kind of
+	explicit dependency. Its syntax is subject to change.
+
 
 Output filenames
 
@@ -552,8 +566,7 @@ Interface names
     * UNIMPLEMENTED *
 
     polypkg can compute the full canonical dependency list of a package,
-    and record it in the helper script. Polypkg uses the %depend section,
-    and/or analyses the files in the package to build this list.
+    and record it in the helper script.
 
     Dependencies (and provisions) are specified as a set of interfaces names.
     All interface names are of the form as:
