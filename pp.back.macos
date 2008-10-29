@@ -334,6 +334,16 @@ pp_macos_mkbom () {
     typeset path mode ugid size cksum linkpath
     typeset bomstage
 
+    # Use mkbom if it understands -i (avoids a copy)
+    if /usr/bin/mkbom -i /dev/null "$2" 2>/dev/null; then
+	rm -f "$2"
+	/usr/bin/mkbom -i "$1" "$2"
+	return
+    fi
+
+    # On 10.4 we have this nonsense.
+    pp_warn "mkbom workaround: copying source files to staging area"
+
     bomstage=$pp_wrkdir/bom_stage
     while IFS='	' read path mode ugid size cksumi linkpath; do
 	if test -h "$pp_destdir/$path"; then
@@ -450,8 +460,6 @@ pp_backend_macos () {
     cat $pp_wrkdir/%files.* | pp_macos_files_bom | sort |
 	pp_macos_bom_fix_parents > $pp_wrkdir/tmp.bomls
 
-    # On 10.5 this is much simpler:
-    #/usr/bin/mkbom -i $pp_wrkdir/tmp.bomls $Contents/Archive.bom
     pp_macos_mkbom $pp_wrkdir/tmp.bomls $Contents/Archive.bom
 
     # Create the cpio archive (Archive.pax.gz)
