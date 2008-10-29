@@ -522,7 +522,7 @@ pp_backend_sd_probe () {
 pp_backend_sd_vas_platforms () {
     case "`pp_backend_sd_probe`" in
 	hpux*-hppa) echo hpux-pa;;
-	hpux*-ia64) echo hpux-ia64;;
+	hpux*-ia64) echo hpux-ia64 hpux-pa;;
 	*)	    pp_die "unknown system `pp_backend_sd_probe`";;
     esac
 }
