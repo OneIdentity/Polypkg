@@ -328,6 +328,31 @@ pp_d2o () {
     esac
 }
 
+#@ pp_macos_mkbom(bomls output.bom): build a bom file from a bomls
+pp_macos_mkbom () {
+    #/usr/bin/mkbom -i $1 $2
+    typeset path mode ugid size cksum linkpath
+    typeset bomstage
+
+    bomstage=$pp_wrkdir/bom_stage
+    while IFS='	' read path mode ugid size cksumi linkpath; do
+	if test -h "$pp_destdir/$path"; then
+	    /bin/ln -s "$linkpath" "$bomstage/$path"
+	else
+	    if test -d "$pp_destdir/$path"; then
+		/bin/mkdir -p "$bomstage/$path"
+	    else
+		/bin/cp "$pp_destdir/$path" "$bomstage/$path" 
+	    fi
+	    /bin/chmod $mode "$bomstage/$path"
+	    /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
+	fi
+    done <"$1"
+    (cd $bomstage && mkbom . $pp_wrkdir/bom_stage.bom) || 
+	pp_error "mkbom failed"
+    mv $pp_wrkdir/bom_stage.bom "$2"
+}
+
 #@ pp_backend_macos(): processes output files to generate a package files
 pp_backend_macos () {
     typeset dmgdir pkgdir Contents Resources lprojdir
@@ -424,10 +449,14 @@ pp_backend_macos () {
     # Create the bill-of-materials (Archive.bom)
     cat $pp_wrkdir/%files.* | pp_macos_files_bom | sort |
 	pp_macos_bom_fix_parents > $pp_wrkdir/tmp.bomls
-    /usr/bin/mkbom -i $pp_wrkdir/tmp.bomls $Contents/Archive.bom
+
+    # On 10.5 this is much simpler:
+    #/usr/bin/mkbom -i $pp_wrkdir/tmp.bomls $Contents/Archive.bom
+    pp_macos_mkbom $pp_wrkdir/tmp.bomls $Contents/Archive.bom
 
     # Create the cpio archive (Archive.pax.gz)
-    (cd $pp_destdir && /bin/pax -w -f - .) | 
+    # On 10.5, we used "-f -" to write explicitly to stdout
+    (cd $pp_destdir && /bin/pax -w .) | 
 	gzip -9 -c > $Contents/Archive.pax.gz
 
     # create a package using packagemaker
