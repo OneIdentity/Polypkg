@@ -5,6 +5,9 @@
 # http://mirrors-3v.club-internet.fr/mirrors/ftp.osxgnu.org/pub/osxgnu/OSXPM/package
 # http://developer.apple.com/releasenotes/DeveloperTools/Installer.html
 # Packagmeaker Help files
+#
+# For online update support, Apple keeps its 'softwareupdate' tool
+# for apple use only. However, see http://code.google.com/p/update-engine/
 
 : NOTES <<.
 
@@ -453,6 +456,21 @@ pp_backend_macos () {
 	    fi
 	    cat $pp_wrkdir/%post.$cmp >> $Resources/postinstall
 	    echo : >> $Resources/postinstall
+	fi
+    done
+
+    # Warn that %preun scripts are simply ignored.
+    # However, write out a 'preuninstall' script, in case one day 
+    # it is supported.
+    for cmp in $pp_components; do
+	if test -s $pp_wrkdir/%preun.$cmp; then
+	    pp_warn "%preun scripts are ignored on OSX"
+	    if test ! -s $Resources/preuninstall; then
+		echo "#!/bin/sh" > $Resources/preuninstall
+		chmod +x $Resources/preuninstall
+	    fi
+	    cat $pp_wrkdir/%preun.$cmp >> $Resources/preuninstall
+	    echo : >> $Resources/preuninstall
 	fi
     done
 
