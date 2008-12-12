@@ -1,10 +1,9 @@
 #@ pp_backend_macos_function(func): output one platform-dependent function
 pp_backend_macos_function () {
     case $1 in
-	INIT) cat<<'.';;
+	_pp_macos_search_unused) cat<<'.';;
 	    # Find an unused value in the given path
 	    # args: path attribute minid [maxid]
-	    _pp_macos_search_unused () {
 		pp_tmp_val=$3
 		while :; do
 		    test $pp_tmp_val -ge ${4:-999999} && return 1
@@ -13,8 +12,8 @@ pp_backend_macos_function () {
 		    pp_tmp_val=`expr $pp_tmp_val + 1`
 		done
 		echo $pp_tmp_val
-	    }
 .
+        pp_mkgroup:depends) echo _pp_macos_search_unused;;
         pp_mkgroup) cat<<'.';;
 	    set -e
 	    /usr/bin/dscl . -read /Groups/"$1" >/dev/null 2>&1 && return
@@ -25,7 +24,7 @@ pp_backend_macos_function () {
 	    /usr/bin/dscl . -create /Groups/"$1" GroupMembership ""
 	    /usr/bin/dscl . -create /Groups/"$1" Password '*'
 .
-        pp_mkuser:depends) echo pp_mkgroup;;
+        pp_mkuser:depends) echo pp_mkgroup _pp_macos_search_unused;;
         pp_mkuser) cat<<'.';;
 	    set -e
 	    /usr/bin/dscl . -read /Users/"$1" >/dev/null 2>&1 && return
