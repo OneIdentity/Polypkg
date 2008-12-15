@@ -1,4 +1,3 @@
-
 The idea of polypkg is to supply a common packaging script that can
 be converted into packaging commands on various different platforms.
 
