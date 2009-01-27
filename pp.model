@@ -195,10 +195,6 @@ pp_debug "symlink target is $_tgt"
                     ${pp_destdir}/*) 
                        pp_warn "stripped \$destdir from symlink ($_path)"
                        _tgt="${_tgt#$pp_destdir}";;
-                    /*) :;;
-                    *)  
-                       pp_warn "converted relative symlink to absolute ($_path)"
-                       _tgt="${_path%/*}/$_tgt";;
                esac
 	   fi
 	   _m=777
