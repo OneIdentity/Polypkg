@@ -47,6 +47,10 @@ pp_backend_rpm_init () {
 
     pp_rpm_detect_arch
     pp_rpm_detect_distro
+
+    # SLES8 doesn't always come with readlink
+    test -x /usr/bin/readlink -o -x /bin/readlink || 
+        pp_readlink_fn=pp_ls_readlink
 }
 
 #@ pp_rpm_detect_arch(): sets $pp_rpm_arch to current RPM architecture
@@ -110,6 +114,7 @@ pp_rpm_detect_distro () {
           /^openSUSE [0-9]/   { print "suse" $2; exit; }
           /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
           /^SUSE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
+          /^SuSE SLES-[0-9]/  { print "sles" substr($2,6); exit; }
        ' /etc/SuSE-release`
     fi
     pp_rpm_distro=`echo $pp_rpm_distro | tr -d .`
