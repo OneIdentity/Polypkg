@@ -1,0 +1,187 @@
+#
+# Tru64 kit backend
+# from Seth Ellsworth
+#
+
+pp_platforms="$pp_platforms kit"
+
+#@ pp_backend_kit_detect(): return true if this platform uses solaris pkgs
+pp_backend_kit_detect () {
+    test x"$1" = x"OSF1"
+}
+
+pp_backend_kit_init () {
+        pp_kit_name=
+        pp_kit_package=
+        pp_kit_desc=
+        pp_kit_version=
+        pp_kit_subset=
+        pp_readlink_fn=pp_ls_readlink
+}
+
+pp_backend_kit () {
+    typeset mi_file k_file svc outfile
+    typeset desc 
+
+    pp_backend_kit_names > /dev/null
+
+    if test -z "$pp_kit_desc"; then
+        pp_kit_desc="$description"
+    fi
+
+    mi_file="$pp_wrkdir/$pp_kit_subset.mi"
+    k_file="$pp_wrkdir/$pp_kit_subset.k"
+
+    desc="${pp_kit_desc:-$description}"
+
+    cat <<-. >> $k_file
+	NAME='$desc'
+	CODE=$pp_kit_name
+	VERS=$pp_kit_version
+	MI=$mi_file
+	COMPRESS=0
+	%%
+	$pp_kit_subset	.	0	'$desc'
+.
+
+    pp_backend_kit_make_mi "$mi_file"
+    rm -rf  $pp_wrkdir/kit_dest
+    mkdir $pp_wrkdir/kit_dest
+    pp_backend_kit_kits $k_file $pp_opt_destdir $pp_wrkdir/kit_dest
+    tar cvf $pp_wrkdir/$pp_kit_subset.tar -C $pp_wrkdir/kit_dest .
+    gzip -c $pp_wrkdir/$pp_kit_subset.tar > $pp_wrkdir/$pp_kit_subset.tar.gz
+    rm $pp_wrkdir/$pp_kit_subset.tar
+}
+
+pp_backend_kit_make_mi () {
+    typeset t m o g f p st line dm
+    while read t m o g f p st; do
+        echo "0	.$p	$pp_kit_subset"
+    done < $pp_wrkdir/%files.run | sort -k3  |uniq > $1
+}
+
+
+pp_backend_kit_cleanup () {
+    :
+}
+
+pp_backend_kit_names () {
+    if test -z "$pp_kit_name"; then
+        pp_warn "pp_kit_name not specified, using XXX"
+        pp_kit_name=XXX
+    fi
+    case "$pp_kit_name" in
+        ???) : ok;;
+        *) pp_error "\$pp_kit_name $pp_kit_name must be three characters";;
+    esac
+    if test -z "$pp_kit_package"; then
+        pp_warn "pp_kit_package not specified, using YYYY" 
+        pp_kit_package=YYYY
+    fi
+    if test -z "$pp_kit_version"; then
+        pp_kit_version=`echo $version|sed -e 's/^\([0-9]\)\.\([0-9]\).*/\1\20/'`
+    fi
+    case "$pp_kit_version" in
+        [0-9][0-9][0-9]) : ok;;
+        *) pp_error "\$pp_kit_version $pp_kit_version must be three digits, ";;
+    esac
+    if test -z "$pp_kit_subset"; then
+        pp_kit_subset="$pp_kit_name$pp_kit_package$pp_kit_version"
+    fi
+    echo "$pp_kit_subset.tar.gz"
+}
+
+pp_backend_kit_install_script () {
+    typeset pkgname platform
+
+    pkgname=`pp_backend_kit_names`
+    platform="`pp_backend_kit_probe`"
+
+    echo "#!/bin/sh"
+    pp_install_script_common
+    cat <<.
+
+        cpt_to_tags () {
+            test x"\$*" = x"all" && set -- $pp_components
+            for cpt
+            do
+                echo "$name.\$cpt"
+            done
+        }
+
+        test \$# -eq 0 && usage
+        op="\$1"; shift
+
+        case "\$op" in 
+            list-components)
+                test \$# -eq 0 || usage \$op
+                echo "$pp_components"
+                ;;
+            list-services)
+                test \$# -eq 0 || usage \$op
+                echo "$pp_services"
+                ;;
+            list-files)
+                test \$# -ge 1 || usage \$op
+                echo \${PP_PKGDESTDIR:-.}/$pkgname
+                ;;
+            install)
+                test \$# -ge 1 || usage \$op
+                verbose echo \${PP_PKGDESTDIR:-\`pwd\`}/$pkgname \`cpt_to_tags "\$@"\`
+                #verbose swinstall -x verbose=0 -s \${PP_PKGDESTDIR:-\`pwd\`}/$pkgname \`cpt_to_tags "\$@"\`
+                ;;
+            uninstall)
+                test \$# -ge 1 || usage \$op
+                verbose echo \`cpt_to_tags "\$@"\`
+                #verbose swremove -x verbose=0 \`cpt_to_tags "\$@"\`
+                ;;
+            start|stop)
+                test \$# -ge 1 || usage \$op
+                ec=0
+                for svc
+                do
+                    verbose /sbin/init.d/\$svc \$op
+                    [ \$? -eq 4 -o \$? -eq 0 ] || ec=1
+                done
+                exit \$ec
+                ;;
+            print-platform)
+		echo "$platform"
+		;;
+            *)
+                usage
+                ;;
+        esac
+.
+}
+
+pp_backend_kit_function () {
+    case "$1" in
+        pp_mkgroup) cat <<'.';;
+            grep "^$1:" /etc/group >/dev/null ||
+                /usr/sbin/groupadd $1
+.
+        pp_mkuser) cat <<'.';;
+            typeset user
+            eval user=\$$#
+            grep "^$user:" /etc/passwd >/dev/null ||
+                /usr/sbin/useradd -s /usr/bin/false "$@"
+.
+        pp_havelib) cat <<'.';;
+            typeset dir
+            for dir in `echo /usr/lib${3+:$3} | tr : ' '`; do
+                test -r "$dir/lib$1.${2-sl}" && return 0
+            done
+            return 1
+.
+        *) pp_error "unknown function request: $1";;
+    esac
+}
+
+pp_backend_kit_init_svc_vars () {
+    :
+}
+
+pp_backend_kit_probe () {
+    echo tru64-`uname -r | sed 's/V\([0-9]*\)\.\([0-9]*\)/\1\2/'`
+}

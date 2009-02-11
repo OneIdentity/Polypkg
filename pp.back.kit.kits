@@ -1,0 +1,240 @@
+
+##### TODO
+##### The .inv file should be created directly from %files.run
+##### 
+
+# Pulled from /usr/bin/kits by Seth and cleaned up by David
+#
+# kits(1)
+#
+# kits - Generates setld format distribution kits
+#
+# DESCRIPTION
+# 
+#   The kits command produces subset images, inventories, and control files for
+#   an installation using the setld command.  You need to know the key file
+#   which describes the product to be built, a hierarchy from which the com-
+#   ponent files to be kitted are to be taken, and a destination directory into
+#   which the kit information is to be placed.
+# 
+#   In the output-path directory, the kits command produces a subset image file
+#   for each subset and a product_code.image file listing all the kit's sub-
+#   sets. In the instctrl subdirectory of output-path, kits produces an inven-
+#   tory file and a control file. The optional subset control program for any
+#   subset in the kit is transferred to output-path/instctrl. An instctrl
+#   directory is created if none existed.
+# 
+# RESTRICTIONS
+# 
+#   Any subset control programs to be provided with the kit must be located in
+#   a directory named scps in the working directory where the kits program is
+#   invoked.  If no subset control program is found for a subset, an empty one
+#   is created.
+
+# Deviations from Tru64's kit(1)
+#    * the scps directory must be in $pp_wrkdir/scps
+
+pp_backend_kit_sizes () {
+    awk '
+    BEGIN { root = usr = var = 0; }
+    {
+        if (substr($9, 1, 1) != "l")
+            if (substr($10, 1, 6) == "./var/")
+                var += $2;
+            else if (substr($10, 1, 10) == "./usr/var/")
+                var += $2
+            else if (substr($10, 1, 6) == "./usr/")
+                usr += $2
+            else
+                root += $2
+    }
+    END { printf "%d\t%d\t%d", root, usr, var }
+    ' "$@"
+}
+
+# extracts a variable setting from a spec file
+pp_kit_kits_global () {
+    line=`sed -n '/^%%/q;/^'$2'=/{s/^'$2'=//p;q;}' <"$1"`
+    test -z "$line" && return 1
+    eval "echo $line"
+    :
+}
+
+#@ pp_backend_kit_kits(key-file input-path output-path [subset...])
+pp_backend_kit_kits () {
+    typeset KITFILE FROMDIR TODIR
+    typeset SCPDIR
+
+    SCPDIR="$pp_wrkdir/scps"
+
+    PATH="/usr/lbin:/usr/bin:/etc:/usr/ucb:$PATH"; export PATH # XXX
+    #umask 2 # XXX
+
+    test $# -ge 3 || pp_die "pp_backend_kit_kits: too few arguments"
+    KITFILE="$1"; shift
+    FROMDIR="$1"; shift
+    TODIR="$1"; shift
+
+    test -f "$KITFILE" || pp_die "$KITFILE not found"
+    test -d "$FROMDIR" || pp_die "$FROMDIR not found"
+    test -d "$TODIR"   || pp_die "$TODIR not found"
+
+    INSTCTRL="$TODIR/instctrl"
+    mkdir -p "$INSTCTRL" || pp_die "cannot create instctrl directory"
+    chmod 775 "$INSTCTRL"
+
+    grep "%%" $KITFILE > /dev/null || pp_die "no %% in $KITFILE"
+
+    typeset NAME CODE VERS MI ROOT COMPRESS
+    typeset S_LIST ALLSUBS
+
+    NAME=`pp_kit_kits_global "$KITFILE" NAME` || pp_die "no NAME in $KITFILE"
+    CODE=`pp_kit_kits_global "$KITFILE" CODE` || pp_die "no CODE in $KITFILE"
+    VERS=`pp_kit_kits_global "$KITFILE" VERS` || pp_die "no VERS in $KITFILE"
+    MI=`pp_kit_kits_global "$KITFILE" MI` || pp_die "no MI in $KITFILE"
+    ROOT=`pp_kit_kits_global "$KITFILE" ROOT` 
+    COMPRESS=`pp_kit_kits_global "$KITFILE" COMPRESS`
+    
+    test -f "$MI" || pp_die "Inventory file $MI not found"
+
+    case "$ROOT" in 
+    *ROOT)	
+        test -f "$TODIR/$ROOT" || 
+            pp_die "Root image $ROOT not found in $TODIR" ;;
+    esac
+
+    ALLSUBS=`awk 'insub==1 {print $1} /^%%/ {insub=1}' <"$KITFILE"`
+    test $# -eq 0 && set -- $ALLSUBS
+
+    pp_debug "Creating $# $NAME subsets."
+    pp_debug "ALLSUBS=<$ALLSUBS>"
+
+    if test x"$COMPRESS" = x"1"; then
+        COMPRESS=:
+    else
+        COMPRESS=false
+    fi
+
+    #rm -f *.ctrl Volume*
+
+    for SUB
+    do 
+        test -z "$SUB" && pp_die "SUB is empty"
+
+        typeset INV CTRL ROOTSIZE USRSIZE VARSIZE TSSUB
+	#rm -f Volume*
+	case $SUB in
+            .*) :;;
+	    *)  pp_verbose rm -f "$TODIR/$SUB"* "$INSTCTRL/$SUB"*;;
+        esac
+
+        TSSUB="$pp_wrkdir/ts.$SUB"
+
+	pp_debug "kits: Subset $SUB"
+
+	INV="$SUB.inv"
+	CTRL="$SUB.ctrl"
+	pp_debug "kits: Generating media creation information..."
+
+        # Invcutter takes as input
+        #   SUB dir/path
+        # and generates stl_inv(4) files, like this
+        #   f 0 00000 0 0 100644 2/11/09 010 f dir/path none SUB
+	grep "	$SUB\$" "$MI" | 
+            pp_verbose /usr/lbin/invcutter \
+                -v "$VERS" -f "$FROMDIR" > "$INSTCTRL/$INV" || 	
+            pp_die "failed to create $INSTCTRL/$INV"
+        chmod 664 "$INSTCTRL/$INV"
+ 
+        pp_backend_kit_sizes "$INSTCTRL/$INV" > "$pp_wrkdir/kit.sizes"
+        read ROOTSIZE USRSIZE VARSIZE < "$pp_wrkdir/kit.sizes"
+
+        # Prefix each line with $FROMDIR. This will be stripped
+        awk '$1 != "d" {print from $10}' from="$FROMDIR/" \
+            > "$TSSUB" < "$INSTCTRL/$INV" || 
+            pp_die "failed"
+
+        NVOLS=0
+
+	pp_debug "kits: Creating $SUB control file..."
+
+        sed '1,/^%%/d;/^'"$SUB"'/{p;q;}' < "$KITFILE" > "$pp_wrkdir/kit.line"
+        read _SUB _IGNOR DEPS FLAGS DESC < "$pp_wrkdir/kit.line"
+        if test -z "$_SUB"; then
+            pp_warn "No such subset $SUB in $KITFILE"
+            continue
+	fi
+        DEPS=`echo $DEPS | tr '|' ' '`
+        case $FLAGS in
+            FLGEXP*) pp_verbose FLAGS='"${'"$FLAGS"'}"' ;;
+        esac
+        case $DESC in
+            *%*) DESC=`echo $DESC|awk -F% '{printf "%-36s%%%s\n", $1, $2}'`;;
+        esac
+
+	cat > "$INSTCTRL/$CTRL" <<-.
+		NAME='$NAME $SUB'
+		DESC=$DESC
+		ROOTSIZE=$ROOTSIZE
+		USRSIZE=$USRSIZE
+		VARSIZE=$VARSIZE
+		NVOLS=1:$NVOLS
+		MTLOC=1:$TLOC
+		DEPS="$DEPS"
+		FLAGS=$FLAGS
+.
+        chmod 664 "$INSTCTRL/$CTRL"
+
+	pp_debug "kits: Making tar image"
+
+#	(cd "$FROMDIR" && tar cfR - $TSSUB) > "$TODIR/$SUB" ||
+#            pp_error "problem creating kit file"
+	pp_verbose tar cfPR "$TODIR/$SUB" "$FROMDIR/" "$TSSUB" ||
+             pp_error "problem creating kit file"
+
+        if $COMPRESS; then
+            pp_debug "kits: Compressing"
+            (cd "$TODIR" && compress -f -v "$SUB") ||
+                pp_die "problem compressing $TODIR/$SUB"
+            SPC=`expr $SUB : '\(...\).*'`    # first three characters
+            SVC=`expr $SUB : '.*\(...\)'`    # last three characters
+            : > "$INSTCTRL/$SPC$SVC.comp"
+            chmod 664 "$INSTCTRL/$SPC$SVC.comp"
+            pp_debug "kits: Padding compressed file to 10kB" # wtf?
+            rm -f "$TODIR/$SUB"
+            pp_verbose \
+            dd if="$TODIR/$SUB.Z" of="$TODIR/$SUB" bs=10k conv=sync ||
+                pp_die "problem moving compressed file"
+            rm -f "$TODIR/$SUB.Z"
+        fi
+        chmod 664 "$TODIR/$SUB"
+
+	if test -f "$SCPDIR/$SUB.scp"; then
+		cp "$SCPDIR/$SUB.scp" "$INSTCTRL/$SUB.scp"
+                chmod 755 "$INSTCTRL/$SUB.scp"
+	else
+		pp_debug "kits: null subset control program for $SUB"  
+		: > "$INSTCTRL/$SUB.scp"
+		chmod 744 "$INSTCTRL/$SUB.scp"
+	fi
+
+        pp_debug "kits: Finished creating media image for $SUB" 
+    done 
+
+    pp_debug "kits: Creating $CODE.image"
+
+    case "$ROOT" in
+    *ROOT)	ALLSUBS="$ROOT $ALLSUBS"
+                ;;
+    esac
+
+    (cd "$TODIR" && sum $ALLSUBS) > "$INSTCTRL/$CODE.image"
+    chmod 664 "$INSTTRL/$CODE.image"
+    pp_debug "kits: Creating INSTCTRL"
+    (cd "$INSTCTRL" && tar cpvf - *) > "$TODIR/INSTCTRL"
+    chmod 664 "$TODIR/INSTCTRL"
+    cp "$INSTCTRL/$CODE.image" "$TODIR/$CODE.image"
+    chmod 664 "$TODIR/$CODE.image"
+
+    pp_debug "kits: Media image production complete"
+}

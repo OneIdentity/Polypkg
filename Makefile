@@ -20,6 +20,8 @@ PP_SRCS= \
 	 pp.back.deb \
 	 pp.back.deb.svc \
 	 pp.back.deb.func \
+	 pp.back.kit \
+	 pp.back.kit.kits \
 	 pp.back.rpm \
 	 pp.back.rpm.svc \
 	 pp.back.rpm.func \
