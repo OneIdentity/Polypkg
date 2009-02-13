@@ -67,9 +67,12 @@ pp_aix_version_fix () {
     case $v in
         ""|*..*|.*|*.) pp_error "malformed '$1'"
                  echo "0.0.0.0";;
-        *.*.*.*.*.*) pp_error "version '$1' has too many dots for AIX"
-                 echo "0.0.0.0";;
-        *.*.*.*.*|*.*.*.*) echo "$v";;
+        *.*.*.*.*)
+                 # 5 components are only valid for fileset updates, not base
+                 # filesets (full packages). We trim 5+ components down to 4.
+                 pp_warn "version '$1' has too many dots for AIX, truncating"
+                 echo "$v" | cut -d. -f1-4;;
+        *.*.*.*) echo "$v";;
         *.*.*) echo "$v.0";;
         *.*) echo "$v.0.0";;
         *) echo "$v.0.0.0";;
