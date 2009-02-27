@@ -500,3 +500,48 @@ $1
 }
 ..
 }
+
+#@ pp_copy_unstripped(file): keep a copy of $file with the unstripped binaries
+pp_copy_unstripped () {
+    typeset filedir realdir
+    filedir="`dirname ${1#$pp_destdir}`"
+    realdir="$pp_wrkdir/unstripped/$filedir"
+
+    mkdir -p "$realdir"
+    # Can't use hardlinks because `strip` modifies the original file in-place
+    cp "$1" "$realdir"
+}
+
+#@ pp_package_stripped_binaries(): tar.gz the unstripped directory tree
+pp_package_stripped_binaries () {
+    (cd "$pp_wrkdir/unstripped" && tar -c .) \
+     | gzip > "$name-$version-unstripped.tar.gz"
+    rm -rf "$pp_wrkdir/unstripped"
+}
+
+#@ pp_strip_binaries(): Strip all ELF binaries in $pp_destdir
+pp_strip_binaries () {
+    if test x"$pp_opt_save_unstripped" = x"true"; then
+	rm  -rf "$pp_wrkdir/unstripped"
+	mkdir "$pp_wrkdir/unstripped"
+    fi
+
+    for f in `find "$pp_destdir" -type f`; do
+	if file "$f" | awk '{print $2}' | grep ^ELF >/dev/null 2>&1; then
+	    if test x"$pp_opt_save_unstripped" = x"true"; then
+		if file "$f" | LC_MESSAGES=C grep 'not stripped' >/dev/null 2>&1; then
+		    pp_debug "Saving unstripped binary $f"
+		    pp_copy_unstripped "$f"
+		else
+		    pp_debug "$f is already stripped; not saving a copy"
+		fi
+	    fi
+	    pp_debug "Stripping unnecessary symbols from $f"
+	    strip "$f"
+	fi
+    done
+
+    if test x"$pp_opt_save_unstripped" = x"true"; then
+	pp_package_stripped_binaries
+    fi
+}

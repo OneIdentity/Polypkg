@@ -12,6 +12,8 @@ pp_opt_no_package=false
 pp_opt_only_front=false
 pp_opt_platform=
 pp_opt_probe=false
+pp_opt_strip=false
+pp_opt_save_unstripped=false
 pp_opt_vas_platforms=false
 pp_opt_wrkdir="`pwd`/pp.work.$$"
 pp_opt_verbose=false
@@ -99,6 +101,8 @@ pp_parseopts () {
 	    --only-front)      pp_opt_only_front=true; shift;;
 	    --platform)        pp_opt_platform="$2";   shift;shift;;
 	    --probe)           pp_opt_probe=true;      shift;;
+	    --strip)           pp_opt_strip=true;      shift;;
+	    --save-unstripped) pp_opt_save_unstripped=true; shift;;
 	    --wrkdir)          pp_opt_wrkdir="$2";     shift;shift;;
 	    --vas-platforms)   pp_opt_vas_platforms=true; shift;;
 	    --verbose)         pp_opt_verbose=true;    shift;;
@@ -150,6 +154,10 @@ usage: $0 [options] [input.pp] [var=value ...]
        --only-front             -- only perform front-end actions
     -p --platform=platform      -- defaults to local platform
        --probe                  -- print local system identifier, then exit
+       --strip                  -- strip debug symbols from binaries before
+                                   packaging (modifies files in destdir)
+       --save-unstripped        -- save unstripped binaries to
+                                   \$name-\$version-unstripped.tar.gz
        --wrkdir=path            -- defaults to subdirectory of \$TMPDIR or /tmp
     -v --verbose                -- write info to stderr
        --version                -- display version and quit
@@ -198,6 +206,10 @@ pp_drive () {
 
 	# stop now if we're only running the front
 	$pp_opt_only_front && return
+
+	if test x"$pp_opt_strip" = x"true"; then
+	    pp_strip_binaries
+	fi
 
 	# run the back-end to generate the package
 	pp_debug "calling backend"
