@@ -515,7 +515,7 @@ pp_copy_unstripped () {
 #@ pp_package_stripped_binaries(): tar.gz the unstripped directory tree
 pp_package_stripped_binaries () {
     (cd "$pp_wrkdir/unstripped" && tar -c .) \
-     | gzip > "$name-$version-unstripped.tar.gz"
+     | gzip > "$name-dbg-$version.tar.gz"
     rm -rf "$pp_wrkdir/unstripped"
 }
 
