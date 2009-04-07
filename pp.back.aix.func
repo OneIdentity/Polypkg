@@ -2,14 +2,14 @@
 pp_backend_aix_function () {
     case $1 in
     pp_mkgroup) cat <<'.';;
-            /usr/bin/lsgroup "$1" >/dev/null &&
+            /usr/sbin/lsgroup "$1" >/dev/null &&
 		return 0
 	    echo "Creating group $1"
             /usr/bin/mkgroup -A "$1"
 .
     pp_mkuser:depends) echo pp_mkgroup;;
     pp_mkuser) cat <<'.';;
-            /usr/bin/lsuser "$1" >/dev/null &&
+            /usr/sbin/lsuser "$1" >/dev/null &&
 	        return 0
 	    pp_mkgroup "${2:-$1}" || return 1
 	    echo "Creating user $1"
