@@ -47,6 +47,7 @@ pp_backend_rpm_init () {
 
     pp_rpm_detect_arch
     pp_rpm_detect_distro
+    pp_rpm_rpmbuild=`pp_rpm_detect_rpmbuild`
 
     # SLES8 doesn't always come with readlink
     test -x /usr/bin/readlink -o -x /bin/readlink || 
@@ -120,6 +121,24 @@ pp_rpm_detect_distro () {
     pp_rpm_distro=`echo $pp_rpm_distro | tr -d .`
     test -z "$pp_rpm_distro" &&
        pp_warn "unknown distro"
+}
+
+# Detect the rpmbuild program. On old systems, it is actually the `rpm`
+# command. More recently it is called rpmbuild.
+# Both are invoked the same way.
+pp_rpm_detect_rpmbuild () {
+    typeset cmd
+    for cmd in rpmbuild rpm; do
+        if `which $cmd > /dev/null 2>&1`; then
+            echo $cmd
+            return 0
+        fi
+    done
+
+    pp_error "Could not find rpmbuild"
+    # Default to `rpmbuild` in case it magically appears
+    echo rpmbuild
+    return 1
 }
 
 #@ pp_rpm_label(label [arg...]): writes "$label: $arg" for each non-empty arg
@@ -232,7 +251,7 @@ pp_backend_rpm () {
 	test -n "$pp_rpm_serial" && pp_warn "pp_rpm_serial deprecated"
 	if test -n "$pp_rpm_epoch"; then
 	    #-- Epoch was introduced in RPM 2.5.6
-	    case `rpmbuild --version 2>/dev/null` in
+	    case `$pp_rpm_rpmbuild --version 2>/dev/null` in
 		1.*|2.[0-5].*|2.5.[0-5]) 
 		    pp_rpm_label "Serial" $pp_rpm_epoch >>$specfile;;
 		*)
@@ -394,7 +413,7 @@ pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
 
 	HOME=$pp_wrkdir \
 	pp_verbose \
-        rpmbuild -bb \
+        $pp_rpm_rpmbuild -bb \
 		--buildroot="$pp_destdir/" \
                 --target="${pp_rpm_arch}" \
                 --define='_unpackaged_files_terminate_build 0' \
