@@ -16,6 +16,7 @@ PP_SRCS= \
 	 pp.back.sd \
 	 pp.back.sd.func \
 	 pp.back.solaris \
+	 pp.back.solaris.func \
 	 pp.back.solaris.svc \
 	 pp.back.deb \
 	 pp.back.deb.svc \

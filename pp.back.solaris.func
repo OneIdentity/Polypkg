@@ -1,0 +1,20 @@
+#@ pp_backend_solaris_function(): output a platform-dependent function
+pp_backend_solaris_function() {
+    case $1 in
+        pp_mkgroup) cat<<'.';;
+	    /usr/sbin/groupmod "$1" 2>/dev/null && return 0
+            /usr/sbin/groupadd "$1"
+.
+        pp_mkuser:depends) echo pp_mkgroup;;
+        pp_mkuser) cat<<'.';;
+	    id "$1" >/dev/null 2>/dev/null && return 0
+	    pp_mkgroup "${2:-$1}" || return 1
+	    /usr/sbin/useradd \
+		-g "${2:-$1}" \
+		-d "${3:-/nonexistent}" \
+		-s "${4:-/bin/false}" \
+		"$1"
+.
+    *) false;;
+    esac
+}
