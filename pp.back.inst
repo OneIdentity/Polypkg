@@ -42,7 +42,7 @@ pp_backend_inst_detect () {
 
 #@ pp_backend_inst_init(): initialises platform variables for inst 
 pp_backend_inst_init () {
-    :
+    pp_readlink_fn=pp_ls_readlink
 }
 
 
