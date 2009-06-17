@@ -280,7 +280,7 @@ pp_macos_files_bom () {
 	    d)
 		echo ".${p%/}	4$m	$owner";;
 	    s)
-		rl=`usr/bin/readlink "${pp_destdir}$p"`
+		rl=`/usr/bin/readlink "${pp_destdir}$p"`
 		test x"$rl" = x"$st" || 
 		    pp_error "symlink mismatch $rl != $st"
 		echo ".$p	12$m	$owner	`
