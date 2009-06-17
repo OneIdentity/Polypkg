@@ -245,11 +245,12 @@ pp_sd_make_service () {
         svc="$1"
 	svcvar=`pp_makevar $svc`
 
+        # TODO: Figure out why this check is here
         #-- don't do anything if the script exists
-        if test -s "$pp_destdir/sbin/init.d/$svc"; then
-            pp_error "$pp_destdir/sbin/init.d/$svc exists"
-            return
-        fi
+        #if test -s "$pp_destdir/sbin/init.d/$svc"; then
+        #    pp_error "$pp_destdir/sbin/init.d/$svc exists"
+        #    return
+        #fi
 
         # symlink the script, depending on the priorities chosen
         eval startpriority='${pp_sd_startpriority_'$svcvar'}'
