@@ -33,7 +33,7 @@ PP_SRCS= \
 	 pp.back.null \
 	 pp.quest
 
-all: pp check
+all: pp pp-stripped check
 	cd example && $(MAKE)
 
 # Generate a pp that includes the sources with the '.' operator.
