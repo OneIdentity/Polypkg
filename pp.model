@@ -47,6 +47,7 @@ pp_service_init_vars () {
 	user=root
 	group=
 	enable=yes		# make it so the service starts on boot
+	optional=no		# Whether installing this service is optional
 	pp_backend_init_svc_vars
 }
 

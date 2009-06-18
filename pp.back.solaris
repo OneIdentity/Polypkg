@@ -136,7 +136,15 @@ pp_solaris_request () {
     if test -n "$pp_services"; then
         echo 'SERVICES='
         for _svc in $pp_services; do
-            echo 'ask n "install '$_svc' service" &&'
+	    pp_load_service_vars $_svc
+	    if "$enable" = "yes"; then
+		_default_prompt=y
+	    else
+		_default_prompt=n
+	    fi
+	    if "$optional" = "yes"; then
+		echo 'ask '$_default_prompt' "install '$_svc' service" &&'
+	    fi
             echo '    SERVICES="$SERVICES '$_svc'"'
         done
         echo 'echo "SERVICES=$SERVICES" >> $1'

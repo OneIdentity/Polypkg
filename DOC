@@ -398,6 +398,11 @@ The %service section
 		user		User to run the service as [default root]
 		group		Insert into a virtual service group which
 				will shutdown/startup all member services.
+		optional	Whether the user will be asked if he wants
+				to install the service at installation time
+				(where supported). Default: no
+		enable		Whether to enable the service during postinst
+				(installation time). Default: yes
 
 	Other platform-specific variables may be provided in this
 	section and are treated differently.
