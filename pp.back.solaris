@@ -101,6 +101,30 @@ pp_solaris_detect_arch () {
 	esac
 }
 
+#@ pp_solaris_is_request_script_necessary():
+# Return success if a request script should be generated; failure
+# if it should not
+pp_solaris_is_request_script_necessary () {
+    typeset has_optional_services
+
+    has_optional_services=no
+    for _svc in $pp_services; do
+    	pp_load_service_vars $_svc
+	if test "$optional" = "yes"; then
+	    has_optional_services=yes
+	fi
+    done
+
+    # If the package has no optional services and only one component, don't
+    # create a request script at all.
+    if test "$has_optional_services" = "no" &&
+       test `echo $pp_components | wc -w` -eq 1; then
+	return 1 # no
+    fi
+
+    return 0 # yes
+}
+
 #@ pp_solaris_request(output): Generate a request script for all components
 pp_solaris_request () {
     typeset _cmp _svc
@@ -311,7 +335,9 @@ pp_backend_solaris () {
 	done
 
 
-        pp_solaris_request > $pp_wrkdir/request
+	if pp_solaris_is_request_script_necessary; then
+	    pp_solaris_request > $pp_wrkdir/request
+	fi
 
         test -n "$pp_services" && 
             for _svc in $pp_services; do
