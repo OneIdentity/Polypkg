@@ -44,7 +44,7 @@ all: pp pp-stripped check
 # Generate a pp that includes the sources with the '.' operator.
 # This is most handy for development because the source line numbers
 # will be correct in error messages.
-pp: $(PP_SRCS)
+pp: $(PP_SRCS) .svn
 	rm -f $@
 	(echo '#!$(PP_SHELL)';                \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
