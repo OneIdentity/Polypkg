@@ -58,7 +58,7 @@ pp: $(PP_SRCS) .svn
 
 # Generate an exportable pp script. Source files have their comments
 # removed and are concatenated together to make the shippable pp script.
-pp-stripped: $(PP_SRCS)
+pp-stripped: $(PP_SRCS) .svn
 	(echo '#!$(PP_SHELL)';                \
 	 echo "# (c) `date +%Y` Quest Software, Inc. All rights reserved"; \
 	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
