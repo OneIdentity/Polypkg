@@ -217,6 +217,26 @@ pp_rpm_depend () {
     done
 }
 
+#@ pp_rpm_override_requires(): generate spec section to override
+#__find_requires if the package requires it
+pp_rpm_override_requires () {
+    local orig_find_requires
+
+    if test -z "$pp_rpm_depend_filter_cmd"; then
+	return 0
+    fi
+
+    orig_find_requires=`rpm --eval '%{__find_requires}'`
+    cat << EOF > "$pp_wrkdir/filtered-find-requires"
+#!/bin/sh
+$orig_find_requires \$@ | $pp_rpm_depend_filter_cmd
+EOF
+    chmod +x "$pp_wrkdir/filtered-find-requires"
+    echo "%define __find_requires $pp_wrkdir/filtered-find-requires"
+    # Might be necessary for old versions of RPM? Not for 4.4.2.
+    #echo "%define _use_internal_dependency_generator 0"
+}
+
 #@ pp_backend_rpm(): generate RPMs for the package
 #-- Reads output files from the frontend and generates multiple output
 #   package files under $pp_wrkdir/
@@ -264,6 +284,8 @@ pp_backend_rpm () {
         elif test -s $pp_wrkdir/%depend.run; then
             pp_rpm_depend < $pp_wrkdir/%depend.run >> $specfile
         fi
+
+	pp_rpm_override_requires >> $specfile
 
 	cat <<-. >>$specfile
 
