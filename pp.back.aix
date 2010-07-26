@@ -287,21 +287,39 @@ pp_aix_add_service () {
 
         #-- add command text to create/remove the service
 	cat <<-. >> $pp_wrkdir/%post.$svc
+# Check if service exists
+svc=$svc
+uid=0
+cmd_cmd=$daemon
+cmd_arg="$cmd_arg"
+stop_signal=$stop_signal
+force_signal=9
+srcgroup="$pp_aix_mkssys_group"
+
+lssrc -s \$svc > /dev/null 2>&1
+if [ \$? -eq 0 ]; then
+  lssrc -s \$svc | grep "active" > /dev/null 2>&1
+  if [ \$? -eq 0 ]; then
+    stopsrc -s \$svc > /dev/null 2>&1
+  fi
+  rmsys -s \$svc > /dev/null 2>&1
+fi
+
 # install service '$svc'
-mkssys -s $svc -u $uid -p "$daemon" ${cmd_arg:+-a "'$cmd_arg'"} -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${pp_aix_mkssys_group:+-G "$pp_aix_mkssys_group"}
+mkssys -s \$svc -u \$uid -p "\$cmd_cmd" \${cmd_arg:+-a "\$cmd_arg"} -S -n \$stop_signal -f 9 ${pp_aix_mkssys_args} \${srcgroup:+-G \$srcgroup}
 .
 
         #-- add code to start the service on reboot
         ${pp_aix_init_services_after_install} &&
           cat <<-. >> $pp_wrkdir/%post.$svc
 # start service '$svc' on reboot
-mkitab "$svc:2:once:/usr/bin/startsrc -s $svc >/dev/console 2>&1"
+mkitab "\$svc:2:once:/usr/bin/startsrc -s \$svc >/dev/console 2>&1"
 .
 
 	${pp_aix_start_services_after_install} &&
           cat <<-. >> $pp_wrkdir/%post.$svc
 # start service '$svc' automatically after install
-startsrc -s $svc
+startsrc -s \$svc
 .
 
 if [ -f "$pp_wrkdir/%post.run" ];then
