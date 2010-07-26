@@ -20,7 +20,7 @@ pp_rpm_service_install_common () {
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
                 /sbin/chkconfig --add $svc &> /dev/null
-                /sbin/chkconfig $svc offS &> /dev/null
+                /sbin/chkconfig $svc off &> /dev/null
             else
 		: # manual links under /etc/init.d
             fi
@@ -32,7 +32,7 @@ pp_rpm_service_install_common () {
             if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
             then
                 # LSB-style install
-		: not sure how to enable
+		: # not sure how to enable
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
                 /sbin/chkconfig $svc on &> /dev/null
@@ -93,7 +93,12 @@ pp_rpm_service_install () {
 
 #@ pp_rpm_service_remove(svc): emit code to stop/remove a service
 pp_rpm_service_remove () {
-    echo "_pp_remove_service $1"
+    cat <<-.
+        if [ "\$1" = "remove" -o "\$1" = "0" ]; then
+            # only remove the service if not upgrade
+            _pp_remove_service $1
+        fi
+.
 }
 
 
