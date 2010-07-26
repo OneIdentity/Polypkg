@@ -91,7 +91,7 @@ pp_backend_inst_create_spec()
 
 #@ pp_backend_inst(): processes output files to generate a package files
 pp_backend_inst () {
-    curdir=$(pwd)
+    curdir=`pwd`
 
     cd "$pp_opt_wrkdir"
 
@@ -112,7 +112,7 @@ pp_backend_inst () {
 
     # Generate tardist
     gendist -verbose -all -root / -source $pp_opt_destdir -idb $pp_inst_idb -spec $pp_inst_spec -dist $pp_inst_tardist $name
-    tar -cvf $(pp_backend_inst_names) $pp_inst_tardist
+    tar -cvf `pp_backend_inst_names` $pp_inst_tardist
 
     cd "$curdir"
 }
