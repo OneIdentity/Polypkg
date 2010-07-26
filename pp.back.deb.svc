@@ -11,7 +11,7 @@ pp_backend_deb_init_svc_vars () {
 
     reload_signal=
     start_runlevels=${pp_deb_default_start_runlevels}   # == lsb default-start
-    stop_runlevels="0 1 2 6"                            # == lsb default-stop
+    stop_runlevels="0 1 6"                              # == lsb default-stop
     svc_description="${pp_deb_default_svc_description}" # == lsb short descr
     svc_process=
 

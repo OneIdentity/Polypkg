@@ -2,7 +2,7 @@
 
 #@ pp_backend_rpm_init_svc_vars(): initialises rpm backend variables
 pp_backend_rpm_init_svc_vars () {
-    pp_rpm_default_start_runlevels=         # should be "3 4 5"??
+    pp_rpm_default_start_runlevels="2 3 4 5"
     pp_rpm_default_svc_description="No description"
 }
 
@@ -103,7 +103,7 @@ pp_backend_rpm_init_svc_vars () {
 
     reload_signal=
     start_runlevels=${pp_rpm_default_start_runlevels}   # == lsb default-start
-    stop_runlevels="0 1 2 6"                            # == lsb default-stop
+    stop_runlevels="0 1 6"                              # == lsb default-stop
     svc_description="${pp_rpm_default_svc_description}" # == lsb short descr
     svc_process=
 
