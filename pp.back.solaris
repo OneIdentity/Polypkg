@@ -343,7 +343,7 @@ pp_backend_solaris () {
             for _svc in $pp_services; do
                 pp_load_service_vars $_svc
                 pp_solaris_make_service $_svc
-                pp_solaris_install_service $_svc >> $pp_wrkdir/postinstall
+                pp_solaris_install_service $_svc | pp_prepend $pp_wrkdir/postinstall
                 pp_prepend $pp_wrkdir/preremove <<-.
                     /etc/init.d/$_svc stop >/dev/null 2>/dev/null
 .
@@ -363,7 +363,7 @@ pp_backend_solaris () {
 
         # NB: pkginfo and copyright are added earlier
         for f in compver depend space checkinstall \
-                 request preinstall postinstall \
+                 preinstall request postinstall \
                  preremove postremove; do
             if test -s $pp_wrkdir/$f; then
 		case $f in

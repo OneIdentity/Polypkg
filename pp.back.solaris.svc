@@ -287,6 +287,7 @@ if [ "x${PKG_INSTALL_ROOT}" != "x" ]; then
   fi
 else
     if [ -x /usr/sbin/svcadm ]; then
+        echo "Registering '$1' with SMF"
         /usr/sbin/svcadm disable -s '$1' 2>/dev/null
         /usr/sbin/svccfg delete '$1' 2>/dev/null
         /usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null
