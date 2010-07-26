@@ -113,8 +113,8 @@ pp_rpm_detect_distro () {
           /^SuSE Linux [0-9]/ { print "suse" $3; exit; }
           /^SUSE LINUX [0-9]/ { print "suse" $3; exit; }
           /^openSUSE [0-9]/   { print "suse" $2; exit; }
-          /^SuSE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
-          /^SUSE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
+          /^S[uU]SE Linux Enterprise Server [0-9]/ { print "sles" $5; exit; }
+          /^S[uU]SE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
           /^SuSE SLES-[0-9]/  { print "sles" substr($2,6); exit; }
        ' /etc/SuSE-release`
     fi
