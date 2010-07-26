@@ -507,7 +507,7 @@ CompressedSize 0
     # On 10.5, we used "-f -" to write explicitly to stdout
     (
     cd $pp_destdir &&
-    cat $pp_wrkdir/%files.* | awk '{ print "." $6 }' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
+    cat $pp_wrkdir/%files.* | awk '{ print "." $6 }' | sed '/\/$/d' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
     )
 
 	sudo rm -rf $pp_wrkdir/bom_stage
