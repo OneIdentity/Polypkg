@@ -12,6 +12,7 @@ pp_model_init () {
 
     rm -f $pp_wrkdir/%files.* \
           $pp_wrkdir/%post.* \
+          $pp_wrkdir/%pre.* \
           $pp_wrkdir/%preun.* \
           $pp_wrkdir/%postup.* \
           $pp_wrkdir/%postun.* \

@@ -313,24 +313,29 @@ pp_backend_solaris () {
         : > $pp_wrkdir/postinstall
         : > $pp_wrkdir/preremove
 	for _cmp in $pp_components; do
-          #-- add the postinstall scripts in definition order
-	  if test -s $pp_wrkdir/%post.$_cmp; then
-		pp_solaris_procedure $_cmp postinst < $pp_wrkdir/%post.$_cmp \
-			>> $pp_wrkdir/postinstall
-          fi
-          #-- add the preremove rules in reverse definition order
-	  if test -s $pp_wrkdir/%preun.$_cmp; then
-		pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
+        #-- add the preinstall scripts in definition order
+        if test -s $pp_wrkdir/%pre.$_cmp; then
+            pp_solaris_procedure $_cmp preinst < $pp_wrkdir/%pre.$_cmp \
+                >> $pp_wrkdir/preinstall
+        fi
+        #-- add the postinstall scripts in definition order
+        if test -s $pp_wrkdir/%post.$_cmp; then
+            pp_solaris_procedure $_cmp postinst < $pp_wrkdir/%post.$_cmp \
+                >> $pp_wrkdir/postinstall
+        fi
+        #-- add the preremove rules in reverse definition order
+        if test -s $pp_wrkdir/%preun.$_cmp; then
+            pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
                     pp_prepend $pp_wrkdir/preremove
-          fi
-          #-- Add the check script in definition order
-	  if test -s $pp_wrkdir/%check.$_cmp; then
-		pp_solaris_procedure $_cmp checkinstall \
+        fi
+        #-- Add the check script in definition order
+        if test -s $pp_wrkdir/%check.$_cmp; then
+            pp_solaris_procedure $_cmp checkinstall \
                         < $pp_wrkdir/%check.$_cmp \
 			>> $pp_wrkdir/checkinstall
-          fi
-          #-- All dependencies are merged together for Solaris pkgs
-          test -s $pp_wrkdir/%depend.$_cmp &&
+        fi
+        #-- All dependencies are merged together for Solaris pkgs
+        test -s $pp_wrkdir/%depend.$_cmp &&
               pp_solaris_depend < $pp_wrkdir/%depend.$_cmp > $pp_wrkdir/depend
 	done
 

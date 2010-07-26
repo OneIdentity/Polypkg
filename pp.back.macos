@@ -445,6 +445,18 @@ CompressedSize 0
 
     # write Resources/postinstall
     for cmp in $pp_components; do
+	if test -s $pp_wrkdir/%pre.$cmp; then
+	    if test ! -s $Resources/preinstall; then
+		echo "#!/bin/sh" > $Resources/preinstall
+		chmod +x $Resources/preinstall
+	    fi
+	    cat $pp_wrkdir/%pre.$cmp >> $Resources/preinstall
+	    echo : >> $Resources/preinstall
+	fi
+    done
+
+    # write Resources/postinstall
+    for cmp in $pp_components; do
 	if test -s $pp_wrkdir/%post.$cmp; then
 	    if test ! -s $Resources/postinstall; then
 		echo "#!/bin/sh" > $Resources/postinstall

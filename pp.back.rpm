@@ -383,6 +383,13 @@ pp_backend_rpm () {
                 pp_rpm_writefiles < $pp_wrkdir/%files.$cmp
             fi
 
+            if test -s $pp_wrkdir/%pre.$cmp; then
+                echo ""
+                echo "%pre $_subname"
+                cat $pp_wrkdir/%pre.$cmp
+                echo :   # causes script to exit true
+            fi
+
             if test -s $pp_wrkdir/%post.$cmp; then
                 echo ""
                 echo "%post $_subname"

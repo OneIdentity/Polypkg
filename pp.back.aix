@@ -368,6 +368,7 @@ pp_backend_aix () {
             # or a post/pre/check script associated
 	    content=U
             if test -s $root_files \
+                    -o -s $pp_wrkdir/%pre.$cmp \
                     -o -s $pp_wrkdir/%post.$cmp \
                     -o -s $pp_wrkdir/%preun.$cmp \
                     -o -s $pp_wrkdir/%check.$cmp
@@ -428,6 +429,11 @@ pp_backend_aix () {
 
 	    #-- assume that post/pre uninstall scripts only make
 	    #   sense when installed in a root context
+
+	    if test -r $pp_wrkdir/%pre.$cmp; then
+		pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
+			< $pp_wrkdir/%pre.$cmp
+	    fi
 
 	    if test -r $pp_wrkdir/%post.$cmp; then
 		pp_aix_make_script $root_wrkdir/$name.$ex.post_i \

@@ -385,6 +385,8 @@ pp_backend_sd () {
         # and not postinstall/preremove, because configure/unconfigure
         # scripts are run on the hosts where the package is installed,
         # not loaded (a subtle difference).
+        test -s $pp_wrkdir/%pre.$cpt &&
+            pp_sd_control preinstall $cpt $pp_wrkdir/%pre.$cpt >> $psf
         test -s $pp_wrkdir/%post.$cpt &&
             pp_sd_control configure $cpt $pp_wrkdir/%post.$cpt >> $psf
         test -s $pp_wrkdir/%preun.$cpt &&
