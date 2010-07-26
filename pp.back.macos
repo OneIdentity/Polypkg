@@ -159,23 +159,22 @@ pp_macos_plist () {
 
       start-plist) cat <<-.; in="  "; shift ;;
 	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
-		"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 	<plist version="1.0">
 .
       end-plist) echo "</plist>"; in=; shift;;
 
       '[')   echo "$in<array>"; in="$in  "; shift;;
       ']')   echo "$in</array>"; in="${in#  }"; shift;;
-      '{')   echo "$in<dict>"; in="$in  "; shift;;
-      '}')   echo "$in</dict>"; in="${in#  }"; shift;;
+      '{')   echo "<dict>"; in="$in  "; shift;;
+      '}')   echo "</dict>"; in="${in#  }"; shift;;
       key)         shift; echo "$in<key>$1</key>"; shift;;
       string)      shift;
 		   echo "$1" | sed -e 's/&/&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;' \
 				   -e 's/^/'"$in"'<string>/;s/$/<\/string>/';
 		   shift;;
-      true)        echo "$in<true />"; shift;;
-      false)       echo "$in<false />"; shift;;
+      true)        echo "$in<true/>"; shift;;
+      false)       echo "$in<false/>"; shift;;
       real)        shift; echo "$in<real>$1</real>"; shift;;
       integer)     shift; echo "$in<integer>$1</integer>"; shift;;
       date)        shift; echo "$in<date>$1</date>"; shift;; # ISO 8601 format
@@ -408,8 +407,6 @@ pp_backend_macos () {
 	    "${pp_macos_bundle_id:-$pp_macos_default_bundle_id_prefix$name}" \
     key CFBundleName string "$name" \
 	key CFBundleShortVersionString string "$bundle_version" \
-	key IFMajorVersion integer 1 \
-	key IFMinorVersion integer 2 \
 	key IFPkgFlagAllowBackRev false \
 	key IFPkgFlagAuthorizationAction string "RootAuthorization" \
 	key IFPkgFlagDefaultLocation string "/" \
@@ -424,7 +421,7 @@ pp_backend_macos () {
 	key IFPkgFlagUpdateInstalledLanguages false \
 	key IFPkgFlagUseUserMask false \
 	key IFPkgFormatVersion real 0.10000000149011612 \
-	key SourceVersion string $version: \
+	key SourceVersion string $version \
 	\} end-plist> $Info_plist
 
     # write en.lproj/Description.plist
@@ -434,6 +431,16 @@ pp_backend_macos () {
 	    key IFPkgDescriptionDescription string "$description" \
 	    key IFPkgDescriptionTitle       string "$name $version" \
  	\} end-plist > $Description_plist
+
+ 	# write Resources/files
+    cat $pp_wrkdir/%files.* | awk '{print $7}' > $Resources/files
+
+    # write package size file
+    printf \
+"NumFiles 0
+InstalledSize $size
+CompressedSize 0
+" > $Resources/$name.sizes
 
     # write Resources/postinstall
     for cmp in $pp_components; do
@@ -454,7 +461,7 @@ pp_backend_macos () {
 		echo "#!/bin/sh" > $Resources/postupgrade
 		chmod +x $Resources/postupgrade
 	    fi
-	    cat $pp_wrkdir/%preun.$cmp >> $Resources/postupgrade
+	    cat $pp_wrkdir/%postup.$cmp >> $Resources/postupgrade
 	    echo : >> $Resources/postupgrade
 	fi
     done
@@ -478,7 +485,7 @@ pp_backend_macos () {
 		echo "#!/bin/sh" > $Resources/postremove
 		chmod +x $Resources/postremove
 	    fi
-	    cat $pp_wrkdir/%preun.$cmp >> $Resources/postremove
+	    cat $pp_wrkdir/%postun.$cmp >> $Resources/postremove
 	    echo : >> $Resources/postremove
 	fi
     done
