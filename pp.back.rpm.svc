@@ -39,7 +39,18 @@ pp_rpm_service_install_common () {
             else
                 # manual install
                 set -- `sed -n -e 's/^# Default-Start://p' /etc/init.d/$svc`
+                start_priority=`sed -n -e 's/^# X-Quest-Start-Priority:[[:space:]]*//p' /etc/init.d/$svc`
+                stop_priority=`sed -n -e 's/^# X-Quest-Stop-Priority:[[:space:]]*//p' /etc/init.d/$svc`
 
+                # Provide default start & stop priorities of 20 & 80 in
+                # accordance with Debian update-rc.d defaults
+                if [ -z "$start_priority" ]; then
+                    start_priority=20
+                fi
+                if [ -z "$stop_priority" ]; then
+                    stop_priority=80
+                fi
+                    
                 if [ -d "/etc/rc.d" ];then
                     rcdir=/etc/rc.d
                 else
@@ -47,10 +58,10 @@ pp_rpm_service_install_common () {
                 fi
 
                 for level
-                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/S90$svc; done
+                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/S$start_priority$svc; done
                 set -- `sed -n -e 's/^# Default-Stop://p' /etc/init.d/$svc`
                 for level
-                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/K10$svc; done
+                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/K$stop_priority$svc; done
             fi
         }
 .
