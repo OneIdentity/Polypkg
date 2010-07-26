@@ -11,7 +11,7 @@ pp_front_end - foo=FOO bar=BAR<<-.
 
 grep 't-1=FOO' $TMPDIR/%post.run > /dev/null || fail "t-1 grep failed"
 grep 't-2=BKR' $TMPDIR/%post.run > /dev/null || fail "t-2 grep failed"
-grep 't-3=FOO FOO FOO bar' $TMPDIR/%post.run >/dev/null || 
+grep 't-3=FOO FOO FOO bar' $TMPDIR/%post.run >/dev/null ||
     fail "t-3 grep failed"
 
 pass

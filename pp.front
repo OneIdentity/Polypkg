@@ -1,5 +1,5 @@
 #
-# Polypkg frontend - reads a polypkg file and split it up into the various 
+# Polypkg frontend - reads a polypkg file and split it up into the various
 # section files that get read by the backend(s).
 #
 # The output files from frontend() are:
@@ -35,8 +35,8 @@
 # file components defined
 #
 # Each of the %files.* files contains entries of the form
-#    f mode owner group flags file-path 
-#    d mode owner group flags directory-path 
+#    f mode owner group flags file-path
+#    d mode owner group flags directory-path
 #    s mode owner group flags symlink-path    symlink-target
 #
 # The mode/owner/group may be the special symbol '-' which means
@@ -124,7 +124,7 @@ pp_frontend_if () {
     shift
     case "$ifcmd" in
 	%if) if test 0 = $pp_if_false; then
-		case "$*" in 
+		case "$*" in
 		    true |1) pp_incr pp_if_true;;
 		    false|0) pp_incr pp_if_false;;
                     *)
@@ -229,15 +229,15 @@ pp_frontend () {
      #pp_debug "line $pp_lineno: $*"
 
      case "$line" in %*)
-        case "$1" in 
-	   %if|%else|%endif) 
+        case "$1" in
+	   %if|%else|%endif)
                 pp_debug "processing if directive $1"
 	   	pp_frontend_if "$@"
 		continue;;
 	esac
 	test 0 -ne $pp_if_false && continue	# ignore lines %if'd out
 
-        case "$1" in 
+        case "$1" in
 	  %set|%fixup|%ignore)
              pp_debug "processing new section $1"
 	     newsection="$1"; shift
@@ -248,7 +248,7 @@ pp_frontend () {
              fi
 	     test $# -eq 0 || pp_warn "ignoring extra arguments: $line"
 	     continue;;
-	  %post|%preun|%files|%depend|%check) 
+	  %post|%preun|%files|%depend|%check)
              pp_debug "processing new component section $*"
              s="$1"; shift
              if test $# -eq 0 || pp_is_qualifier "$1"; then
@@ -265,8 +265,8 @@ pp_frontend () {
              fi
              test $# -eq 0 ||
                 pp_warn "ignoring extra arguments: $line"
-             case "$cpt" in 
-                run|dbg|doc|dev) 
+             case "$cpt" in
+                run|dbg|doc|dev)
                     $newsection_enabled && pp_add_component "$cpt";;
                 x-*) :;;    # useful for discarding stuff
                 *) pp_error "unknown component: $1 $cpt";;
@@ -303,7 +303,7 @@ pp_frontend () {
                 pp_warn "ignoring extra arguments: $line"
 	     $newsection_enabled && pp_add_service "$svc"
 	     continue;;
-	  %\\*) 
+	  %\\*)
              pp_debug "removing leading %\\"
 	     line="${line#??}"
              pp_debug "  result is <$line>"
@@ -311,14 +311,14 @@ pp_frontend () {
              set -- $line
              set +f
              ;;
-	  %%*) 
+	  %%*)
              pp_debug "removing leading %"
 	     line="${line#%}"
              set -f
              set -- $line
              set +f
 	     ;;
-	  %*) 
+	  %*)
 	     pp_error "unknown section $1"
 	     newsection='%ignore'
              newsection_enabled=:
@@ -333,7 +333,7 @@ pp_frontend () {
      #-- finish processing a previous section
      if test x"$newsection" != x""; then
       $section_enabled && case "$section" in
-     	%ignore|%_initial) 
+     	%ignore|%_initial)
                 pp_debug "leaving ignored section $section"
 		: ignore  # guaranteed to be the last section
 		;;
@@ -364,7 +364,7 @@ pp_frontend () {
 
      #-- process some lines in-place
      case "$section" in
-	%_initial)	
+	%_initial)
 		case "$line" in "") continue;; esac # ignore non-section blanks
 		pp_die "Ignoring text before % section introducer";;
 	%set|%preun.*|%post.*|%check.*|%service.*|%fixup)
@@ -380,7 +380,7 @@ pp_frontend () {
 		echo "$@" >> $pp_wrkdir/%depend.$cpt
 		;;
      esac
-  done 
+  done
   exec <&-
 
   if test $pp_if_true != 0 -o $pp_if_false != 0; then

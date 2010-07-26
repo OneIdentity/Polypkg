@@ -21,7 +21,7 @@
  # /Developer/usr/bin/packagemaker (man packagemaker)
 
     Make a bunch of packages, and then build a 'distribution'
-    which is only understood by macos>10.4 
+    which is only understood by macos>10.4
 
  # Message files in the resource path used are
     Welcome.{rtf,html,rtfd,txt} - limited text shown in Intro
@@ -29,7 +29,7 @@
     License.{rtf,html,rtfd,txt} - ditto, user must click 'Accept'
     background.{jpg,tif,gif,pict,eps,pdf} 620x418 background image
 
- # These scripts looked for in the resource path 
+ # These scripts looked for in the resource path
     InstallationCheck $pkgpath $defaultloc $targetvol
 	0:ok 32:warn 32+x:warn[1] 64:stop 96+x:stop[2]
     VolumeCheck $volpath
@@ -103,13 +103,13 @@
       RunAtLoad: true,
       WatchPaths: [ "/etc/crontab" ],
       QueueDirectories: [ "/var/cron/tabs" ],
-      inetdCompatibility: { Wait: false },                   # inetd-only 
+      inetdCompatibility: { Wait: false },                   # inetd-only
       OnDemand: false,                                       # recommended
       SessionCreate: true,
       UserName: "nobody",
       InitGroups: true,
       Sockets: {                                             # inetd only
-	Listeners: { 
+	Listeners: {
 	   SockServiceName: "ssh",
 	   Bonjour: ["ssh", "sftp-ssh"], } },
       Disabled: false,
@@ -138,14 +138,14 @@ pp_backend_macos_detect () {
     [ x"$1" = x"Darwin" ]
 }
 
-#@ pp_backend_macos_init(): initialises platform variables for macos 
+#@ pp_backend_macos_init(): initialises platform variables for macos
 pp_backend_macos_init () {
     pp_macos_default_bundle_id_prefix="com.quest.rc."
     pp_macos_bundle_id=
     pp_macos_bundle_vendor=
     pp_macos_bundle_version=
     pp_macos_bundle_info_string=
-    pp_macos_prog_packagemaker=/Developer/usr/bin/packagemaker 
+    pp_macos_prog_packagemaker=/Developer/usr/bin/packagemaker
     pp_macos_pkg_domain=anywhere
     pp_macos_pkg_extra_flags=
 }
@@ -159,7 +159,7 @@ pp_macos_plist () {
 
       start-plist) cat <<-.; in="  "; shift ;;
 	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" 
+	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
 		"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 	<plist version="1.0">
 .
@@ -170,7 +170,7 @@ pp_macos_plist () {
       '{')   echo "$in<dict>"; in="$in  "; shift;;
       '}')   echo "$in</dict>"; in="${in#  }"; shift;;
       key)         shift; echo "$in<key>$1</key>"; shift;;
-      string)      shift; 
+      string)      shift;
 		   echo "$1" | sed -e 's/&/&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;' \
 				   -e 's/^/'"$in"'<string>/;s/$/<\/string>/';
 		   shift;;
@@ -195,8 +195,8 @@ pp_macos_rewrite_cpio () {
     # A CPIO header block has octal fields at the following offset/lengths:
     #   0  6 magic
     #   6  6 dev
-    #  12  6 ino 
-    #  18  6 mode 
+    #  12  6 ino
+    #  18  6 mode
     #  24  6 uid
     #  30  6 gid
     #  36  6 nlink
@@ -207,7 +207,7 @@ pp_macos_rewrite_cpio () {
     #  76    --
     cat <<-'.' >$script
 	while (<DATA>) {
-		my ($type,$mode,$uid,$gid,$flags,$name) = 
+		my ($type,$mode,$uid,$gid,$flags,$name) =
 		    m/^(.) (\d+) (\S+) (\S+) (\S+) (.*)/;
 		$uid = 0 if $uid eq "-";
 		$gid = 0 if $gid eq "-";
@@ -275,13 +275,13 @@ pp_macos_files_bom () {
 	case $t in
 	    f)
 		echo ".$p	10$m	$owner	`
-		    /usr/bin/cksum < "${pp_destdir}$p" | 
+		    /usr/bin/cksum < "${pp_destdir}$p" |
 		    awk '{print $2 "	" $1}'`";;
 	    d)
 		echo ".${p%/}	4$m	$owner";;
 	    s)
 		rl=`/usr/bin/readlink "${pp_destdir}$p"`
-		test x"$rl" = x"$st" || 
+		test x"$rl" = x"$st" ||
 		    pp_error "symlink mismatch $rl != $st"
 		echo ".$p	12$m	$owner	`
 		    /usr/bin/readlink -n "${pp_destdir}$p" |
@@ -320,7 +320,7 @@ pp_macos_files_size () {
 
 #@ pp_o2d($oct): prints the decimal form of octal number $oct to stdout
 pp_o2d () {
-    awk 'BEGIN { x=0; '`echo "$1" | 
+    awk 'BEGIN { x=0; '`echo "$1" |
 	sed -e 's/./x=x*8+&;/g'`'print x;}' </dev/null
 }
 #@ pp_d2o($dec): prints the octal form of decimal expression $dec to stdout
@@ -355,13 +355,13 @@ pp_macos_mkbom () {
 	    if test -d "$pp_destdir/$path"; then
 		/bin/mkdir -p "$bomstage/$path"
 	    else
-		/bin/cp "$pp_destdir/$path" "$bomstage/$path" 
+		/bin/cp "$pp_destdir/$path" "$bomstage/$path"
 	    fi
 	    /bin/chmod $mode "$bomstage/$path"
 	    /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
 	fi
     done <"$1"
-    (cd $bomstage && mkbom . $pp_wrkdir/bom_stage.bom) || 
+    (cd $bomstage && mkbom . $pp_wrkdir/bom_stage.bom) ||
 	pp_error "mkbom failed"
     mv $pp_wrkdir/bom_stage.bom "$2"
 }
@@ -369,7 +369,7 @@ pp_macos_mkbom () {
 #@ pp_backend_macos(): processes output files to generate a package files
 pp_backend_macos () {
     typeset dmgdir pkgdir Contents Resources lprojdir
-    typeset Info_plist Description_plist 
+    typeset Info_plist Description_plist
     typeset bundle_vendor bundle_version size
 
     bundle_vendor=${pp_macos_bundle_vendor:-"Quest Software, Inc."}
@@ -390,7 +390,7 @@ pp_backend_macos () {
     Contents=$pkgdir/Contents
     Resources=$Contents/Resources
     lprojdir=$Resources/en.lproj
-    mkdir $dmgdir $pkgdir $Contents $Resources $lprojdir || 
+    mkdir $dmgdir $pkgdir $Contents $Resources $lprojdir ||
 	pp_fatal "Can't make package temporary directories"
 
     echo major: 1 > $Resources/package_version
@@ -460,7 +460,7 @@ pp_backend_macos () {
     done
 
     # Warn that %preun scripts are simply ignored.
-    # However, write out a 'preuninstall' script, in case one day 
+    # However, write out a 'preuninstall' script, in case one day
     # it is supported.
     for cmp in $pp_components; do
 	if test -s $pp_wrkdir/%preun.$cmp; then
@@ -482,7 +482,7 @@ pp_backend_macos () {
 
     # Create the cpio archive (Archive.pax.gz)
     # On 10.5, we used "-f -" to write explicitly to stdout
-    (cd $pp_destdir && /bin/pax -w .) | 
+    (cd $pp_destdir && /bin/pax -w .) |
 	gzip -9 -c > $Contents/Archive.pax.gz
 
     # create a package using packagemaker

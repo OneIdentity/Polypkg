@@ -9,14 +9,14 @@ pp_expand_path=
 
 #@ pp_expand_test_usr_bin(): returns true if input is /usr and /bin
 pp_expand_test_usr_bin () {
-	awk '$1 == "/usr" || $2 == "/usr" {usr++} 
-	     $1 == "/bin" || $2 == "/bin" {bin++} 
+	awk '$1 == "/usr" || $2 == "/usr" {usr++}
+	     $1 == "/bin" || $2 == "/bin" {bin++}
 	     END { if (usr == 1 && bin == 1) exit(0); else exit(1); }'
 }
 
 #@ pp_set_expand_converter_or_reexec(arg...): sets $pp_expand_path
 pp_set_expand_converter_or_reexec () {
-    test -d /usr -a -d /bin || 
+    test -d /usr -a -d /bin ||
 	pp_die "missing /usr or /bin"
     echo /usr /bin | pp_expand_test_usr_bin || pp_die "pp_expand_test_usr_bin?"
     if (eval "echo /{usr,bin}" | pp_expand_test_usr_bin) 2>/dev/null; then
@@ -27,8 +27,8 @@ pp_set_expand_converter_or_reexec () {
 	test x"$pp_expand_rexec" != x"true" ||
 	    pp_die "problem finding shell that can do brace expansion"
 	for shell in ksh ksh93 bash; do
-	    if ($shell -c 'echo /{usr,bin}' | 
-			pp_expand_test_usr_bin) 2>/dev/null || 
+	    if ($shell -c 'echo /{usr,bin}' |
+			pp_expand_test_usr_bin) 2>/dev/null ||
 	       ($shell -c 'echo /@(usr|bin)' |
 			pp_expand_test_usr_bin) 2>/dev/null
 	    then

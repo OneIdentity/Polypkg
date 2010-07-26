@@ -1,14 +1,14 @@
 
-In script sections, platform-specific shell functions can be included by 
+In script sections, platform-specific shell functions can be included by
 invoking:
 
      %(pp_functions <function-name> ...)
 
-It is safe to include a function multiple times within the one call to 
-pp_functions, and dependencies on other functions will be resolved. 
+It is safe to include a function multiple times within the one call to
+pp_functions, and dependencies on other functions will be resolved.
 
 Notes to implementors:
-    When implementing these functions, note that arguments are already 
+    When implementing these functions, note that arguments are already
     checked for functions defined in this file.
     Also, avoid the use of typeset and any ksh-isms. Assume ancient shell.
     Use variable names starting with pp_tmp_
@@ -29,13 +29,13 @@ pp_mkuser user [group [homedir [shell]]]
     Creates a local user entry. If the user already exists,
     no action is performed and the function returns immediately.
 
-    If the group isn't specified, or is provided as '', then 
+    If the group isn't specified, or is provided as '', then
     the group name defaults to the same as the username.
 
     If the group doesn't exist, it is created.
 
     If the homedir isn't specified (or specified as ''), then
-    it defaults to "/nonexistent", or the platform equivalent.  
+    it defaults to "/nonexistent", or the platform equivalent.
     The actual home directory is not created, nor populated.
 
     If the shell is not specified, or is specified as '', then
@@ -47,20 +47,20 @@ pp_mkuser user [group [homedir [shell]]]
 
 pp_havelib name [major[.minor]] [searchpath]
 
-    This function returns true if a program dynamically 
-    linked with -l<name> will have a chance of finding 
+    This function returns true if a program dynamically
+    linked with -l<name> will have a chance of finding
     its dependent library (ie, on some platforms, lib<name>.so).
 
-    The shared library search can be restricted to a particular 
+    The shared library search can be restricted to a particular
     major/minor number by specifying the major[.minor] argument.
     If no restriction is required, the mahor[.minor] argument can
     be omitted or specified as ''.
 
-    The platform's standard library path is searched. Extra directories 
+    The platform's standard library path is searched. Extra directories
     for searching be provided with a colon-separated list of directories.
 
     Note that this function is sensitive to the package being generated;
-    for example, if the target package is going to be labeled x86_64 and 
+    for example, if the target package is going to be labeled x86_64 and
     the platform supports both 32 and 64 bit libraries, then only the
     64 bit system library paths are searched.
 

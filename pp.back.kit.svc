@@ -36,7 +36,7 @@ cat <<-'.' >> $out
 	    done
 	    return 0
 	}
-	
+
 	#-- stops services in reverse
 	pp_stop () {
 	    reverse=
@@ -49,7 +49,7 @@ cat <<-'.' >> $out
 	        done
 	        return $rc
 	}
-	
+
 	case $1 in
 	    start_msg) echo "Starting $svcs";;
 	stop_msg)  echo "Stopping $svcs";;
@@ -107,7 +107,7 @@ pp_kit_service_script () {
 	            fi
 	        fi
 	    }
-	
+
 	    pp_running () {
 	        if test ! -s "$pidfile"; then
 	            return 1

@@ -23,12 +23,12 @@ pp_backend_deb_init_svc_vars () {
     stop_priority=50            #-- stop_priority = 100 - start_priority
 }
 
-#@ pp_deb_service_make_init_script(svc): generates a service init script 
+#@ pp_deb_service_make_init_script(svc): generates a service init script
 #   Assumes %service variables have been set before invocation
 #   Does nothing if an /etc/init.d/$svc script exists already.
 #   Otherwise creates an /etc/init.d/$svc script
 pp_deb_service_make_init_script () {
-    typeset svc=$1 
+    typeset svc=$1
     typeset script=/etc/init.d/$svc
     typeset out=$pp_destdir$script
     typeset _process _cmd
@@ -173,7 +173,7 @@ do_stop()
     else
         quiet_opt="--verbose"
     fi
-	start-stop-daemon --stop $quiet_opt $signal_opt --retry=TERM/30/KILL/5 $pidfile_opt --name $NAME 
+	start-stop-daemon --stop $quiet_opt $signal_opt --retry=TERM/30/KILL/5 $pidfile_opt --name $NAME
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks

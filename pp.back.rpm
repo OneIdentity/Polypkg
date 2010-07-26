@@ -50,7 +50,7 @@ pp_backend_rpm_init () {
     pp_rpm_rpmbuild=`pp_rpm_detect_rpmbuild`
 
     # SLES8 doesn't always come with readlink
-    test -x /usr/bin/readlink -o -x /bin/readlink || 
+    test -x /usr/bin/readlink -o -x /bin/readlink ||
         pp_readlink_fn=pp_ls_readlink
 }
 
@@ -267,12 +267,12 @@ pp_backend_rpm () {
 	pp_rpm_label "Vendor"   "$pp_rpm_vendor"   >>$specfile
 	pp_rpm_label "Packager" "$pp_rpm_packager" >>$specfile
 	pp_rpm_label "Provides" "$pp_rpm_provides" >>$specfile
-	
+
 	test -n "$pp_rpm_serial" && pp_warn "pp_rpm_serial deprecated"
 	if test -n "$pp_rpm_epoch"; then
 	    #-- Epoch was introduced in RPM 2.5.6
 	    case `$pp_rpm_rpmbuild --version 2>/dev/null` in
-		1.*|2.[0-5].*|2.5.[0-5]) 
+		1.*|2.[0-5].*|2.5.[0-5])
 		    pp_rpm_label "Serial" $pp_rpm_epoch >>$specfile;;
 		*)
 		    pp_rpm_label "Epoch" $pp_rpm_epoch >>$specfile;;
@@ -334,7 +334,7 @@ pp_backend_rpm () {
 .
 	done >>$specfile
 
-        #-- NB: we don't put any %prep, %build or %install RPM sections 
+        #-- NB: we don't put any %prep, %build or %install RPM sections
 	#   into the spec file.
 
         #-- add service start/stop code
@@ -352,7 +352,7 @@ pp_backend_rpm () {
 
                 #-- prepend %preun code to uninstall svc
                 # (use files in case vars are modified)
-                pp_rpm_service_remove $svc | pp_prepend $pp_wrkdir/%preun.run 
+                pp_rpm_service_remove $svc | pp_prepend $pp_wrkdir/%preun.run
             done
             pp_rpm_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
         fi
@@ -426,7 +426,7 @@ pp_backend_rpm () {
 
         . $pp_wrkdir/%fixup
 
-$pp_opt_debug && cat $specfile 
+$pp_opt_debug && cat $specfile
 
         pp_debug "creating: `pp_backend_rpm_names`"
 
@@ -441,7 +441,7 @@ pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
                 --define='_unpackaged_files_terminate_build 0' \
                 `$pp_opt_debug && echo --verbose || echo --quiet` \
                 $pp_rpm_rpmbuild_extra_flags \
-		$specfile || 
+		$specfile ||
             pp_error "Problem creating RPM packages"
 
 	for f in `pp_backend_rpm_names`; do
@@ -507,7 +507,7 @@ pp_backend_rpm_install_script () {
 	    else
 		oi=true
 	    fi
-            test x"\$*" = x"all" && 
+            test x"\$*" = x"all" &&
                 set -- $pp_components
             for cmp
             do
@@ -528,7 +528,7 @@ pp_backend_rpm_install_script () {
 
 
         cmp_to_pathname () {
-            test x"\$*" = x"all" && 
+            test x"\$*" = x"all" &&
                 set -- $pp_components
             for cmp
             do
@@ -542,9 +542,9 @@ pp_backend_rpm_install_script () {
                 esac
             done
         }
-	
+
 	print_requires () {
-            test x"\$*" = x"all" && 
+            test x"\$*" = x"all" &&
                 set -- $pp_components
             for cmp
             do
@@ -564,7 +564,7 @@ pp_backend_rpm_install_script () {
         test \$# -eq 0 && usage
         op="\$1"; shift
         case "\$op" in
-            list-components) 
+            list-components)
                 test \$# -eq 0 || usage \$op
                 echo $pp_components
                 ;;

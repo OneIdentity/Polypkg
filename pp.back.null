@@ -7,7 +7,7 @@ pp_backend_null_detect () {
     ! :
 }
 
-#@ pp_backend_null_init(): initialises platform variables for null 
+#@ pp_backend_null_init(): initialises platform variables for null
 pp_backend_null_init () {
     :
 }

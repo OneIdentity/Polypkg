@@ -21,7 +21,7 @@ pp_set_platform () {
 		break;
 	    fi
 	done
-	test -z "$pp_platform" && 
+	test -z "$pp_platform" &&
 		pp_die "cannot detect platform (supported: $pp_platforms)"
     fi
     pp_debug "pp_platform = $pp_platform"

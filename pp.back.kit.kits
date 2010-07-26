@@ -1,7 +1,7 @@
 
 ##### TODO
 ##### The .inv file should be created directly from %files.run
-##### 
+#####
 
 # Pulled from /usr/bin/kits by Seth and cleaned up by David
 #
@@ -10,22 +10,22 @@
 # kits - Generates setld format distribution kits
 #
 # DESCRIPTION
-# 
+#
 #   The kits command produces subset images, inventories, and control files for
 #   an installation using the setld command.  You need to know the key file
 #   which describes the product to be built, a hierarchy from which the com-
 #   ponent files to be kitted are to be taken, and a destination directory into
 #   which the kit information is to be placed.
-# 
+#
 #   In the output-path directory, the kits command produces a subset image file
 #   for each subset and a product_code.image file listing all the kit's sub-
 #   sets. In the instctrl subdirectory of output-path, kits produces an inven-
 #   tory file and a control file. The optional subset control program for any
 #   subset in the kit is transferred to output-path/instctrl. An instctrl
 #   directory is created if none existed.
-# 
+#
 # RESTRICTIONS
-# 
+#
 #   Any subset control programs to be provided with the kit must be located in
 #   a directory named scps in the working directory where the kits program is
 #   invoked.  If no subset control program is found for a subset, an empty one
@@ -92,14 +92,14 @@ pp_backend_kit_kits () {
     CODE=`pp_kit_kits_global "$KITFILE" CODE` || pp_die "no CODE in $KITFILE"
     VERS=`pp_kit_kits_global "$KITFILE" VERS` || pp_die "no VERS in $KITFILE"
     MI=`pp_kit_kits_global "$KITFILE" MI` || pp_die "no MI in $KITFILE"
-    ROOT=`pp_kit_kits_global "$KITFILE" ROOT` 
+    ROOT=`pp_kit_kits_global "$KITFILE" ROOT`
     COMPRESS=`pp_kit_kits_global "$KITFILE" COMPRESS`
-    
+
     test -f "$MI" || pp_die "Inventory file $MI not found"
 
-    case "$ROOT" in 
-    *ROOT)	
-        test -f "$TODIR/$ROOT" || 
+    case "$ROOT" in
+    *ROOT)
+        test -f "$TODIR/$ROOT" ||
             pp_die "Root image $ROOT not found in $TODIR" ;;
     esac
 
@@ -118,7 +118,7 @@ pp_backend_kit_kits () {
     #rm -f *.ctrl Volume*
 
     for SUB
-    do 
+    do
         test -z "$SUB" && pp_die "SUB is empty"
 
         typeset INV CTRL ROOTSIZE USRSIZE VARSIZE TSSUB
@@ -140,18 +140,18 @@ pp_backend_kit_kits () {
         #   SUB dir/path
         # and generates stl_inv(4) files, like this
         #   f 0 00000 0 0 100644 2/11/09 010 f dir/path none SUB
-	grep "	$SUB\$" "$MI" | 
+	grep "	$SUB\$" "$MI" |
             pp_verbose /usr/lbin/invcutter \
-                -v "$VERS" -f "$FROMDIR" > "$INSTCTRL/$INV" || 	
+                -v "$VERS" -f "$FROMDIR" > "$INSTCTRL/$INV" ||
             pp_die "failed to create $INSTCTRL/$INV"
         chmod 664 "$INSTCTRL/$INV"
- 
+
         pp_backend_kit_sizes "$INSTCTRL/$INV" > "$pp_wrkdir/kit.sizes"
         read ROOTSIZE USRSIZE VARSIZE < "$pp_wrkdir/kit.sizes"
 
         # Prefix each line with $FROMDIR. This will be stripped
         awk '$1 != "d" {print from $10}' from="$FROMDIR/" \
-            > "$TSSUB" < "$INSTCTRL/$INV" || 
+            > "$TSSUB" < "$INSTCTRL/$INV" ||
             pp_die "failed"
 
         NVOLS=0
@@ -213,13 +213,13 @@ pp_backend_kit_kits () {
 		cp "$SCPDIR/$SUB.scp" "$INSTCTRL/$SUB.scp"
                 chmod 755 "$INSTCTRL/$SUB.scp"
 	else
-		pp_debug "kits: null subset control program for $SUB"  
+		pp_debug "kits: null subset control program for $SUB"
 		: > "$INSTCTRL/$SUB.scp"
 		chmod 744 "$INSTCTRL/$SUB.scp"
 	fi
 
-        pp_debug "kits: Finished creating media image for $SUB" 
-    done 
+        pp_debug "kits: Finished creating media image for $SUB"
+    done
 
     pp_debug "kits: Creating $CODE.image"
 

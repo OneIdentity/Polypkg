@@ -15,7 +15,7 @@ PPFLAGS=	--verbose --debug --no-clean --destdir=$(DESTDIR) \
 #PPFLAGS+=	--platform=aix
 PPVARS=
 PPVARS+=	prefix=$(prefix)
-PPVARS+=	bindir=$(bindir) 
+PPVARS+=	bindir=$(bindir)
 PPVARS+=	sbindir=$(sbindir)
 PPVARS+=	libdir=$(libdir)
 PPVARS+=	sysconfdir=$(sysconfdir)

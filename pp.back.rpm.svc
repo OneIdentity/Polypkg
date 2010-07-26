@@ -19,7 +19,7 @@ pp_rpm_service_install_common () {
                 /usr/lib/lsb/install_initd /etc/init.d/$svc
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
-                /sbin/chkconfig --add $svc 
+                /sbin/chkconfig --add $svc
                 /sbin/chkconfig $svc off
             else
 		: # manual links under /etc/init.d
@@ -178,7 +178,7 @@ pp_rpm_service_group_make_init_script () {
             stop)           pp_stop;;
             restart)        pp_stop; pp_start;;
             status)         pp_status;;
-            try-restart|condrestart)    
+            try-restart|condrestart)
                             if pp_status >/dev/null; then
                                     pp_restart
                             fi;;
@@ -194,14 +194,14 @@ pp_rpm_service_group_make_init_script () {
     chmod 755 $out
 }
 
-#@ pp_rpm_service_make_init_script(svc): generates a service init script 
+#@ pp_rpm_service_make_init_script(svc): generates a service init script
 #   Assumes %service variables have been set before invocation
 #   Does nothing if an /etc/init.d/$svc script exists already.
 #   Otherwise creates an /etc/init.d/$svc script that should work
 #   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
 #   broken on Red Hat, chkconfig is tried first.
 pp_rpm_service_make_init_script () {
-    typeset svc=$1 
+    typeset svc=$1
     typeset script=/etc/init.d/$svc
     typeset out=$pp_destdir$script
     typeset _process _cmd _rpmlevels
@@ -377,7 +377,7 @@ pp_rpm_service_make_init_script () {
             stop)           pp_stop;;
             restart)        pp_restart;;
             status)         pp_status;;
-            try-restart|condrestart)    
+            try-restart|condrestart)
                             if pp_status >/dev/null; then
                                     pp_restart
                             fi;;

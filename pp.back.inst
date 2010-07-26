@@ -28,7 +28,7 @@
 #      config([update|suggest|noupdate])
 #      symval(<symlink-target>)
 #      postop(cmd)
-# 
+#
 
 pp_platforms="$pp_platforms inst"
 
@@ -40,7 +40,7 @@ pp_backend_inst_detect () {
     esac
 }
 
-#@ pp_backend_inst_init(): initialises platform variables for inst 
+#@ pp_backend_inst_init(): initialises platform variables for inst
 pp_backend_inst_init () {
     pp_readlink_fn=pp_ls_readlink
 }
@@ -80,7 +80,7 @@ pp_backend_inst_init_svc_vars () {
 
 #@ pp_backend_inst_probe(): output local platform's short name
 pp_backend_inst_probe () {
-    cpu=`hinv|sed -n '/^CPU/{s/000 /k /;s/^CPU: //;s/ Process.*//;s/^MIPS //;p;q;}'|tr A-Z a-z` 
+    cpu=`hinv|sed -n '/^CPU/{s/000 /k /;s/^CPU: //;s/ Process.*//;s/^MIPS //;p;q;}'|tr A-Z a-z`
     echo irix`uname -r`-$cpu
 }
 

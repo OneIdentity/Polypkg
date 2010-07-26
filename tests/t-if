@@ -9,4 +9,4 @@ pp_front_end <<-.
 	%endif
 .
 
-test -r $TMPDIR/ok && pass 
+test -r $TMPDIR/ok && pass

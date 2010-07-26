@@ -12,7 +12,7 @@ pp_backend_aix_detect () {
 	test x"$1" = x"AIX"
 }
 
-#@ pp_backend_aix_init(): initialise the 
+#@ pp_backend_aix_init(): initialise the
 pp_backend_aix_init () {
         pp_aix_detect_arch
         pp_aix_detect_os
@@ -42,9 +42,9 @@ pp_aix_detect_arch () {
 	esac
 
 	case "`/usr/sbin/lsattr -El proc0 -a type -F value`" in
-	    PowerPC_POWER*) pp_aix_arch_std=ppc64;;	
-	    PowerPC*) pp_aix_arch_std=ppc;;	
-	    *) pp_aix_arch_std=unknown;;	
+	    PowerPC_POWER*) pp_aix_arch_std=ppc64;;
+	    PowerPC*) pp_aix_arch_std=ppc;;
+	    *) pp_aix_arch_std=unknown;;
 	esac
 }
 
@@ -56,7 +56,7 @@ pp_aix_detect_os () {
         pp_aix_os=aix$v$r
 }
 
-#-- pp_aix_version_fix(version) convert version into an AIX version 
+#-- pp_aix_version_fix(version) convert version into an AIX version
 #   AIX demands version strings of the form a.b.c.d[.e]
 pp_aix_version_fix () {
     typeset v
@@ -80,7 +80,7 @@ pp_aix_version_fix () {
 }
 
 #@ pp_aix_select(-user|-root) < file-list:
-#   Selects out the %files lines that are in /usr or /opt (-user) 
+#   Selects out the %files lines that are in /usr or /opt (-user)
 #   or otherwise (-root).
 pp_aix_select () {
 	case "$1" in
@@ -94,15 +94,15 @@ pp_aix_select () {
 }
 
 #@ pp_aix_copy_root($root) < root-file-list:
-#   Copies (links) the files from $pp_destdir into $pp_destdir$root, creating 
-#   directories as needed. This is used prior to running the BFF backup. 
+#   Copies (links) the files from $pp_destdir into $pp_destdir$root, creating
+#   directories as needed. This is used prior to running the BFF backup.
 pp_aix_copy_root () {
     typeset t m o g f p st target
     while read t m o g f p st; do
         case "$t" in
            d) pp_create_dir_if_missing "$1${p%/}";;
            f) pp_add_transient_file "$1$p"
-	      pp_verbose ln "$pp_destdir$p" "$pp_destdir$1$p" || 
+	      pp_verbose ln "$pp_destdir$p" "$pp_destdir$1$p" ||
 		pp_error "can't link $p into $1";;
 #           s) pp_add_transient_file "$1$p"
 #              #target=`$pp_readlink_fn $pp_destdir$p`
@@ -117,9 +117,9 @@ pp_aix_copy_root () {
 #   The directories are derived from a scan of a %files component, then
 #   du and awk are used to add up the total block sizes of files
 #   e.g. the lines
-#	f 644 root root - /usr/bin/ls 
+#	f 644 root root - /usr/bin/ls
 #	f 644 root root - /usr/bin/mv
-#	f 644 root root - /usr/lib/libc.a 
+#	f 644 root root - /usr/lib/libc.a
 #   could turn into
 #	/usr/bin 61
 #	/usr/lib 115
@@ -133,8 +133,8 @@ pp_aix_size () {
     while read t m o g f p st; do
       case "$t" in f) du -a "$pp_destdir$p";; esac
     done | sed -e 's!/[^/]*$!!' | sort +1 |
-    awk '{ if ($2 != d) 
-           { if (sz) print d,sz; 
+    awk '{ if ($2 != d)
+           { if (sz) print d,sz;
              d=$2; sz=0 }
            sz += $1; }
          END { if (sz) print d,sz }' |
@@ -155,7 +155,7 @@ pp_aix_make_liblpp () {
     fl=
     for f
     do
-	case "$f" in "$dn/"*) fl="$fl `basename $f`" ;; 
+	case "$f" in "$dn/"*) fl="$fl `basename $f`" ;;
 		     *) pp_die "liblpp name $f not in $dn/";; esac
     done
     (cd "$dn" && pp_verbose  ar -c -g -r "$out" $fl) || pp_error "ar error"
@@ -213,12 +213,12 @@ pp_aix_inventory () {
 	    *)
 	      if test -r "$pp_destdir$p"; then
 	        echo " size = $size"
-                pp_verbose  sum -r < "$pp_destdir$p" | 
+                pp_verbose  sum -r < "$pp_destdir$p" |
 	      	  sed -e 's/.*/ checksum = "&"/'
 	      fi
 	      ;;
 	   esac;;
-	s) 
+	s)
 	   echo " target = $st"
 	   ;;
       esac
@@ -260,7 +260,7 @@ pp_aix_add_service () {
 	set -- $cmd
 	cmd_cmd="$1"; shift
 	cmd_arg="$*";
-	
+
 	case "$stop_signal" in
 		HUP) stop_signal=1;;
 		INT) stop_signal=2;;
@@ -269,9 +269,9 @@ pp_aix_add_service () {
 		TERM) stop_signal=15;;
 		USR1) stop_signal=30;;
 		USR2) stop_signal=31;;
-		"") 
+		"")
 		  pp_error "%service $svc: stop_signal not set";;
-		[a-zA-Z]*) 
+		[a-zA-Z]*)
 		  pp_error "%service $svc: bad stop_signal ($stop_signal)";;
 	esac
 
@@ -298,7 +298,7 @@ pp_aix_add_service () {
             mkitab "$svc:2:once:/usr/bin/startsrc -s $svc >/dev/console 2>&1"
 .
 
-	${pp_aix_start_services_after_install} && 
+	${pp_aix_start_services_after_install} &&
           cat <<-. >> $pp_wrkdir/%post.run
             # start service '$svc' automatically after install
             startsrc -s $svc
@@ -348,10 +348,10 @@ pp_backend_aix () {
 	done
 
         {
-	  echo "4 $pp_aix_arch I $name {" 
+	  echo "4 $pp_aix_arch I $name {"
 
 	  for cmp in $pp_components; do
-	    case "$cmp" in 
+	    case "$cmp" in
 		run) ex=rte  briefex="runtime";;
 		doc) ex=doc  briefex="documentation";;
 		dev) ex=adt  briefex="developer toolkit";;
@@ -390,7 +390,7 @@ fi >&2
 	         $pp_aix_lang "$summary $briefex"
 	    echo "["
 
-	    pp_aix_depend $pp_wrkdir/%depend.$cmp 
+	    pp_aix_depend $pp_wrkdir/%depend.$cmp
 
 	    echo "%"
 
@@ -404,7 +404,7 @@ fi >&2
 
 if $pp_opt_debug; then
     echo "$cmp USER $name.$ex.al:"
-    cat $user_wrkdir/$name.$ex.al 
+    cat $user_wrkdir/$name.$ex.al
     echo "$cmp ROOT $name.$ex.al:"
     cat $root_wrkdir/$name.$ex.al
 fi >&2
@@ -416,7 +416,7 @@ fi >&2
 
 if $pp_opt_debug; then
     pp_debug "$cmp USER $name.$ex.inventory:"
-    cat $user_wrkdir/$name.$ex.inventory 
+    cat $user_wrkdir/$name.$ex.inventory
     pp_debug "$cmp ROOT $name.$ex.inventory:"
     cat $root_wrkdir/$name.$ex.inventory
 fi >&2
@@ -476,14 +476,14 @@ fi >&2
 		pp_error "ar error"
 	if test -s $user_wrkdir/liblpp.a; then
            pp_add_transient_file $instuser/liblpp.a
-	   pp_verbose cp $user_wrkdir/liblpp.a $pp_destdir$instuser/liblpp.a || 
+	   pp_verbose cp $user_wrkdir/liblpp.a $pp_destdir$instuser/liblpp.a ||
 		pp_error "cannot create user liblpp.a"
 	fi
 	(cd $root_wrkdir && pp_verbose  ar -c -g -r liblpp.a $name.*) ||
 		pp_error "ar error"
 	if test -s $root_wrkdir/liblpp.a; then
            pp_add_transient_file $instroot/liblpp.a
-	   pp_verbose cp $root_wrkdir/liblpp.a $pp_destdir$instroot/liblpp.a || 
+	   pp_verbose cp $root_wrkdir/liblpp.a $pp_destdir$instroot/liblpp.a ||
 		pp_error "cannot create root liblpp.a"
 	fi
 
@@ -515,7 +515,7 @@ fi >&2
 		    ;;
 	    esac
 	fi
-        
+
 	. $pp_wrkdir/%fixup
 
         outbff=`pp_backend_aix_names`
@@ -558,7 +558,7 @@ pp_backend_aix_install_script () {
 
         fsets=
         for cmp in $pp_components; do
-	    case "$cmp" in 
+	    case "$cmp" in
 		run) ex=rte;;
 		doc) ex=doc;;
 		dev) ex=adt;;
@@ -577,7 +577,7 @@ pp_backend_aix_install_script () {
                     set -- $pp_components
                 for cpt
                 do
-                    case "\$cpt" in 
+                    case "\$cpt" in
                         run) echo "$name.rte";;
                         doc) echo "$name.doc";;
                         dev) echo "$name.adt";;

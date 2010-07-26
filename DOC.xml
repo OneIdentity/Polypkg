@@ -1,5 +1,5 @@
 <?xml version='1.0'?>
-<?xml-stylesheet 
+<?xml-stylesheet
     href="/usr/share/xml/docbook/stylesheet/css/current/driver.css"
     type="text/css"?>
 
@@ -10,7 +10,7 @@
  <bookinfo>
   <author><firstname>David</firstname>
           <surname>Leonard</surname></author>
-  <copyright><year>2006</year> 
+  <copyright><year>2006</year>
              <holder>Quest Software, Inc.</holder></copyright>
  </bookinfo>
 
@@ -166,7 +166,7 @@ description="Hello tool"
 
     </varlistentry>
    </variablelist>
-   
+
 
   </section>
  </chapter>
@@ -183,10 +183,10 @@ description="Hello tool"
    <title>Bourne shell requirements</title>
 
    <para>
-    PolyPackage is a shell script that runs on most versions of the 
+    PolyPackage is a shell script that runs on most versions of the
     Bourne or Korn shell.  One of the problematic features of
     PolyPakcage is that it uses the shell's interpretation of
-    braces for filename generation or 'globbing'. 
+    braces for filename generation or 'globbing'.
    </para>
 
    <para>
@@ -204,7 +204,7 @@ description="Hello tool"
    <title>Sections</title>
    <para>
     Sections are introduced by %-directives. A line that starts with '%%'
-    will be treated as if it were a literal line and the first '%' will 
+    will be treated as if it were a literal line and the first '%' will
     be removed.
    </para>
    <example>
@@ -217,7 +217,7 @@ description="Hello tool"
    <para>
     The special %-directives %if, %else and %endif are processed
     before sections. The argument to %if and %else is a shell command
-    whose standard output is discarded. Note that '!' is understood by 
+    whose standard output is discarded. Note that '!' is understood by
     the shell to invert the exit code of the command.
    </para>
    <example>
@@ -230,9 +230,9 @@ description="Hello tool"
   <section>
    <title>The %set section</title>
    <para>
-	The %set section directive causes successive lines to 
+	The %set section directive causes successive lines to
 	be interpreted as literal shell code. The section body is stored
-	in a text file and then sourced with the '.' operator at the 
+	in a text file and then sourced with the '.' operator at the
 	end of the section.
    </para>
    <example><![CDATA[%set
@@ -247,14 +247,14 @@ description="Hello tool"
       <term>name</term>
       <listitem>simple identifier name of the package</listitem>
       <term>version</term>
-      <listitem>version identifier: must start with a digit, 
-       and consist of only digits and periods. At most three 
+      <listitem>version identifier: must start with a digit,
+       and consist of only digits and periods. At most three
        periods are permitted.</listitem>
       <term>summary</term>
       <listitem>summary of the package, limit 40 characters.
        Defaults to "no summary"</listitem>
       <term>description</term>
-      <listitem>A paragraph describing the package. Can be placed 
+      <listitem>A paragraph describing the package. Can be placed
        in quotes where newlines will be replaced by spaces.
        Defaults to "No description".</listitem>
       <term>copyright</term>
@@ -275,7 +275,7 @@ description="Hello tool"
     </para>
    </section>
   </section>
-  
+
   <section>
    <title>The %files sections</title>
    <para>
@@ -302,30 +302,30 @@ description="Hello tool"
    </para>
   </section>
  </chapter>
-</book> 
+</book>
 
    <!-- TO BE COMPLETED -->
 
 <!--
 	'Path-glob' is an absolute pathname which may contain the wildcard
-	and pattern metacharacters *,?,[,],{,}. 
+	and pattern metacharacters *,?,[,],{,}.
 
 	  Impl note: {,}-patterns may be converted into /@(|)-patterns
 
 	If the path-glob ends with %so then it is replaced with
-	platform's native shared library suffix pattern. 
+	platform's native shared library suffix pattern.
 	On HP-UX this is .sl*, and on other platforms it is .so*.
 	For AIX, .a is used.
 
 		/usr/lib/libfoo.%so
 
-	Source files matching the path-glob must exist in a directory 
+	Source files matching the path-glob must exist in a directory
 	rooted under $DESTDIR unless the 'optional' flag is supplied.
 	If the path-glob refers to a directory, it *must* end with a
 	trailing slash.
 
 	The octal-mode argument must start with a digit or be
-	the special word '=' meaning to use the mode of the 
+	the special word '=' meaning to use the mode of the
 	source file.
 
 	The owner:group argument must contain a ':'. Either or both
@@ -333,8 +333,8 @@ description="Hello tool"
 	as '=' meaning to use the mode of the source file.
 
 	The defaults for unspecified mode, owner and group depend on the
-	platform, path prefix, and the file type.  Generally, if the 
-	path is a directory, the default mode will be 755. For normal 
+	platform, path prefix, and the file type.  Generally, if the
+	path is a directory, the default mode will be 755. For normal
 	files the default mode is generally 644.
 
 	If the source file is a symlink, then the package will include
@@ -356,7 +356,7 @@ description="Hello tool"
 		[d|f] mode owner group flags path
 		s     mode owner group flags path target
 
-	Where d,f,s indicate directory, file or symbolic link. 
+	Where d,f,s indicate directory, file or symbolic link.
 	The v field indicates volatility, or '-' for a placeholder.
 	The mode of symbolic links is ignored but written as 777.
 
@@ -387,12 +387,12 @@ The %service section
 	A %service section consists of the directive %service followed
 	by a simple service identifier. If omitted, the simple name of the
 	package is used.
-	
+
 		%service [name]
 
 	The body of a %service section consists of shell text. It is
 	expected to set some simple shell variables, and is effectively
-	treated much like a %set section. 
+	treated much like a %set section.
 
 	The service sections assume the common case of a daemon process
 	started at boot time and controlled by native platform service
@@ -416,21 +416,21 @@ The %service section
 		cmd		Shell command to execute
 		pidfile		Path to the file containing the PID as
 				the first word on the first line.
-		stop_signal	Signal number that gracefully stops 
+		stop_signal	Signal number that gracefully stops
 				the process [default 15]
 		user		User to run the service as [default root]
 
 	Other platform-specific variables may be provided in this
 	section and are treated differently.
-	
+
    Output of a %service section:
 
    	The result of processing a %service section is to create or
-	append to a file called %service.name, where 'name' is the 
+	append to a file called %service.name, where 'name' is the
 	name given to the service. The file will contains the shell
 	text. The shell text is sourced and then platform-specific
 	changes are made to the other output files before %fixup
-	
+
 The %depend section
 
 	The dependency section lists the names of packages that
@@ -439,14 +439,14 @@ The %depend section
 
 	    %depend [component]
 
-	The body of a depend section consists of names and 
+	The body of a depend section consists of names and
 	minimum version numbers of (other PolyPackage) packages.
 	Blank lines, or lines start starting with '#' are ignored.
 	The lines can contain shell variable expansion.
 
 		name version
 
-	Lines starting with a the special symbol "+" indicate 
+	Lines starting with a the special symbol "+" indicate
 	platform-specific dependency information.
 
     Output of a %depend section
@@ -462,10 +462,10 @@ The %depend section
 	together. Lines beginning with # and blank lines are removed.
 	Whitespace at the beginning of lines is ignored.
 
-	Note that some %depend.* files are created regardless of whether 
-	a %depend section has been specified for them or not. If the 
-	components doc, dbg and dev have been named in a %files 
-	section, then the following %depend sections declarations are 
+	Note that some %depend.* files are created regardless of whether
+	a %depend section has been specified for them or not. If the
+	components doc, dbg and dev have been named in a %files
+	section, then the following %depend sections declarations are
 	implied:
 
 		%depend doc
@@ -484,7 +484,7 @@ The %fixup section
 	immediately before the platform packaging tools are executed.
 
 	The %fixup directive is not followed by any identifier.
-	This is really only intended as a last-resort place to hold 
+	This is really only intended as a last-resort place to hold
 	any horrible hackery required.
 
     Output of a %fixup section
@@ -495,7 +495,7 @@ The %fixup section
 The %pp section
 
 	This optional section has no body. It specifies a version of
-	the PolyPackage API that the script was written to use. This 
+	the PolyPackage API that the script was written to use. This
 	document descibes version 1.0.
 
 		%pp 1.0

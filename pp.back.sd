@@ -8,7 +8,7 @@ pp_backend_sd_detect () {
     test x"$1" = x"HP-UX"
 }
 
-#@ pp_backend_sd_init(): initialises platform variables for sd 
+#@ pp_backend_sd_init(): initialises platform variables for sd
 pp_backend_sd_init () {
     pp_sd_sudo=sudo     # FIXME: argh why is hpux so braindead
     pp_sd_startlevels=2
@@ -44,7 +44,7 @@ pp_sd_write_files () {
     while read t m o g f p st; do
         line="                file"
         case "$f" in *v*) line="$line -v";; esac    # FIXME for uninstall
-        case $t in 
+        case $t in
             f) dm=644;;
             d) line="$line -t d"; p=${p%/}; dm=755;;
             s) line="$line -t s";;
@@ -181,7 +181,7 @@ pp_debug "config file is $config_file"
                 echo "Unable to stop $svc (no pid file)"
                 return 1
             else
-                read pid < "$pidfile" 
+                read pid < "$pidfile"
 		if kill -0 "$pid" 2>/dev/null; then
 		    if kill -${stop_signal:-TERM} "$pid"; then
 			rm -f "$pidfile"
@@ -201,7 +201,7 @@ pp_debug "config file is $config_file"
             if test ! -s "$pidfile"; then
                 return 1
             else
-                read pid < "$pidfile" 
+                read pid < "$pidfile"
                 kill -0 "$pid" 2>/dev/null
             fi
         }
@@ -209,7 +209,7 @@ pp_debug "config file is $config_file"
         case $1 in
             start_msg) echo "Starting the $svc service";;
             stop_msg)  echo "Stopping the $svc service";;
-            start)  
+            start)
                     if test -f "$config_file"; then
                         . $config_file
                     fi
@@ -268,12 +268,12 @@ pp_sd_make_service () {
         pp_sd_service_script $svc
 
         # fix the priority up
-        case "$startpriority" in 
+        case "$startpriority" in
             ???) :;;
             ??) startpriority=0$startpriority;;
             ?) startpriority=00$startpriority;;
         esac
-        case "$stoppriority" in 
+        case "$stoppriority" in
             ???) :;;
             ??) stoppriority=0$stoppriority;;
             ?) stoppriority=00$stoppriority;;
@@ -295,12 +295,12 @@ pp_sd_make_service () {
         test -z "$stoplevels" || for level in $stoplevels; do
             echo "                file -t s" \
                     "/sbin/init.d/$svc" \
-                    "/sbin/rc$level.d/K$stoppriority$svc" 
+                    "/sbin/rc$level.d/K$stoppriority$svc"
         done
 }
 
 #@ pp_sd_control (name files...) creates and emits a control script
-#  based on section "Control Script Format" in [1] 
+#  based on section "Control Script Format" in [1]
 pp_sd_control () {
     typeset ctrl script
     typeset cpt
@@ -397,7 +397,7 @@ pp_backend_sd () {
         if test $cpt = run -a -n "$pp_services"; then
             for svc in $pp_services; do
                 #-- service names are 10 chars max on hpux
-                case "$svc" in ???????????*) 
+                case "$svc" in ???????????*)
                     pp_warn "service name '$svc' is too long for hpux";;
                 esac
                 pp_sd_make_service $svc >> $psf
@@ -411,7 +411,7 @@ pp_backend_sd () {
         cat <<. >>$psf
             end
 .
-        
+
     done
 
     #-- end product clause
@@ -470,7 +470,7 @@ pp_backend_sd_install_script () {
         test \$# -eq 0 && usage
         op="\$1"; shift
 
-        case "\$op" in 
+        case "\$op" in
             list-components)
                 test \$# -eq 0 || usage \$op
                 echo "$pp_components"

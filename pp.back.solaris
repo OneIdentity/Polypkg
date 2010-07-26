@@ -1,7 +1,7 @@
 #
 # solaris backend
 # http://docs.sun.com/app/docs/doc/802-1932
-# 
+#
 # the pkgmk tool input:
 #    prototype (required) -pkgproto(1M) or prototype(4)
 #    pkginfo (required)   -pkginfo(4)
@@ -14,8 +14,8 @@
 # names must be [A-Za-z][-+A-Za-z0-9]{,8} and not (install|new|all)
 #
 # The component name is used for the class name
-# 
-# pkginfo should have 
+#
+# pkginfo should have
 #    PKG=foobar
 #    NAME=the foo bad system
 #    CATEGORY=system
@@ -24,13 +24,13 @@
 #    CLASSES=none
 # prototype lines are
 #    [part] ftype class pathname[=srcpath] [mode owner group]
-# directories should be 755 root sys 
+# directories should be 755 root sys
 # binaries should be 555 root bin
 # directories expected to exist should be ? ? ? (three question marks)
 #
 #
 # Idea: create a "compressed" class that is installed using gzip?
-# 
+#
 #
 
 pp_platforms="$pp_platforms solaris"
@@ -82,7 +82,7 @@ pp_solaris_detect_os () {
 }
 
 #@ pp_solaris_detect_arch(): set $pp_solaris_arch to short platform arch
-# NOTE: this is the architecture EXECUTION capability. 
+# NOTE: this is the architecture EXECUTION capability.
 # The TARGET arch of the package is detected during pp_solaris_proto()
 #   i386    = 32-bit intel (i386)
 #   amd64   = 64-bit intel (x86_64)
@@ -128,7 +128,7 @@ pp_solaris_is_request_script_necessary () {
 #@ pp_solaris_request(output): Generate a request script for all components
 pp_solaris_request () {
     typeset _cmp _svc
-        
+
     #-- The common part of the request script contains the ask() function
     #   and resets the CLASSES list to empty
     cat <<'.'
@@ -195,8 +195,8 @@ pp_solaris_depend () {
     typeset _name _vers
     while read _name _vers; do
 	if test -n "$_name"; then
-	    echo "P $_name $_name" 
-	    test -n "$_vers" && echo " $_vers" 
+	    echo "P $_name $_name"
+	    test -n "$_vers" && echo " $_vers"
 	fi
     done
 }
@@ -220,20 +220,20 @@ pp_solaris_proto () {
 	typeset abi
 
 	while read t m o g f p st; do
-	  if test x"$o" = x"-"; then 
+	  if test x"$o" = x"-"; then
             o="bin"
           fi
-	  if test x"$g" = x"-"; then 
+	  if test x"$g" = x"-"; then
             g="bin"
           fi
 	  case "$t" in
 	    f) test x"$m" = x"-" && m=444
-	       case "$f" in 
+	       case "$f" in
 		*v*) echo "v $1 $p=$pp_destdir$p $m $o $g";;
 		*)   echo "f $1 $p=$pp_destdir$p $m $o $g";;
 	       esac
 	       if test -r "$pp_destdir$p"; then
-		  #-- Use file to record ABI types seen 
+		  #-- Use file to record ABI types seen
 		  case "`file "$pp_destdir$p"`" in
 		    *"ELF 32"*80386*) abi=i386;;
 		    *"ELF 64"*AMD*) abi=x86_64;;
@@ -339,7 +339,7 @@ pp_backend_solaris () {
 	    pp_solaris_request > $pp_wrkdir/request
 	fi
 
-        test -n "$pp_services" && 
+        test -n "$pp_services" &&
             for _svc in $pp_services; do
                 pp_load_service_vars $_svc
                 pp_solaris_make_service $_svc
@@ -349,7 +349,7 @@ pp_backend_solaris () {
 .
             done
 
-        test -n "$pp_service_groups" && 
+        test -n "$pp_service_groups" &&
 	    for _grp in $pp_service_groups; do
 		pp_solaris_make_service_group \
 		    $_grp "`pp_service_get_svc_group $_grp`"
@@ -370,7 +370,7 @@ pp_backend_solaris () {
 		    *install|*remove|request)
 			# turn scripts into a proper shell scripts
 			mv $pp_wrkdir/$f $pp_wrkdir/$f.tmp
-			{ echo "#!/bin/sh"; 
+			{ echo "#!/bin/sh";
 			  echo "# $f script for ${pp_solaris_name:-$name}-$version"
 			  cat $pp_wrkdir/$f.tmp
 			  echo "exit 0"; } > $pp_wrkdir/$f
@@ -480,7 +480,7 @@ pp_backend_solaris_install_script () {
             test \$# -eq 0 && usage
             op="\$1"; shift
 
-            case "\$op" in 
+            case "\$op" in
                 list-components)
                     test \$# -eq 0 || usage \$op
                     echo "$pp_components"
@@ -533,8 +533,8 @@ pp_backend_solaris_install_script () {
 #   be added to %depend.$cpt
 pp_solaris_dynlib_depend () {
 	xargs ldd 2>/dev/null |
-	sed -e '/^[^ 	]*:$/d' -e 's,.*=>[	 ]*,,' -e 's,^[ 	]*,,' | 
-	sort -u | 
+	sed -e '/^[^ 	]*:$/d' -e 's,.*=>[	 ]*,,' -e 's,^[ 	]*,,' |
+	sort -u |
 	grep -v '^/usr/platform/' | (
 	  set -- ""; shift
 	  while read p; do
@@ -577,12 +577,12 @@ pp_backend_solaris_probe () {
 #@ pp_backend_solaris_vas_platforms(): print the VAS platform identifiers
 pp_backend_solaris_vas_platforms () {
     case `pp_backend_solaris_probe` in
-	sol10-sparc* | sol9-sparc* | sol8-sparc*)	
+	sol10-sparc* | sol9-sparc* | sol8-sparc*)
 			echo solaris8-sparc solaris7-sparc solaris26-sparc;;
 	sol7-sparc*)	echo                solaris7-sparc solaris26-sparc;;
 	sol26-sparc*)	echo                               solaris26-sparc;;
 	sol8-*86)	echo solaris8-x86;;
-	sol10-*86 | sol10-x86_64)	
+	sol10-*86 | sol10-x86_64)
 			echo solaris10-x64 solaris8-x86;;
 	*)		pp_die "unknown system `pp_backend_solaris_probe`";;
     esac

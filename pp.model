@@ -64,7 +64,7 @@ pp_service_check_vars () {
 #@ pp_load_service_vars(svc): source a file for service definitions
 pp_load_service_vars () {
 	pp_service_init_vars
-	. "$pp_wrkdir/%service.$1" 
+	. "$pp_wrkdir/%service.$1"
 	pp_service_check_vars "$1"
 }
 
@@ -148,7 +148,7 @@ pp_files_expand () {
             while read _path; do
                 _path="${_path#.}"
                 pp_find_recurse "$pp_destdir${_path%/}"
-            done < $pp_wrkdir/tmp.files.exp | 
+            done < $pp_wrkdir/tmp.files.exp |
                  sort -u > $pp_wrkdir/tmp.files.exp2
             mv $pp_wrkdir/tmp.files.exp2 $pp_wrkdir/tmp.files.exp
             ;;
@@ -159,12 +159,12 @@ pp_files_expand () {
 	_file="${pp_destdir}${_path}"
 	_tgt=
 	_m="$_mode"
-	_o="${_owner:--}" 
+	_o="${_owner:--}"
 	_g="${_group:--}"
 	_f="$_flags"
 
-        case "$_path" in 
-            /*) :;; 
+        case "$_path" in
+            /*) :;;
             *)  pp_warn "$_path: inserting leading /"
                 _path="/$_path";;  # ensure leading /
         esac
@@ -192,8 +192,8 @@ pp_debug "symlink target is $_tgt"
 	   else
 	       _tgt=`pp_readlink "$_file"`;
                test -z "$_tgt" && pp_error "can't readlink $_file"
-               case "$_tgt" in 
-                    ${pp_destdir}/*) 
+               case "$_tgt" in
+                    ${pp_destdir}/*)
                        pp_warn "stripped \$destdir from symlink ($_path)"
                        _tgt="${_tgt#$pp_destdir}";;
                esac
@@ -201,8 +201,8 @@ pp_debug "symlink target is $_tgt"
 	   _m=777
 	elif test -d "$_file"; then
 	   #-- display a warning if the user forgot the trailing /
-	   case "$_path" in 
-		*/) :;; 
+	   case "$_path" in
+		*/) :;;
 		*) pp_warn "$_path (matching $_file): adding trailing /"
 		   _path="$_path/";;
 	   esac
@@ -239,9 +239,9 @@ pp_debug "symlink target is $_tgt"
             fi
 	    ;;
 	esac
-	
+
 	test -n "$_f" || _f=-
-	
+
 	#-- sanity checks
 	test -n "$_type" || pp_die "_type empty"
 	test -n "$_path" || pp_die "_path empty"

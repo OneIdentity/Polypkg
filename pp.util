@@ -51,7 +51,7 @@ pp_die_if_errors () {
 }
 
 #@ pp_debug(msg): writes a message only if the --debug option was given
-pp_debug () { 
+pp_debug () {
 	$pp_opt_debug && echo "${pp_col_bluefg}debug${pp_col_reset} $*" >&2
 }
 
@@ -66,7 +66,7 @@ pp_verbose () {
 #     - substitutes each %(cmd) with the output of `cmd`
 #     - otherwise passes characters unchanged.
 #     - assumes input does not contain ^U ^V or ^W characters
-pp_substitute () { 
+pp_substitute () {
   sed -e 's,%(\([^)]*\)),`\1`,g' \
       -e 's,%{\([^}]*\)},${\1},g' \
       -e 's,$,,' |
@@ -94,7 +94,7 @@ pp_decr () {
 #@ pp_check_var_is_defined(): check the variable is set and/or non-empty
 #   Otherwise, generates an error, and sets the variable to "undefined"
 pp_check_var_is_defined () {
-    if eval test -z "\"\$$1\""; then 
+    if eval test -z "\"\$$1\""; then
 	pp_error "\$$1: not set"
 	eval "$1=undefined"
     fi
@@ -267,10 +267,10 @@ pp_create_dir_if_missing () {
 	*)  if test ! -d "$pp_destdir$1"; then
                 pp_debug "fabricating directory $1/"
 		pp_create_dir_if_missing "${1%/*}"
-		mkdir "$pp_destdir$1" && 
+		mkdir "$pp_destdir$1" &&
                     pp_note_file_used "$1/"
 		pp_remove_later "$1" &&
-		chmod ${2:-755} "$pp_destdir$1" 
+		chmod ${2:-755} "$pp_destdir$1"
 	    fi;;
     esac
 }
@@ -286,9 +286,9 @@ pp_add_file_if_missing () {
     typeset dir
     #-- check that the file isn't already declared in the component
     if test -s $pp_wrkdir/%files.${2:-run}; then
-      awk "\$6 == \"$1\" {exit 1}" < $pp_wrkdir/%files.${2:-run} || return 1  
+      awk "\$6 == \"$1\" {exit 1}" < $pp_wrkdir/%files.${2:-run} || return 1
     fi
-                
+
     pp_create_dir_if_missing "${1%/*}"
     pp_debug "fabricating file $1"
     echo "f ${3:-755} - - ${4:--} $1" >> $pp_wrkdir/%files.${2:-run}
@@ -333,7 +333,7 @@ pp_remove_later_now () {
         pp_debug "pp_remove_later_now"
         while read f; do
             pp_debug "removing $pp_destdir$f"
-	    if test -d $pp_destdir$f; then 
+	    if test -d $pp_destdir$f; then
 		rmdir $pp_destdir$f
 	    else
 		rm $pp_destdir$f
@@ -384,15 +384,15 @@ pp_install_script_common () {
               "print-platform")
                 echo "usage: \$0 print-platform" ;;
               *)
-                echo "usage: \$0 [-q] command [args]" 
-                echo "   list-services" 
-                echo "   list-components" 
-                echo "   list-files {cpt...|all}" 
-                echo "   install {cpt...|all}" 
-                echo "   uninstall {cpt...|all}" 
-                echo "   start {svc...}" 
-                echo "   stop {svc...}" 
-                echo "   print-platform" 
+                echo "usage: \$0 [-q] command [args]"
+                echo "   list-services"
+                echo "   list-components"
+                echo "   list-files {cpt...|all}"
+                echo "   install {cpt...|all}"
+                echo "   uninstall {cpt...|all}"
+                echo "   start {svc...}"
+                echo "   stop {svc...}"
+                echo "   print-platform"
                 ;;
               esac >&2
               exit 1
@@ -443,7 +443,7 @@ pp_functions () {
 }
 
 #@ pp_function(func): emits a single platform-dependent function definition
-pp_function () { 
+pp_function () {
     pp_functions "$1"
 }
 
@@ -474,17 +474,17 @@ pp_getopt () {
      _pp_optstring="$1"; shift; eval `_pp_getopt "$_pp_optstring"`
 }
 _pp_getopt_meta=s,[\\\\\"\'\`\$\&\;\(\)\{\}\#\%\ \	],\\\\\&,g
-_pp_protect () { 
-    sed "$_pp_getopt_meta" <<. | tr '\012' ' ' 
+_pp_protect () {
+    sed "$_pp_getopt_meta" <<. | tr '\012' ' '
 $*
 .
 }
-_pp_protect2 () { 
+_pp_protect2 () {
     sed "s,^..,,$pp_getopt_meta" <<. | tr '\012' ' '
 $*
 .
 }
-_pp_nonl () { 
+_pp_nonl () {
     tr '\012' ' ' <<.
 $*
 .

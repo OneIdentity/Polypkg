@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Test driver
-# 
+#
 # Environment variables
 #   SELECT: glob used to select tests to run (default is *)
 #   DEBUG: if set and non-empty, adds --debug to pp
@@ -20,7 +20,7 @@ desc () { DESC="$*"; }
 
 pass () { echo "PASS $NAME: $DESC"; exit 0; }
 fail () { echo "FAIL $NAME: $DESC";
-          test $# -gt 0 && echo "       reason: $*"; 
+          test $# -gt 0 && echo "       reason: $*";
           exit 1; }
 skip () { echo "?    $NAME"; exit 0; }
 

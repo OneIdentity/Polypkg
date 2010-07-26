@@ -26,7 +26,7 @@ test -n "$PP_NO_CLEAN" && pp_opt_no_clean=true
 test -n "$PP_DEBUG" && pp_opt_debug=true
 test -n "$PP_VERBOSE" && pp_opt_verbose=true
 
-#@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir 
+#@ pp_main_cleanup(): calls backend cleanup and removes $pp_wrkdir
 pp_main_cleanup () {
 	pp_debug "main_cleanup"
         pp_remove_later_now
@@ -60,7 +60,7 @@ pp_parseopts () {
 	    --?*) : ;;
 
 	    -d)  shift; set -- "--debug" "$@";;
-	    -d*) a=`echo "$1" | sed -ne 's/^-.//'` 
+	    -d*) a=`echo "$1" | sed -ne 's/^-.//'`
 		 shift; set -- "--debug" "$@";;
 
 	    -i) shift; set -- "--install-script" "$@";;
@@ -68,7 +68,7 @@ pp_parseopts () {
 		 shift; set -- "--install-script" "$a" "$@";;
 
 	    -l)  shift; set -- "--list" "$@";;
-	    -l*) a=`echo "$1" | sed -ne 's/^-.//'` 
+	    -l*) a=`echo "$1" | sed -ne 's/^-.//'`
 		 shift; set -- "--list" "$@";;
 
 	    -p) shift; set -- "--platform" "$@";;
@@ -76,11 +76,11 @@ pp_parseopts () {
 		 shift; set -- "--platform" "$a" "$@";;
 
 	    -v)  shift; set -- "--verbose" "$@";;
-	    -v*) a=`echo "$1" | sed -ne 's/^-.//'` 
+	    -v*) a=`echo "$1" | sed -ne 's/^-.//'`
 		 shift; set -- "--verbose" "$@";;
 
 	    -\?)  shift; set -- "--help" "$@";;
-	    -\?*) a=`echo "$1" | sed -ne 's/^-.//'` 
+	    -\?*) a=`echo "$1" | sed -ne 's/^-.//'`
 		 shift; set -- "--help" "$@";;
 	  esac
 
@@ -140,7 +140,7 @@ pp_parseopts () {
 	test $# -gt 0 &&
             pp_error "unknown argument $1"
 
-	if $pp_errors; then 
+	if $pp_errors; then
 	    cat <<. >&2
 polypkg $pp_version $pp_copyright
 usage: $0 [options] [input.pp] [var=value ...]
@@ -166,7 +166,7 @@ usage: $0 [options] [input.pp] [var=value ...]
 	fi
 }
 
-#@ pp_drive(): drives the front-end, middle and backend 
+#@ pp_drive(): drives the front-end, middle and backend
 pp_drive () {
 	# initialise the front and back ends
         pp_model_init
@@ -176,9 +176,9 @@ pp_drive () {
 	# run the front-end to generate the intermediate files
         # set $pp_input_dir to be the 'include dir' if needed
 	pp_debug "calling frontend on $pp_opt_input"
-	case "$pp_opt_input" in 
+	case "$pp_opt_input" in
 	    -)   pp_input_dir=.
-		 test -t 1<&0 && 
+		 test -t 1<&0 &&
 		    pp_warn "reading directives from standard input"
                  pp_frontend
                  ;;
@@ -229,7 +229,7 @@ pp_drive () {
 	pp_die_if_errors "Errors during package copying"
 }
 
-#@ pp_install_script(): generate the install helper script 
+#@ pp_install_script(): generate the install helper script
 pp_install_script () {
         pp_debug "writing install script to $pp_opt_install_script"
         rm -f $pp_opt_install_script
@@ -240,7 +240,7 @@ pp_install_script () {
 
 #@ pp_main(): main driver function
 pp_main () {
-	# If PP_DEV_PATH is set, then jump to that script. 
+	# If PP_DEV_PATH is set, then jump to that script.
 	# (Useful when working on polypkg source that isn't installed)
 	if test -n "$PP_DEV_PATH" -a x"$PP_DEV_PATH" != x"$0"; then
 	    pp_warn "switching from $0 to $PP_DEV_PATH ..."
@@ -251,7 +251,7 @@ pp_main () {
 	pp_parseopts "$@"
 
         if $pp_opt_version; then
-            #-- print version and exit 
+            #-- print version and exit
             echo "polypkg $pp_version"
             exit 0
         fi

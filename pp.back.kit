@@ -23,7 +23,7 @@ pp_backend_kit_init () {
 
 pp_backend_kit () {
     typeset mi_file k_file svc outfile
-    typeset desc 
+    typeset desc
 
     pp_backend_kit_names > /dev/null
 
@@ -70,7 +70,7 @@ pp_backend_kit_make_mi () {
     # XXX this information should go into the .inv files
     typeset t m o g f p st line dm
     while read t m o g f p st; do
-        case $t in 
+        case $t in
             f|d)
                 echo "0	.$p	$pp_kit_subset"
                 echo "        chmod $m $p" >> $pp_wrkdir/%post.run
@@ -171,7 +171,7 @@ pp_backend_kit_names () {
         *) pp_error "\$pp_kit_name $pp_kit_name must be three characters";;
     esac
     if test -z "$pp_kit_package"; then
-        pp_warn "pp_kit_package not specified, using YYYY" 
+        pp_warn "pp_kit_package not specified, using YYYY"
         pp_kit_package=YYYY
     fi
     if test -z "$pp_kit_version"; then
@@ -208,7 +208,7 @@ pp_backend_kit_install_script () {
         test \$# -eq 0 && usage
         op="\$1"; shift
 
-        case "\$op" in 
+        case "\$op" in
             list-components)
                 test \$# -eq 0 || usage \$op
                 echo "$pp_components"

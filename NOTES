@@ -54,8 +54,8 @@ service. the section contains these assignents
 	svc_stopsig:	signal used to stop the server ([dlt] TERM)
 	svc_user:	user to run service as ([dflt] root)
 
-if $svc_pid is empty, it gets set internally to a platform-agreeable path, 
-and code will be added to capture the PID of the command at startup. 
+if $svc_pid is empty, it gets set internally to a platform-agreeable path,
+and code will be added to capture the PID of the command at startup.
 $svc_daemon must be 'no' in this case.
 
 if $svc_user is not root, then the user is created at post-install
@@ -103,7 +103,7 @@ Mostly, what's important in a file list is
 
 Wildcards can be used in the file list.  This lets the packager tool
 determine the files for you at packaging time, but leads to the risk
-of adding files you don't want packaged. 
+of adding files you don't want packaged.
 
 Package post-install and pre-remove scripts
 -------------------------------------------
