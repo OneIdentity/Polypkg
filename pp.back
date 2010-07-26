@@ -29,6 +29,7 @@
 #	$summary
 #	$description
 #	$copyright
+#	$vendor
 #
 # Backends for platform P can use private variables of the form $pp_P_*
 # and document user-provided variables of the form $P_* where P is the
