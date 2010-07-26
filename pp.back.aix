@@ -431,8 +431,10 @@ pp_backend_aix () {
 	    #   sense when installed in a root context
 
 	    if test -r $pp_wrkdir/%pre.$cmp; then
-		pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
-			< $pp_wrkdir/%pre.$cmp
+            pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
+                < $pp_wrkdir/%pre.$cmp
+			pp_aix_make_script $user_wrkdir/$name.$ex.pre_i \
+                < $pp_wrkdir/%pre.$cmp
 	    fi
 
 	    if test -r $pp_wrkdir/%post.$cmp; then
@@ -446,8 +448,8 @@ pp_backend_aix () {
 	    fi
 
 	    if test -r $pp_wrkdir/%check.$cmp; then
-                #-- if this script exits false, then it should print a msg
-		pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
+            #-- if this script exits false, then it should print a msg
+            pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
 			< $pp_wrkdir/%check.$cmp
 	    fi
 

@@ -343,7 +343,7 @@ pp_frontend () {
 		. $pp_wrkdir/tmp
 		: > $pp_wrkdir/tmp
 		;;
-	$pre.*|%preun.*|%post.*|%postup.*|%postun.*|%depend.*|%check.*|%service.*|%fixup)
+	%pre.*|%preun.*|%post.*|%postup.*|%postun.*|%depend.*|%check.*|%service.*|%fixup)
                 pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
                 # cat $pp_wrkdir/tmp >&2    # debugging
                 $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
