@@ -166,8 +166,8 @@ pp_macos_plist () {
 
       '[')   echo "$in<array>"; in="$in  "; shift;;
       ']')   echo "$in</array>"; in="${in#  }"; shift;;
-      '{')   echo "<dict>"; in="$in  "; shift;;
-      '}')   echo "</dict>"; in="${in#  }"; shift;;
+      '{')   echo "<dict>"; in="$in      "; shift;;
+      '}')   echo "</dict>"; in="${in#      }"; shift;;
       key)         shift; echo "$in<key>$1</key>"; shift;;
       string)      shift;
 		   echo "$1" | sed -e 's/&/&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;' \
@@ -349,20 +349,20 @@ pp_macos_mkbom () {
     bomstage=$pp_wrkdir/bom_stage
     while IFS='	' read path mode ugid size cksumi linkpath; do
 	if test -h "$pp_destdir/$path"; then
-	    /bin/ln -s "$linkpath" "$bomstage/$path"
+	    sudo /bin/ln -s "$linkpath" "$bomstage/$path"
 	else
 	    if test -d "$pp_destdir/$path"; then
-		/bin/mkdir -p "$bomstage/$path"
+		sudo /bin/mkdir -p "$bomstage/$path"
 	    else
-		/bin/cp "$pp_destdir/$path" "$bomstage/$path"
+		sudo /bin/cp "$pp_destdir/$path" "$bomstage/$path"
 	    fi
-	    /bin/chmod $mode "$bomstage/$path"
-	    /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
+	    sudo /bin/chmod $mode "$bomstage/$path"
+	    sudo /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
 	fi
     done <"$1"
-    (cd $bomstage && mkbom . $pp_wrkdir/bom_stage.bom) ||
+    (cd $bomstage && sudo mkbom . $pp_wrkdir/bom_stage.bom) ||
 	pp_error "mkbom failed"
-    mv $pp_wrkdir/bom_stage.bom "$2"
+    sudo mv $pp_wrkdir/bom_stage.bom "$2"
 }
 
 #@ pp_backend_macos(): processes output files to generate a package files
@@ -382,6 +382,7 @@ pp_backend_macos () {
     else
         bundle_version="$pp_macos_bundle_version"
     fi
+    source_version=$(echo $version | sed 's/.*\.//')
 
     # build the package layout
     pkgdir=$pp_wrkdir/$name.pkg
@@ -421,7 +422,7 @@ pp_backend_macos () {
 	key IFPkgFlagUpdateInstalledLanguages false \
 	key IFPkgFlagUseUserMask false \
 	key IFPkgFormatVersion real 0.10000000149011612 \
-	key SourceVersion string $version \
+	key SourceVersion string $source_version \
 	\} end-plist> $Info_plist
 
     # write en.lproj/Description.plist
@@ -433,7 +434,7 @@ pp_backend_macos () {
  	\} end-plist > $Description_plist
 
  	# write Resources/files
-    cat $pp_wrkdir/%files.* | awk '{print $7}' > $Resources/files
+    cat $pp_wrkdir/%files.* | awk '{print $6}' > $Resources/files
 
     # write package size file
     printf \
@@ -504,8 +505,12 @@ CompressedSize 0
 
     # Create the cpio archive (Archive.pax.gz)
     # On 10.5, we used "-f -" to write explicitly to stdout
-    (cd $pp_destdir && /bin/pax -w .) |
-	gzip -9 -c > $Contents/Archive.pax.gz
+    (
+    cd $pp_destdir &&
+    cat $pp_wrkdir/%files.* | awk '{ print "." $6 }' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
+    )
+
+	sudo rm -rf $pp_wrkdir/bom_stage
 }
 # -uid 99 -gid 99 -copyuid 99
 
