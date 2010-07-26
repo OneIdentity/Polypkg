@@ -264,6 +264,33 @@ pp_solaris_install_service () {
     k="${solaris_sysv_init_kill}$1"
 
     echo 'case " $SERVICES " in *" '$1' "*)'
+    echo '
+if [ "x${PKG_INSTALL_ROOT}" != "x" ]; then
+  if [ -x ${PKG_INSTALL_ROOT}/usr/sbin/svcadm ]; then
+    echo "/usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
+  else'
+    test -n "${solaris_sysv_init_start_states}" &&
+        for state in ${solaris_sysv_init_start_states}; do
+            l="/etc/rc$state.d/$s"
+            echo "echo '$l'"
+            echo "installf -c run \$PKGINST \$PKG_INSTALL_ROOT$l=../init.d/$1 s"
+            pp_solaris_space /etc/rc$state.d 0 1
+        done
+    test -n "${solaris_sysv_init_kill_states}" &&
+        for state in ${solaris_sysv_init_kill_states}; do
+            l="/etc/rc$state.d/$k"
+            echo "echo '$l'"
+            echo "installf -c run \$PKGINST \$PKG_INSTALL_ROOT$l=../init.d/$1 s"
+            pp_solaris_space /etc/rc$state.d 0 1
+        done
+    echo '
+  fi
+else
+    if [ -x /usr/sbin/svcadm ]; then
+        /usr/sbin/svcadm disable -s '$1' 2>/dev/null
+        /usr/sbin/svccfg delete '$1' 2>/dev/null
+        /usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null
+    else'
     test -n "${solaris_sysv_init_start_states}" &&
         for state in ${solaris_sysv_init_start_states}; do
             l="/etc/rc$state.d/$s"
