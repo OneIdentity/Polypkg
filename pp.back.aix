@@ -313,7 +313,7 @@ mkssys -s \$svc -u \$uid -p "\$cmd_cmd" \${cmd_arg:+-a "\$cmd_arg"} -S -n \$stop
         ${pp_aix_init_services_after_install} &&
           cat <<-. >> $pp_wrkdir/%post.$svc
 # start service '$svc' on reboot
-mkitab "\$svc:2:once:/usr/bin/startsrc -s \$svc > /dev/null 2>&1"
+mkitab "\$svc:2:once:/usr/bin/startsrc -s \$svc" > /dev/null 2>&1
 .
 
 	${pp_aix_start_services_after_install} &&
