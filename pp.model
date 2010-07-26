@@ -13,6 +13,8 @@ pp_model_init () {
     rm -f $pp_wrkdir/%files.* \
           $pp_wrkdir/%post.* \
           $pp_wrkdir/%preun.* \
+          $pp_wrkdir/%postup.* \
+          $pp_wrkdir/%postun.* \
           $pp_wrkdir/%service.* \
           $pp_wrkdir/%set \
           $pp_wrkdir/%fixup

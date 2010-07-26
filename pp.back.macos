@@ -281,8 +281,8 @@ pp_macos_files_bom () {
 		echo ".${p%/}	4$m	$owner";;
 	    s)
 		rl=`/usr/bin/readlink "${pp_destdir}$p"`
-		test x"$rl" = x"$st" ||
-		    pp_error "symlink mismatch $rl != $st"
+		#test x"$rl" = x"$st" ||
+		#    pp_error "symlink mismatch $rl != $st"
 		echo ".$p	12$m	$owner	`
 		    /usr/bin/readlink -n "${pp_destdir}$p" |
 		    /usr/bin/cksum |
@@ -377,15 +377,15 @@ pp_backend_macos () {
     if test -z "$pp_macos_bundle_version"; then
         bundle_version=`echo "$version.0.0.0" | sed -n -e 's/[^0-9.]//g' \
             -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
-        if test x"$bundle_version" != x"$version"; then
-            pp_warn "converted version from '$version' to '$bundle_version'"
-        fi
+        #if test x"$bundle_version" != x"$version"; then
+        #    pp_warn "converted version from '$version' to '$bundle_version'"
+        #fi
     else
         bundle_version="$pp_macos_bundle_version"
     fi
 
     # build the package layout
-    pkgdir=$pp_wrkdir/$name-$version.pkg
+    pkgdir=$pp_wrkdir/$name.pkg
     Contents=$pkgdir/Contents
     Resources=$Contents/Resources
     lprojdir=$Resources/English.lproj
@@ -447,9 +447,9 @@ pp_backend_macos () {
 	fi
     done
 
-    # write Resources/preupgrade) (AKA preun)
+    # write Resources/postupgrade)
     for cmp in $pp_components; do
-	if test -s $pp_wrkdir/%preun.$cmp; then
+	if test -s $pp_wrkdir/%postup.$cmp; then
 	    if test ! -s $Resources/postupgrade; then
 		echo "#!/bin/sh" > $Resources/postupgrade
 		chmod +x $Resources/postupgrade
@@ -458,6 +458,36 @@ pp_backend_macos () {
 	    echo : >> $Resources/postupgrade
 	fi
     done
+
+    # write Resources/preremove)
+    for cmp in $pp_components; do
+	if test -s $pp_wrkdir/%preun.$cmp; then
+	    if test ! -s $Resources/preremove; then
+		echo "#!/bin/sh" > $Resources/preremove
+		chmod +x $Resources/preremove
+	    fi
+	    cat $pp_wrkdir/%preun.$cmp >> $Resources/preremove
+	    echo : >> $Resources/preremove
+	fi
+    done
+
+    # write Resources/postremove)
+    for cmp in $pp_components; do
+	if test -s $pp_wrkdir/%postun.$cmp; then
+	    if test ! -s $Resources/postremove; then
+		echo "#!/bin/sh" > $Resources/postremove
+		chmod +x $Resources/postremove
+	    fi
+	    cat $pp_wrkdir/%preun.$cmp >> $Resources/postremove
+	    echo : >> $Resources/postremove
+	fi
+    done
+
+    # write uninstall info
+    echo "version=$version" > $Resources/uninstall
+    if [ -n "$pp_macos_requires" ];then
+        echo "requires=$pp_macos_requires" >> $Resources/uninstall
+    fi
 
     # Create the bill-of-materials (Archive.bom)
     cat $pp_wrkdir/%files.* | pp_macos_files_bom | sort |
@@ -469,8 +499,6 @@ pp_backend_macos () {
     # On 10.5, we used "-f -" to write explicitly to stdout
     (cd $pp_destdir && /bin/pax -w .) |
 	gzip -9 -c > $Contents/Archive.pax.gz
-
-    tar -czf $pkgdir.tar.gz $pkgdir
 }
 # -uid 99 -gid 99 -copyuid 99
 
@@ -483,7 +511,7 @@ pp_backend_macos_cleanup () {
 #    each path should start with $name-$version
 #    the package must be relative to the $pp_wrkdir directory
 pp_backend_macos_names () {
-    echo ${name}-${version}.pkg.tar.gz
+    echo ${name}.pkg
 }
 
 #@ pp_backend_macos_install_script(component): generate helper install script

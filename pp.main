@@ -220,7 +220,7 @@ pp_drive () {
 	for f in `pp_backend_names` -; do
            test x"$f" = x"-" && continue
 	   pp_debug "copying: $f to `pwd`"
-	   if pp_verbose cp $pp_wrkdir/$f ${PP_PKGDESTDIR:-.}; then
+	   if pp_verbose cp -r $pp_wrkdir/$f ${PP_PKGDESTDIR:-.}; then
                echo "${PP_PKGDESTDIR:+$PP_PKGDESTDIR/}$f"
            else
                pp_error "$f: missing package"
