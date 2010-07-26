@@ -14,7 +14,7 @@ pp_solaris_init_svc () {
     smf_type=service
     solaris_user=
     solaris_stop_signal=
-    solaris_sysv_init_start=S98     # invocation order for start scripts
+    solaris_sysv_init_start=S70     # invocation order for start scripts
     solaris_sysv_init_kill=K30      # invocation order for kill scripts
     solaris_sysv_init_start_states="2" # states to install start link
     solaris_sysv_init_kill_states="S 0 1"  # states to install kill link
