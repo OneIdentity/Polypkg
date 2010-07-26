@@ -338,6 +338,7 @@ pp_backend_sd () {
         vendor
             tag             Quest
             title           Quest Software, Inc.
+        end
 
         product
             tag             $name
@@ -353,8 +354,10 @@ pp_backend_sd () {
             directory       /
             is_locatable    false
 .
-    test -n "$description" && cat <<. >>$psf
-            description     "$description"
+    test -n "$description" \
+        && echo $description > $pp_wrkdir/description \
+        && cat <<. >> $psf
+            description     < $pp_wrkdir/description
 .
 
     # make convenience service groups
@@ -368,8 +371,9 @@ pp_backend_sd () {
     for cpt in $pp_components; do
         cat <<. >>$psf
             fileset
-                tag             $cpt
-                title           $cpt
+                tag             ${pp_sd_fileset_tag:-$cpt}
+                title           "${summary:-cpt}"
+                revision        $version
 .
 
 	#-- make sure services are shut down during uninstall
@@ -386,7 +390,7 @@ pp_backend_sd () {
         # scripts are run on the hosts where the package is installed,
         # not loaded (a subtle difference).
         test -s $pp_wrkdir/%pre.$cpt &&
-            pp_sd_control preinstall $cpt $pp_wrkdir/%pre.$cpt >> $psf
+            pp_sd_control checkinstall $cpt $pp_wrkdir/%pre.$cpt >> $psf
         test -s $pp_wrkdir/%post.$cpt &&
             pp_sd_control configure $cpt $pp_wrkdir/%post.$cpt >> $psf
         test -s $pp_wrkdir/%preun.$cpt &&
