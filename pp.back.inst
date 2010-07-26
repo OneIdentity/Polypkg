@@ -42,16 +42,7 @@ pp_backend_inst_detect () {
 
 #@ pp_backend_inst_init(): initialises platform variables for inst
 pp_backend_inst_init () {
-    typeset pp_inst_tardist pp_inst_spec pp_inst_idb
-
-    pp_inst_tardist=$pp_opt_wrkdir/tardist
-    pp_inst_spec=${name}.spec
-    pp_inst_idb=${name}.idb
-
     pp_readlink_fn=pp_ls_readlink
-
-    rm -rf $pp_inst_tardist
-    mkdir -p $pp_inst_tardist
 }
 
 pp_backend_inst_create_idb()
@@ -84,31 +75,46 @@ pp_backend_inst_create_idb()
 pp_backend_inst_create_spec()
 {
     echo "product $name"
-    echo "    id "'"$summary. Version: $version"'
+    echo "    id \"${summary}. Version: ${version}\""
     echo "    image sw"
-    echo "        id "'"Software"'
-    echo "        version: $version"
+    echo "        id \"Software\""
+    echo "        version $version"
     echo "        order 9999"
     echo "        subsys base"
-    echo "            id "'"Base Software"'
+    echo "            id \"Base Software\""
     echo "            replaces self"
     echo "            exp $name.sw.base"
+    echo "        endsubsys"
     echo "    endimage"
     echo "endproduct"
 }
 
 #@ pp_backend_inst(): processes output files to generate a package files
 pp_backend_inst () {
-    # Create idb file
-    for _cmp in $pp_components; do
-        pp_backend_inst_create_idb < $pp_wrkdir/%files.$_cmp
-    done >> $pp_inst_idb
+    curdir=$(pwd)
 
-    $(pp_backend_inst_create_spec) >> $pp_inst_spec
+    cd "$pp_opt_wrkdir"
+
+    # initialize
+    pp_inst_tardist=tardist
+    pp_inst_spec=${name}.spec
+    pp_inst_idb=${name}.idb
+ 
+    rm -rf $pp_inst_tardist $pp_inst_spec $pp_inst_idb
+    mkdir -p $pp_inst_tardist
+
+    # Create idb file
+    (for _cmp in $pp_components; do
+        cat  %files.$_cmp | sort +4u -6 | pp_backend_inst_create_idb
+    done) >> $pp_inst_idb
+
+    pp_backend_inst_create_spec >> $pp_inst_spec
 
     # Generate tardist
     gendist -verbose -all -root / -source $pp_opt_destdir -idb $pp_inst_idb -spec $pp_inst_spec -dist $pp_inst_tardist $name
     tar -cvf $(pp_backend_inst_names) $pp_inst_tardist
+
+    cd "$curdir"
 }
 
 #@ pp_backend_inst_cleanup(): removes any files created outside $pp_wrkdir
