@@ -384,6 +384,12 @@ pp_backend_rpm () {
                 pp_rpm_writefiles < $pp_wrkdir/%files.$cmp
             fi
 
+            if test -n "$pp_rpm_ghost"; then
+                for ghost in $pp_rpm_ghost; do
+                    echo "%ghost $ghost"
+                done
+            fi
+
             if test -s $pp_wrkdir/%pre.$cmp; then
                 echo ""
                 echo "%pre $_subname"
