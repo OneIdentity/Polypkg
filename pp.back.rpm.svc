@@ -39,11 +39,18 @@ pp_rpm_service_install_common () {
             else
                 # manual install
                 set -- `sed -n -e 's/^# Default-Start://p' /etc/init.d/$svc`
+
+                if [ -d "/etc/rc.d" ];then
+                    rcdir=/etc/rc.d
+                else
+                    rcdir=/etc
+                fi
+
                 for level
-                do ln -sf /etc/init.d/$svc /etc/rc.d/rc$level.d/S90$svc; done
+                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/S90$svc; done
                 set -- `sed -n -e 's/^# Default-Stop://p' /etc/init.d/$svc`
                 for level
-                do ln -sf /etc/init.d/$svc /etc/rc.d/rc$level.d/K10$svc; done
+                do ln -sf /etc/init.d/$svc $rcdir/rc$level.d/K10$svc; done
             fi
         }
 .
@@ -63,7 +70,13 @@ pp_rpm_service_remove_common () {
             elif [ -x /sbin/chkconfig ]; then
                 /sbin/chkconfig --del $svc &> /dev/null
             else
-                rm -f /etc/rc.d/rc?.d/[SK]??$svc
+                if [ -d "/etc/rc.d" ];then
+                    rcdir=/etc/rc.d
+                else
+                    rcdir=/etc
+                fi
+
+                rm -f $rcdir/rc?.d/[SK]??$svc
             fi
         }
 .
