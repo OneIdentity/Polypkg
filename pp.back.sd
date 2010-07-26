@@ -395,6 +395,8 @@ pp_backend_sd () {
             pp_sd_control configure $cpt $pp_wrkdir/%post.$cpt >> $psf
         test -s $pp_wrkdir/%preun.$cpt &&
             pp_sd_control unconfigure $cpt $pp_wrkdir/%preun.$cpt >> $psf
+        test -s $pp_wrkdir/%postun.$cpt &&
+            pp_sd_control postremove $cpt $pp_wrkdir/%postun.$cpt >> $psf
         test -s $pp_wrkdir/%check.$cpt &&
             pp_sd_control checkinstall $cpt $pp_wrkdir/%check.$cpt >> $psf
 
