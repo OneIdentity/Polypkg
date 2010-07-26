@@ -286,35 +286,46 @@ pp_aix_add_service () {
 
 
         #-- add command text to create/remove the service
-	cat <<-. >> $pp_wrkdir/%post.run
-           # install service '$svc'
-           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${pp_aix_mkssys_group:+-G "$pp_aix_mkssys_group"}
+	cat <<-. >> $pp_wrkdir/%post.$svc
+# install service '$svc'
+mkssys -s $svc -u $uid -p "$daemon" ${cmd_arg:+-a "'$cmd_arg'"} -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${pp_aix_mkssys_group:+-G "$pp_aix_mkssys_group"}
 .
 
         #-- add code to start the service on reboot
         ${pp_aix_init_services_after_install} &&
-          cat <<-. >> $pp_wrkdir/%post.run
-            # start service '$svc' on reboot
-            mkitab "$svc:2:once:/usr/bin/startsrc -s $svc >/dev/console 2>&1"
+          cat <<-. >> $pp_wrkdir/%post.$svc
+# start service '$svc' on reboot
+mkitab "$svc:2:once:/usr/bin/startsrc -s $svc >/dev/console 2>&1"
 .
 
 	${pp_aix_start_services_after_install} &&
-          cat <<-. >> $pp_wrkdir/%post.run
-            # start service '$svc' automatically after install
-            startsrc -s $svc
+          cat <<-. >> $pp_wrkdir/%post.$svc
+# start service '$svc' automatically after install
+startsrc -s $svc
 .
 
+if [ -f "$pp_wrkdir/%post.run" ];then
+    cat $pp_wrkdir/%post.run >> $pp_wrkdir/%post.$svc
+fi
+mv $pp_wrkdir/%post.$svc $pp_wrkdir/%post.run
+
+
         ${pp_aix_init_services_after_install} &&
-           pp_prepend $pp_wrkdir/%preun.run <<-.
-            # stop starting service '$svc' at boot
-	    rmitab $svc
+           pp_prepend $pp_wrkdir/%preun.$svc <<-.
+# stop starting service '$svc' at boot
+rmitab $svc
 .
-	pp_prepend $pp_wrkdir/%preun.run <<-.
-	    # stop service '$svc'
-	    stopsrc -s $svc >/dev/null 2>&1
-	    # uninstall service '$svc' from SRC
-	    rmssys -s $svc
+	pp_prepend $pp_wrkdir/%preun.$svc <<-.
+# stop service '$svc'
+stopsrc -s $svc >/dev/null 2>&1
+# uninstall service '$svc' from SRC
+rmssys -s $svc
 .
+
+if [ -f "$pp_wrkdir/%preun.run" ];then
+    cat $pp_wrkdir/%preun.run >> $pp_wrkdir/%preun.$svc
+fi
+mv $pp_wrkdir/%preun.$svc $pp_wrkdir/%preun.run
 }
 
 #@ pp_backend_aix(): generate an installable AIX package
@@ -431,8 +442,6 @@ pp_backend_aix () {
 	    #   sense when installed in a root context
 
 	    if test -r $pp_wrkdir/%pre.$cmp; then
-            pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
-                < $pp_wrkdir/%pre.$cmp
 			pp_aix_make_script $user_wrkdir/$name.$ex.pre_i \
                 < $pp_wrkdir/%pre.$cmp
 	    fi
@@ -445,12 +454,6 @@ pp_backend_aix () {
 	    if test -r $pp_wrkdir/%preun.$cmp; then
 		pp_aix_make_script $root_wrkdir/$name.$ex.unpost_i \
 			< $pp_wrkdir/%preun.$cmp
-	    fi
-
-	    if test -r $pp_wrkdir/%check.$cmp; then
-            #-- if this script exits false, then it should print a msg
-            pp_aix_make_script $root_wrkdir/$name.$ex.pre_i \
-			< $pp_wrkdir/%check.$cmp
 	    fi
 
 	    # remove empty files
