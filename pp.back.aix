@@ -357,12 +357,13 @@ pp_backend_aix () {
 
 	instuser="/usr/lpp/$name"
 	instroot="$instuser/inst_root"
+	pp_aix_bff_name=${pp_aix_bff_name:-$name}
 
 	# Here is the component mapping:
-	#  run -> $name.rte ('Run time environment')
-	#  doc -> $name.doc (non-standard)
-	#  dev -> $name.adt ('Application developer toolkit')
-	#  dbg -> $name.diag ('Diagnostics')
+	#  run -> $pp_aix_bff_name.rte ('Run time environment')
+	#  doc -> $pp_aix_bff_name.doc (non-standard)
+	#  dev -> $pp_aix_bff_name.adt ('Application developer toolkit')
+	#  dbg -> $pp_aix_bff_name.diag ('Diagnostics')
 
 	test `echo "$summary" | wc -c ` -gt 40 && pp_error "\$summary too long"
 
@@ -414,7 +415,7 @@ pp_backend_aix () {
 
 	    bosboot=N; pp_contains_any "$pp_aix_bosboot" $cmp && bosboot=b
 
-            echo $name.$ex \
+            echo $pp_aix_bff_name.$ex \
                  ${pp_aix_version:-`pp_aix_version_fix "$version"`} \
 	         1 $bosboot $content \
 	         $pp_aix_lang "$summary $briefex"
@@ -428,54 +429,54 @@ pp_backend_aix () {
 	    pp_aix_size < $user_files
 	    pp_aix_size $instroot < $root_files
 
-	    pp_aix_list            < $user_files  > $user_wrkdir/$name.$ex.al
-	    pp_aix_list $instroot  < $root_files >> $user_wrkdir/$name.$ex.al
-	    pp_aix_list            < $root_files  > $root_wrkdir/$name.$ex.al
+	    pp_aix_list            < $user_files  > $user_wrkdir/$pp_aix_bff_name.$ex.al
+	    pp_aix_list $instroot  < $root_files >> $user_wrkdir/$pp_aix_bff_name.$ex.al
+	    pp_aix_list            < $root_files  > $root_wrkdir/$pp_aix_bff_name.$ex.al
 
             if $pp_opt_debug; then
-                echo "$cmp USER $name.$ex.al:"
-                cat $user_wrkdir/$name.$ex.al
-                echo "$cmp ROOT $name.$ex.al:"
-                cat $root_wrkdir/$name.$ex.al
+                echo "$cmp USER $pp_aix_bff_name.$ex.al:"
+                cat $user_wrkdir/$pp_aix_bff_name.$ex.al
+                echo "$cmp ROOT $pp_aix_bff_name.$ex.al:"
+                cat $root_wrkdir/$pp_aix_bff_name.$ex.al
             fi >&2
 
-	    pp_aix_inventory $name.$ex < $user_files \
-                                       > $user_wrkdir/$name.$ex.inventory
-	    pp_aix_inventory $name.$ex < $root_files \
-                                       > $root_wrkdir/$name.$ex.inventory
+	    pp_aix_inventory $pp_aix_bff_name.$ex < $user_files \
+                                       > $user_wrkdir/$pp_aix_bff_name.$ex.inventory
+	    pp_aix_inventory $pp_aix_bff_name.$ex < $root_files \
+                                       > $root_wrkdir/$pp_aix_bff_name.$ex.inventory
 
             if $pp_opt_debug; then
-                pp_debug "$cmp USER $name.$ex.inventory:"
-                cat $user_wrkdir/$name.$ex.inventory
-                pp_debug "$cmp ROOT $name.$ex.inventory:"
-                cat $root_wrkdir/$name.$ex.inventory
+                pp_debug "$cmp USER $pp_aix_bff_name.$ex.inventory:"
+                cat $user_wrkdir/$pp_aix_bff_name.$ex.inventory
+                pp_debug "$cmp ROOT $pp_aix_bff_name.$ex.inventory:"
+                cat $root_wrkdir/$pp_aix_bff_name.$ex.inventory
             fi >&2
 
 	    if test x"" != x"$pp_aix_copyright"; then
-	        echo "$pp_aix_copyright" > $user_wrkdir/$name.$ex.copyright
-	        echo "$pp_aix_copyright" > $root_wrkdir/$name.$ex.copyright
+	        echo "$pp_aix_copyright" > $user_wrkdir/$pp_aix_bff_name.$ex.copyright
+	        echo "$pp_aix_copyright" > $root_wrkdir/$pp_aix_bff_name.$ex.copyright
 	    fi
 
 	    #-- assume that post/pre uninstall scripts only make
 	    #   sense when installed in a root context
 
 	    if test -r $pp_wrkdir/%pre.$cmp; then
-			pp_aix_make_script $user_wrkdir/$name.$ex.pre_i \
+			pp_aix_make_script $user_wrkdir/$pp_aix_bff_name.$ex.pre_i \
                 < $pp_wrkdir/%pre.$cmp
 	    fi
 
 	    if test -r $pp_wrkdir/%post.$cmp; then
-		pp_aix_make_script $root_wrkdir/$name.$ex.post_i \
+		pp_aix_make_script $root_wrkdir/$pp_aix_bff_name.$ex.post_i \
 			< $pp_wrkdir/%post.$cmp
 	    fi
 
 	    if test -r $pp_wrkdir/%preun.$cmp; then
-		pp_aix_make_script $root_wrkdir/$name.$ex.unpost_i \
+		pp_aix_make_script $root_wrkdir/$pp_aix_bff_name.$ex.unpost_i \
 			< $pp_wrkdir/%preun.$cmp
 	    fi
 
 	    # remove empty files
-	    for f in $user_wrkdir/$name.$ex.* $root_wrkdir/$name.$ex.*; do
+	    for f in $user_wrkdir/$pp_aix_bff_name.$ex.* $root_wrkdir/$pp_aix_bff_name.$ex.*; do
 	      if test ! -s "$f"; then
                 pp_debug "removing empty $f"
                 rm -f "$f"
