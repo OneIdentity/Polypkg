@@ -19,7 +19,7 @@ pp_backend_aix_init () {
 
 	pp_aix_bosboot=		# components that need bosboot
 	pp_aix_lang=en_US
-	pp_aix_copyright="$pp_copyright"
+	pp_aix_copyright=
         pp_aix_start_services_after_install=false
         pp_aix_init_services_after_install=true
 
@@ -452,9 +452,9 @@ pp_backend_aix () {
                 cat $root_wrkdir/$pp_aix_bff_name.$ex.inventory
             fi >&2
 
-	    if test x"" != x"$pp_aix_copyright"; then
-	        echo "$pp_aix_copyright" > $user_wrkdir/$pp_aix_bff_name.$ex.copyright
-	        echo "$pp_aix_copyright" > $root_wrkdir/$pp_aix_bff_name.$ex.copyright
+	    if test x"" != x"${pp_aix_copyright:-$copyright}"; then
+	        echo "${pp_aix_copyright:-$copyright}" > $user_wrkdir/$pp_aix_bff_name.$ex.copyright
+	        echo "${pp_aix_copyright:-$copyright}" > $root_wrkdir/$pp_aix_bff_name.$ex.copyright
 	    fi
 
 	    #-- assume that post/pre uninstall scripts only make

@@ -372,7 +372,7 @@ pp_backend_macos () {
     typeset bundle_vendor bundle_version size
 
     mac_version=`sw_vers -productVersion`
-    bundle_vendor=${pp_macos_bundle_vendor:-"Quest Software, Inc."}
+    bundle_vendor=${pp_macos_bundle_vendor:-$vendor}
 
     if test -z "$pp_macos_bundle_version"; then
         bundle_version=`echo "$version.0.0.0" | sed -n -e 's/[^0-9.]//g' \

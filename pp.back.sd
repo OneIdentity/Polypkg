@@ -14,6 +14,8 @@ pp_backend_sd_init () {
     pp_sd_startlevels=2
     pp_sd_stoplevels=auto
     pp_sd_config_file=
+    pp_sd_vendor=
+    pp_sd_vendor_tag=Quest
     pp_sd_default_start=1           # config_file default start value
 
     pp_readlink_fn=pp_ls_readlink   # HPUX has no readlink
@@ -336,14 +338,14 @@ pp_backend_sd () {
     #-- vendor
     cat <<. >>$psf
         vendor
-            tag             Quest
-            title           Quest Software, Inc.
+            tag             $pp_sd_vendor_tag
+            title           "${pp_sd_vendor:-$vendor}"
         end
 
         product
             tag             $name
             revision        $version
-            vendor_tag      Quest
+            vendor_tag      $pp_sd_vendor_tag
             is_patch        false
             title           "$summary"
             copyright       "$copyright"

@@ -45,7 +45,7 @@ pp_backend_solaris_init () {
 	pp_solaris_category=
 	pp_solaris_istates="s S 1 2 3"	# run-states when install is ok
 	pp_solaris_rstates="s S 1 2 3"	# run-states when remove is ok
-	pp_solaris_vendor="Quest Software, Inc."
+	pp_solaris_vendor=
 	pp_solaris_copyright=
 	pp_solaris_name=
 	pp_solaris_desc=
@@ -301,8 +301,8 @@ pp_backend_solaris () {
 	  echo "RSTATES=$pp_solaris_rstates" >> $pkginfo
 	test -n "$pp_solaris_istates" &&
 	  echo "ISTATES=$pp_solaris_istates" >> $pkginfo
-	test -n "$pp_solaris_vendor" &&
-	  echo "VENDOR=$pp_solaris_vendor" >> $pkginfo
+	test -n "${pp_solaris_vendor:-$vendor}" &&
+	  echo "VENDOR=${pp_solaris_vendor:-$vendor}" >> $pkginfo
 
 	if test -n "${pp_solaris_copyright:-$copyright}"; then
 	    echo "${pp_solaris_copyright:-$copyright}" > $pp_wrkdir/copyright

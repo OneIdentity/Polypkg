@@ -18,8 +18,8 @@ pp_backend_rpm_init () {
     pp_rpm_summary=
     pp_rpm_description=
     pp_rpm_group="Applications/Internet"
-    pp_rpm_license=Unspecified
-    pp_rpm_vendor="Quest Software, Inc."
+    pp_rpm_license="Unspecified"
+    pp_rpm_vendor=
     pp_rpm_url=
     pp_rpm_packager=
     pp_rpm_provides=
@@ -266,12 +266,12 @@ pp_backend_rpm () {
 		License: ${pp_rpm_license}
 .
 	if test -n "$pp_rpm_url"; then
-	    pp_rpm_label "URL"  "$pp_rpm_url"      >>$specfile
+	    pp_rpm_label "URL"  "$pp_rpm_url"               >>$specfile
 	fi
-	pp_rpm_label "Vendor"   "$pp_rpm_vendor"   >>$specfile
-	pp_rpm_label "Packager" "$pp_rpm_packager" >>$specfile
-	pp_rpm_label "Provides" "$pp_rpm_provides" >>$specfile
-	pp_rpm_label "Requires" "$pp_rpm_requires" >>$specfile
+	pp_rpm_label "Vendor"   "${pp_rpm_vendor:-$vendor}" >>$specfile
+	pp_rpm_label "Packager" "$pp_rpm_packager"          >>$specfile
+	pp_rpm_label "Provides" "$pp_rpm_provides"          >>$specfile
+	pp_rpm_label "Requires" "$pp_rpm_requires"          >>$specfile
 
 	test -n "$pp_rpm_serial" && pp_warn "pp_rpm_serial deprecated"
 	if test -n "$pp_rpm_epoch"; then
