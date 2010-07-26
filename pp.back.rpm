@@ -426,8 +426,10 @@ pp_backend_rpm () {
 	    case "$pp_rpm_arch_seen" in
 		"i386 x86_64"|"x86_64 i386")
 		    pp_rpm_arch_seen=x86_64;;
+		*"s390 s390x"* | *"s390x s390"* )
+		    pp_rpm_arch_seen=s390x;;
 		*" "*)
-		    pp_warn "detected multiple targets: $pp_rpm_arch_seen"
+		    pp_error "detected multiple targets: $pp_rpm_arch_seen"
 		    pp_rpm_arch_seen=unknown;;	    # not detected
 		"")
 		    pp_warn "detected no binaries: using target noarch"
