@@ -221,7 +221,7 @@ pp_solaris_proto () {
 
 	while read t m o g f p st; do
 	  if test x"$o" = x"-"; then
-            o="bin"
+            o="root"
           fi
 	  if test x"$g" = x"-"; then
             g="bin"

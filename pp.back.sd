@@ -50,8 +50,8 @@ pp_sd_write_files () {
             s) line="$line -t s";;
         esac
 
-        test x"$o" = x"-" && o=bin
-        test x"$g" = x"-" && g=bin
+        test x"$o" = x"-" && o=root
+        test x"$g" = x"-" && g=sys
         test x"$m" = x"-" && m=$dm
 
         case $t in
