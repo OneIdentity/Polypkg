@@ -159,7 +159,7 @@ pp_macos_plist () {
 
       start-plist) cat <<-.; in="  "; shift ;;
 	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 	<plist version="1.0">
 .
       end-plist) echo "</plist>"; in=; shift;;
@@ -371,6 +371,7 @@ pp_backend_macos () {
     typeset Info_plist Description_plist
     typeset bundle_vendor bundle_version size
 
+    mac_version=`sw_vers -productVersion`
     bundle_vendor=${pp_macos_bundle_vendor:-"Quest Software, Inc."}
 
     if test -z "$pp_macos_bundle_version"; then
@@ -388,12 +389,19 @@ pp_backend_macos () {
     pkgdir=$pp_wrkdir/$name.pkg
     Contents=$pkgdir/Contents
     Resources=$Contents/Resources
-    lprojdir=$Resources/English.lproj
+    lprojdir=$Resources/en.lproj
     mkdir $pkgdir $Contents $Resources $lprojdir ||
 	pp_fatal "Can't make package temporary directories"
 
-    echo major: 1 > $Resources/package_version
-    echo minor: 0 >> $Resources/package_version
+    echo "major: 1" > $Resources/package_version
+    echo "minor: 0" >> $Resources/package_version
+    echo "pmkrpkg1" > $Contents/PkgInfo
+    case $mac_version in
+        "10.6"*)
+            xattr -w "com.apple.TextEncoding" "macintosh;0" "$Resources/package_version"
+            xattr -w "com.apple.TextEncoding" "macintosh;0" "$Resources/PkgInfo"
+            ;;
+    esac
 
     # compute the installed size
     size=`cat $pp_wrkdir/%files.* | pp_macos_files_size`
@@ -408,6 +416,8 @@ pp_backend_macos () {
 	    "${pp_macos_bundle_id:-$pp_macos_default_bundle_id_prefix$name}" \
     key CFBundleName string "$name" \
 	key CFBundleShortVersionString string "$bundle_version" \
+	key IFMajorVersion integer 1 \
+	key IFMinorVersion integer 0 \
 	key IFPkgFlagAllowBackRev false \
 	key IFPkgFlagAuthorizationAction string "RootAuthorization" \
 	key IFPkgFlagDefaultLocation string "/" \
@@ -429,8 +439,10 @@ pp_backend_macos () {
     Description_plist=$lprojdir/Description.plist
     pp_macos_plist \
  	start-plist \{ \
-	    key IFPkgDescriptionDescription string "$description" \
-	    key IFPkgDescriptionTitle       string "$name $version" \
+        key IFPkgDescriptionDeleteWarning string "" \
+	    key IFPkgDescriptionDescription string "$pp_macos_bundle_info_string" \
+	    key IFPkgDescriptionTitle       string "$name" \
+	    key IFPkgDescriptionVersion string "$version" \
  	\} end-plist > $Description_plist
 
  	# write Resources/files
