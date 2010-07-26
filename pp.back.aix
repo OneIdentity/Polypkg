@@ -259,7 +259,7 @@ pp_aix_add_service () {
 
 	set -- $cmd
 	cmd_cmd="$1"; shift
-	cmd_arg="$*";
+	cmd_arg="$pp_aix_mkssys_cmd_args";
 
 	case "$stop_signal" in
 		HUP) stop_signal=1;;
@@ -288,7 +288,7 @@ pp_aix_add_service () {
         #-- add command text to create/remove the service
 	cat <<-. >> $pp_wrkdir/%post.run
            # install service '$svc'
-           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -O -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${group:+-G "$group"}
+           mkssys -s $svc -u $uid -p "$cmd_cmd" ${cmd_arg:+-a "$cmd_arg"} -S -n $stop_signal -f 9 ${pp_aix_mkssys_args} ${pp_aix_mkssys_group:+-G "$pp_aix_mkssys_group"}
 .
 
         #-- add code to start the service on reboot
@@ -375,12 +375,12 @@ pp_backend_aix () {
                 content=B
             fi
 
-if $pp_opt_debug; then
-    echo "$cmp USER %files:"
-    cat $user_files
-    echo "$cmp ROOT %files:"
-    cat $root_files
-fi >&2
+            if $pp_opt_debug; then
+                echo "$cmp USER %files:"
+                cat $user_files
+                echo "$cmp ROOT %files:"
+                cat $root_files
+            fi >&2
 
 	    bosboot=N; pp_contains_any "$pp_aix_bosboot" $cmp && bosboot=b
 
@@ -402,24 +402,24 @@ fi >&2
 	    pp_aix_list $instroot  < $root_files >> $user_wrkdir/$name.$ex.al
 	    pp_aix_list            < $root_files  > $root_wrkdir/$name.$ex.al
 
-if $pp_opt_debug; then
-    echo "$cmp USER $name.$ex.al:"
-    cat $user_wrkdir/$name.$ex.al
-    echo "$cmp ROOT $name.$ex.al:"
-    cat $root_wrkdir/$name.$ex.al
-fi >&2
+            if $pp_opt_debug; then
+                echo "$cmp USER $name.$ex.al:"
+                cat $user_wrkdir/$name.$ex.al
+                echo "$cmp ROOT $name.$ex.al:"
+                cat $root_wrkdir/$name.$ex.al
+            fi >&2
 
 	    pp_aix_inventory $name.$ex < $user_files \
                                        > $user_wrkdir/$name.$ex.inventory
 	    pp_aix_inventory $name.$ex < $root_files \
                                        > $root_wrkdir/$name.$ex.inventory
 
-if $pp_opt_debug; then
-    pp_debug "$cmp USER $name.$ex.inventory:"
-    cat $user_wrkdir/$name.$ex.inventory
-    pp_debug "$cmp ROOT $name.$ex.inventory:"
-    cat $root_wrkdir/$name.$ex.inventory
-fi >&2
+            if $pp_opt_debug; then
+                pp_debug "$cmp USER $name.$ex.inventory:"
+                cat $user_wrkdir/$name.$ex.inventory
+                pp_debug "$cmp ROOT $name.$ex.inventory:"
+                cat $root_wrkdir/$name.$ex.inventory
+            fi >&2
 
 	    if test x"" != x"$pp_aix_copyright"; then
 	        echo "$pp_aix_copyright" > $user_wrkdir/$name.$ex.copyright
@@ -462,10 +462,10 @@ fi >&2
 	  echo "}"
 	} > $pp_wrkdir/lpp_name
 
-if $pp_opt_debug; then
-    echo "/lpp_name :"
-    cat $pp_wrkdir/lpp_name
-fi >&2
+        if $pp_opt_debug; then
+            echo "/lpp_name :"
+            cat $pp_wrkdir/lpp_name
+        fi >&2
 
         #-- copy the /lpp_name file to the destdir
         pp_add_transient_file /lpp_name
