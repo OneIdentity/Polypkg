@@ -439,6 +439,7 @@ pp_debug "pp_rpm_arch = <${pp_rpm_arch}>"
 		--buildroot="$pp_destdir/" \
                 --target="${pp_rpm_arch}" \
                 --define='_unpackaged_files_terminate_build 0' \
+                --define='_use_internal_dependency_generator 0' \
                 `$pp_opt_debug && echo --verbose || echo --quiet` \
                 $pp_rpm_rpmbuild_extra_flags \
 		$specfile ||
