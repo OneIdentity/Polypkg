@@ -11,7 +11,7 @@ pp_backend_deb_detect () {
 
 #@ pp_deb_cmp_full_name(component hyphen): translate cpt into a Debian pkg name
 pp_deb_cmp_full_name () {
-    typeset prefix
+    local prefix
     prefix="${pp_deb_name:-$name}"
     case "$1" in
         run) echo "${prefix}" ;;
@@ -53,7 +53,7 @@ pp_backend_deb_init () {
 
 #@ pp_deb_check_required_programs(): looks for required programs
 pp_deb_check_required_programs () {
-    typeset p needed notfound ok
+    local p needed notfound ok
     needed= notfound=
     for prog in dpkg dpkg-deb install md5sum fakeroot
     do
@@ -116,8 +116,8 @@ pp_deb_make_control() {
 #@ pp_deb_make_md5sums(data_dir file...) create md5sums for data files.
 # files are relative to $data_dir
 pp_deb_make_md5sums() {
-    typeset cmp="$1"; shift
-    typeset pkg_dir
+    local cmp="$1"; shift
+    local pkg_dir
 
     pkg_dir=$pp_wrkdir/`pp_deb_cmp_full_name $cmp`
     (cd $pkg_dir && md5sum "$@") > $pkg_dir/DEBIAN/md5sums ||
@@ -127,9 +127,9 @@ pp_deb_make_md5sums() {
 #@ pp_deb_make_package_maintainer_script(output, source, description):
 #   create package maintainer script
 pp_deb_make_package_maintainer_script() {
-    typeset output="$1"
-    typeset source="$2"
-    typeset desc="$3"
+    local output="$1"
+    local source="$2"
+    local desc="$3"
 
     # See if we need to create this script at all
     if [ -s "$source" ]
@@ -153,7 +153,7 @@ pp_deb_make_package_maintainer_script() {
 #@ pp_deb_handle_services(): handle services and append appropriate stuff
 #    to postinst/prerm
 pp_deb_handle_services() {
-    typeset svc
+    local svc
 
     #-- add service start/stop code
     if test -n "$pp_services"; then
@@ -198,9 +198,9 @@ pp_deb_fakeroot () {
 
 #@ pp_deb_make_DEBIAN(): create control files
 pp_deb_make_DEBIAN() {
-    typeset cmp="${1:-run}"
-    typeset data cmp_full_name
-    typeset old_umask
+    local cmp="${1:-run}"
+    local data cmp_full_name
+    local old_umask
 
     old_umask=`umask`
     umask 0022
@@ -233,8 +233,8 @@ pp_deb_make_DEBIAN() {
 
 #@ pp_deb_make_data(name): Package up data files for .deb
 pp_deb_make_data() {
-    typeset _l t m o g f p st data
-    typeset data share_doc owner group
+    local _l t m o g f p st data
+    local data share_doc owner group
     cmp=$1
     data=$pp_wrkdir/`pp_deb_cmp_full_name $cmp`
     cat $pp_wrkdir/%files.${cmp} | while read t m o g f p st; do
@@ -278,8 +278,8 @@ pp_deb_make_data() {
 
 #@ pp_deb_makedeb(component): creates directory structure ready for dpkg-deb
 pp_deb_makedeb () {
-    typeset cmp
-    typeset package_build_dir
+    local cmp
+    local package_build_dir
 
     cmp="$1"
 
@@ -305,7 +305,7 @@ pp_deb_makedeb () {
 
 #@ pp_backend_deb(): processes output files to generate a package files
 pp_backend_deb () {
-    typeset debname
+    local debname
 
     # Handle services
     pp_deb_handle_services $cmp
@@ -338,7 +338,7 @@ pp_backend_deb_cleanup () {
 
 #@ pp_deb_name(component): prints the names of the package files
 pp_deb_name () {
-    typeset cmp="${1:-run}"
+    local cmp="${1:-run}"
     echo `pp_deb_cmp_full_name $cmp`"_${pp_deb_version:-$version}-${pp_deb_release:-1}_${pp_deb_arch}.deb"
 }
 #
@@ -352,7 +352,7 @@ pp_backend_deb_names () {
 
 #@ pp_backend_deb_install_script(): generate a helper install script
 pp_backend_deb_install_script () {
-    typeset cmp _cmp_full_name
+    local cmp _cmp_full_name
 
     echo "#!/bin/sh"
     pp_install_script_common
@@ -437,7 +437,7 @@ pp_backend_deb_install_script () {
 
 #@ pp_backend_deb_probe(): output local platform's short id
 pp_backend_deb_probe() {
-    typeset arch distro release
+    local arch distro release
 
     pp_deb_detect_arch
 

@@ -127,7 +127,7 @@ pp_rpm_detect_distro () {
 # command. More recently it is called rpmbuild.
 # Both are invoked the same way.
 pp_rpm_detect_rpmbuild () {
-    typeset cmd
+    local cmd
     for cmd in rpmbuild rpm; do
         if `which $cmd > /dev/null 2>&1`; then
             echo $cmd
@@ -143,7 +143,7 @@ pp_rpm_detect_rpmbuild () {
 
 #@ pp_rpm_label(label [arg...]): writes "$label: $arg" for each non-empty arg
 pp_rpm_label () {
-    typeset label arg
+    local label arg
     label="$1"; shift
     for arg
     do
@@ -153,7 +153,7 @@ pp_rpm_label () {
 
 #@ pp_rpm_writefiles() < %files: Write body of a %files section in RPM form
 pp_rpm_writefiles () {
-    typeset _l t m o g f p st fo farch
+    local _l t m o g f p st fo farch
     while read t m o g f p st; do
         _l="$p"
 	test $t = d && _l="%dir ${_l%/}/"
@@ -241,7 +241,7 @@ EOF
 #-- Reads output files from the frontend and generates multiple output
 #   package files under $pp_wrkdir/
 pp_backend_rpm () {
-        typeset cmp specfile _summary _group _desc _pkg _subname svc
+    local cmp specfile _summary _group _desc _pkg _subname svc
 
 	specfile=$pp_wrkdir/$name.spec
         : > $specfile
@@ -483,7 +483,7 @@ pp_rpm_output_name () {
 #@ pp_backend_rpm_names(): print the package names generated
 #   the names always start with $name-$version
 pp_backend_rpm_names () {
-    typeset cmp _subname
+    local cmp _subname
     for cmp in $pp_components; do
 	pp_rpm_output_name $cmp
     done
@@ -495,7 +495,7 @@ pp_backend_rpm_cleanup () {
 
 #@ pp_rpm_print_requires(): prints the required features of the package
 pp_rpm_print_requires () {
-    typeset _subname _name
+    local _subname _name
 
     echo "CPU:$pp_rpm_arch"
     ## XXX should be lines of the form (from file/ldd/objdump)
@@ -506,7 +506,7 @@ pp_rpm_print_requires () {
 
 #@ pp_backend_rpm_install_script(): generate the install script
 pp_backend_rpm_install_script () {
-    typeset cmp _subname
+    local cmp _subname
 
     echo "#!/bin/sh"
     pp_install_script_common
@@ -514,7 +514,7 @@ pp_backend_rpm_install_script () {
     cat <<.
 
         cmp_to_pkgname () {
-	    typeset oi name
+	    local oi name
 	    if test x"\$1" = x"--only-installed"; then
 		#-- only print if installation detected
 		oi=false

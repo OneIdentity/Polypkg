@@ -11,7 +11,7 @@ pp_rpm_service_install_common () {
     cat <<-'.'
 
         _pp_install_service () {
-            typeset svc level
+            local svc level
             svc="$1"
             if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
             then
@@ -27,7 +27,7 @@ pp_rpm_service_install_common () {
         }
 
         _pp_enable_service () {
-            typeset svc level
+            local svc level
             svc="$1"
             if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
             then
@@ -61,7 +61,7 @@ pp_rpm_service_remove_common () {
     cat <<-'.'
 
         _pp_remove_service () {
-            typeset svc
+            local svc
             svc="$1"
             /etc/init.d/$svc stop >/dev/null 2>&1
             if [ -x /usr/lib/lsb/remove_initd -a ! -r /etc/redhat-release ]
@@ -118,10 +118,10 @@ pp_backend_rpm_init_svc_vars () {
 
 #@ pp_rpm_service_group_make_init_script (grp svcs): makes a group script
 pp_rpm_service_group_make_init_script () {
-    typeset grp=$1
-    typeset svcs="$2"
-    typeset script=/etc/init.d/$grp
-    typeset out=$pp_destdir$script
+    local grp=$1
+    local svcs="$2"
+    local script=/etc/init.d/$grp
+    local out=$pp_destdir$script
 
     pp_add_file_if_missing $script run 755 || return 0
 
@@ -214,10 +214,10 @@ pp_rpm_service_group_make_init_script () {
 #   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
 #   broken on Red Hat, chkconfig is tried first.
 pp_rpm_service_make_init_script () {
-    typeset svc=$1
-    typeset script=/etc/init.d/$svc
-    typeset out=$pp_destdir$script
-    typeset _process _cmd _rpmlevels
+    local svc=$1
+    local script=/etc/init.d/$svc
+    local out=$pp_destdir$script
+    local _process _cmd _rpmlevels
 
     pp_add_file_if_missing $script run 755 || return 0
 
