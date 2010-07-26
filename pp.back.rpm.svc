@@ -16,11 +16,11 @@ pp_rpm_service_install_common () {
             if [ -x /usr/lib/lsb/install_initd -a ! -r /etc/redhat-release ]
             then
                 # LSB-style install
-                /usr/lib/lsb/install_initd /etc/init.d/$svc
+                /usr/lib/lsb/install_initd /etc/init.d/$svc &> /dev/null
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
-                /sbin/chkconfig --add $svc
-                /sbin/chkconfig $svc off
+                /sbin/chkconfig --add $svc &> /dev/null
+                /sbin/chkconfig $svc offS &> /dev/null
             else
 		: # manual links under /etc/init.d
             fi
@@ -35,7 +35,7 @@ pp_rpm_service_install_common () {
 		: not sure how to enable
             elif [ -x /sbin/chkconfig ]; then
                 # Red Hat/chkconfig-style install
-                /sbin/chkconfig $svc on
+                /sbin/chkconfig $svc on &> /dev/null
             else
                 # manual install
                 set -- `sed -n -e 's/^# Default-Start://p' /etc/init.d/$svc`
@@ -59,9 +59,9 @@ pp_rpm_service_remove_common () {
             /etc/init.d/$svc stop >/dev/null 2>&1
             if [ -x /usr/lib/lsb/remove_initd -a ! -r /etc/redhat-release ]
             then
-                /usr/lib/lsb/remove_initd /etc/init.d/$svc
+                /usr/lib/lsb/remove_initd /etc/init.d/$svc &> /dev/null
             elif [ -x /sbin/chkconfig ]; then
-                /sbin/chkconfig --del $svc
+                /sbin/chkconfig --del $svc &> /dev/null
             else
                 rm -f /etc/rc.d/rc?.d/[SK]??$svc
             fi
