@@ -382,7 +382,7 @@ pp_backend_macos () {
     else
         bundle_version="$pp_macos_bundle_version"
     fi
-    source_version=$(echo $version | sed 's/.*\.//')
+    source_version=`echo $version | sed 's/.*\.//'`
 
     # build the package layout
     pkgdir=$pp_wrkdir/$name.pkg
