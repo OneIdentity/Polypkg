@@ -10,7 +10,7 @@ pp_backend_sd_detect () {
 
 #@ pp_backend_sd_init(): initialises platform variables for sd
 pp_backend_sd_init () {
-    pp_sd_sudo=sudo     # FIXME: argh why is hpux so braindead
+    pp_sd_sudo=
     pp_sd_startlevels=2
     pp_sd_stoplevels=auto
     pp_sd_config_file=
