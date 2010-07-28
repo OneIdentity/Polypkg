@@ -75,7 +75,12 @@ pp_rpm_detect_arch () {
     rm $pp_wrkdir/dummy.spec
 
     #-- Ask the kernel what machine architecture is in use
-    case "`uname -p`" in
+    local arch=`uname -p`
+    if [ "$arch" = "unknown" ]; then
+	arch=`uname -m`
+    fi
+
+    case "$arch" in
 	i?86)	pp_rpm_arch_std=i386;;
 	x86_64)	pp_rpm_arch_std=x86_64;;
 	ppc)	pp_rpm_arch_std=ppc;;
