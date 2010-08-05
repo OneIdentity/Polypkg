@@ -44,10 +44,10 @@ all: pp pp-stripped check
 # Generate a pp that includes the sources with the '.' operator.
 # This is most handy for development because the source line numbers
 # will be correct in error messages.
-pp: $(PP_SRCS) .svn
+pp: $(PP_SRCS)
 	rm -f $@
 	(echo '#!$(PP_SHELL)';                \
-	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
+	 echo 'pp_revision="$(shell date +%Y%m%d)"'; \
 	 echo 'd=`dirname $$0`';          \
 	 for p in $(PP_SRCS); do          \
 	    echo '. "$$d/'$$p'" &&';        \
@@ -58,10 +58,10 @@ pp: $(PP_SRCS) .svn
 
 # Generate an exportable pp script. Source files have their comments
 # removed and are concatenated together to make the shippable pp script.
-pp-stripped: $(PP_SRCS) .svn
+pp-stripped: $(PP_SRCS)
 	(echo '#!$(PP_SHELL)';                \
 	 echo "# (c) `date +%Y` Quest Software, Inc. All rights reserved"; \
-	 echo 'pp_revision="$(shell svnversion . | tr : _)"'; \
+	 echo 'pp_revision="$(shell date +%Y%m%d)"'; \
 	 cat pp.licence; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
 	 echo 'pp_main $${1+"$$@"}';	\
