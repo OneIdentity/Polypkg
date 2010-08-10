@@ -351,6 +351,14 @@ pp_backend_solaris () {
                 pp_solaris_install_service $_svc | pp_prepend $pp_wrkdir/postinstall
                 pp_prepend $pp_wrkdir/preremove <<-.
                     /etc/init.d/$_svc stop >/dev/null 2>/dev/null
+                    # Remove the service from SMF if present
+                    if [ "x${PKG_INSTALL_ROOT}" = 'x' ]; then
+                        if [ -x /usr/sbin/svcadm ] ; then
+                            # Likely un-needed, but just in case.
+                            /usr/sbin/svcadm disable -s $_svc 2>/dev/null
+                            /usr/sbin/svccfg delete $_svc 2>/dev/null
+                        fi
+                    fi
 .
             done
 
