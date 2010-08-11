@@ -535,6 +535,8 @@ CompressedSize 0
     )
 
 	sudo rm -rf $pp_wrkdir/bom_stage
+
+    hdiutil create -fs HFS+ -srcfolder $pkgdir -volname $name ${name}-${version}.dmg
 }
 # -uid 99 -gid 99 -copyuid 99
 
