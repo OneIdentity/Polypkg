@@ -227,8 +227,8 @@ pp_aix_inventory () {
       case "$t" in
         f) if test -r "$pp_destdir$p"; then
 	    case "`file "$pp_destdir$p"`" in
-		*": executable (RISC System/6000)"*) abi=ppc;;
-		*": 64-bit XCOFF executable"*)       abi=ppc64;;
+		*"executable (RISC System/6000)"*) abi=ppc;;
+		*"64-bit XCOFF executable"*)       abi=ppc64;;
 		*) abi=;;
 	    esac
 	    if test -n "$abi"; then

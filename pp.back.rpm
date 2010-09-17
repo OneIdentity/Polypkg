@@ -203,9 +203,9 @@ pp_rpm_writefiles () {
 		    farch=s390;;
 		*": ELF 64-bit MSB "*", IBM S/390"*)
 		    farch=s390x;;
-		*": executable (RISC System/6000)"*)
+		*"executable (RISC System/6000)"*)
 		    farch=ppc;;
-		*": 64-bit XCOFF executable"*)
+		*"64-bit XCOFF executable"*)
 		    fatch=ppc64;;
 		*)
 		    farch=noarch;;
