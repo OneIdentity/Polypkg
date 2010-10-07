@@ -94,12 +94,29 @@ pp_deb_detect_arch () {
    pp_deb_arch_std=`uname -m`
 }
 
+# Strip invalid characters from a version number
+# Described by Debian policy section 5.6.12
+pp_deb_sanitize_version() {
+    echo "$@" | tr -d -c '[:alnum:].+-:~'
+}
+
+# Print the package version (based on either pp_deb_version or version)
+# where all invalid characters have been stripped.
+pp_deb_version_final() {
+    if test -n "$pp_deb_version"; then
+        # Don't sanitize; assume the user is sane (hah!)
+        echo "$pp_deb_version"
+    else
+        pp_deb_sanitize_version "$version"
+    fi
+}
+
 #@ pp_deb_make_control(cmp) > control: creates a debian control file
 pp_deb_make_control() {
     package_name=`pp_deb_cmp_full_name "$1"`
     cat <<-.
 	Package: ${package_name}
-	Version: ${pp_deb_version:-$version}-${pp_deb_release:-1}
+	Version: `pp_deb_version_final`-${pp_deb_release:-1}
 	Section: ${pp_deb_section:-contrib}
 	Priority: optional
 	Architecture: ${pp_deb_arch}
@@ -339,7 +356,7 @@ pp_backend_deb_cleanup () {
 #@ pp_deb_name(component): prints the names of the package files
 pp_deb_name () {
     local cmp="${1:-run}"
-    echo `pp_deb_cmp_full_name $cmp`"_${pp_deb_version:-$version}-${pp_deb_release:-1}_${pp_deb_arch}.deb"
+    echo `pp_deb_cmp_full_name $cmp`"_"`pp_deb_version_final`"-${pp_deb_release:-1}_${pp_deb_arch}.deb"
 }
 #
 #@ pp_backend_deb_names: prints the names of the package files
