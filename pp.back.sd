@@ -46,11 +46,21 @@ pp_sd_write_files () {
     while read t m o g f p st; do
         line="                file"
         case "$f" in *v*) line="$line -v";; esac    # FIXME for uninstall
-        case $t in
-            f) dm=644;;
-            d) line="$line -t d"; p=${p%/}; dm=755;;
-            s) line="$line -t s";;
-        esac
+	case ${pp_sd_os} in
+	    10.*)
+		case $t in
+		    f) dm=644;;
+		    d) p=${p%/}; dm=755;;
+		esac
+		;;
+	    *)
+		case $t in
+		    f) dm=644;;
+		    d) line="$line -t d"; p=${p%/}; dm=755;;
+		    s) line="$line -t s";;
+		esac
+		;;
+	esac
 
         test x"$o" = x"-" && o=root
         test x"$g" = x"-" && g=sys
@@ -240,10 +250,15 @@ pp_sd_service_script () {
 #@ pp_sd_make_service($svc): create the service files and links
 pp_sd_make_service () {
         typeset level startpriority stoppriority startlevels stoplevels
-        typeset svc svcvar
+        typeset svc svcvar symtype
 
         svc="$1"
 	svcvar=`pp_makevar $svc`
+
+	case ${pp_sd_os} in
+	    10.*) symtype="file";;
+	    *) symtype="file -t s";;
+	esac
 
         # TODO: Figure out why this check is here
         #-- don't do anything if the script exists
@@ -288,12 +303,12 @@ pp_sd_make_service () {
 
         # create the symlinks
         test -z "$startlevels" || for level in $startlevels; do
-            echo "                file -t s" \
+            echo "                ${symtype}" \
                     "/sbin/init.d/$svc" \
                     "/sbin/rc$level.d/S$startpriority$svc"
         done
         test -z "$stoplevels" || for level in $stoplevels; do
-            echo "                file -t s" \
+            echo "                ${symtype}" \
                     "/sbin/init.d/$svc" \
                     "/sbin/rc$level.d/K$stoppriority$svc"
         done
@@ -328,9 +343,10 @@ pp_sd_control () {
 
 #@ pp_backend_sd(): processes output files to generate a package files
 pp_backend_sd () {
-    typeset psf cpt svc outfile
+    typeset psf cpt svc outfile release swp_flags
 
     psf=$pp_wrkdir/psf
+    release="?.${pp_sd_os%.[0-9][0-9]}.*"
 
     echo "depot" > $psf
     echo "layout_version 1.0" >>$psf
@@ -351,7 +367,7 @@ pp_backend_sd () {
             copyright       "$copyright"
             machine_type    *
             os_name         HP-UX
-            os_release      ?.11.*
+            os_release      $release
             os_version      ?
             directory       /
             is_locatable    false
@@ -432,10 +448,15 @@ pp_backend_sd () {
     test -s $pp_wrkdir/%fixup && . $pp_wrkdir/%fixup
 
     outfile=`pp_backend_sd_names`
-    if pp_verbose ${pp_sd_sudo} /usr/sbin/swpackage \
-        -s $psf \
-        -x run_as_superuser=false \
-        -x media_type=tape \
+    case ${pp_sd_os} in
+	10.*)
+	    swp_flags="-x target_type=tape"
+	    ;;
+	*)
+	    swp_flags="-x media_type=tape -x run_as_superuser=false"
+	    ;;
+    esac
+    if pp_verbose ${pp_sd_sudo} /usr/sbin/swpackage -s $psf $swp_flags \
         @ $pp_wrkdir/$outfile
     then
         pp_verbose ${pp_sd_sudo} /usr/sbin/swlist -l file -s $pp_wrkdir/$outfile
