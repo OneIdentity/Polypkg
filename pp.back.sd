@@ -453,7 +453,7 @@ pp_backend_sd () {
 	    swp_flags="-x target_type=tape"
 	    ;;
 	*)
-	    swp_flags="-x media_type=tape -x run_as_superuser=false"
+	    swp_flags="-x media_type=tape"
 	    ;;
     esac
     if pp_verbose ${pp_sd_sudo} /usr/sbin/swpackage -s $psf $swp_flags \
