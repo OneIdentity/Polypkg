@@ -47,6 +47,7 @@ pp_backend_solaris_init () {
 	pp_solaris_rstates="s S 1 2 3"	# run-states when remove is ok
 	pp_solaris_maxinst=
 	pp_solaris_vendor=
+	pp_solaris_pstamp=
 	pp_solaris_copyright=
 	pp_solaris_name=
 	pp_solaris_desc=
@@ -306,6 +307,8 @@ pp_backend_solaris () {
 	  echo "MAXINST=$pp_solaris_maxinst" >> $pkginfo
 	test -n "${pp_solaris_vendor:-$vendor}" &&
 	  echo "VENDOR=${pp_solaris_vendor:-$vendor}" >> $pkginfo
+	test -n "$pp_solaris_pstamp" &&
+	  echo "PSTAMP=$pp_solaris_pstamp" >> $pkginfo
 
 	if test -n "${pp_solaris_copyright:-$copyright}"; then
 	    echo "${pp_solaris_copyright:-$copyright}" > $pp_wrkdir/copyright
