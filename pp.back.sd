@@ -19,6 +19,7 @@ pp_backend_sd_init () {
     pp_sd_default_start=1           # config_file default start value
 
     pp_readlink_fn=pp_ls_readlink   # HPUX has no readlink
+    pp_shlib_suffix='.sl'           # .so on most other platforms
 
     pp_sd_detect_os
 }

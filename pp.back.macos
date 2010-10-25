@@ -148,6 +148,8 @@ pp_backend_macos_init () {
     pp_macos_prog_packagemaker=/Developer/usr/bin/packagemaker
     pp_macos_pkg_domain=anywhere
     pp_macos_pkg_extra_flags=
+    # OS X puts the library version *before* the .dylib extension
+    pp_shlib_suffix='*.dylib'
 }
 
 #@ pp_macos_plist(cmds...): emits plist xml fragments
