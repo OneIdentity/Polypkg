@@ -153,11 +153,12 @@ pp_unique () {
 }
 
 #@ pp_mode_strip_altaccess(str): given a string `ls` mode pattern, remove a
-#   trailing '+' if there is one. '+' indicates an "alternate access mode",
-#   usually an ACL.
+#   trailing '+' or '.' if there is one.
+#   '+' indicates an "alternate access mode", usually an ACL.
+#   '.' indicates the file has an SELinux security context.
 pp_mode_strip_altaccess () {
     case "$1" in
-	??????????+)
+	??????????[+.])
 	    echo `echo "$1" | cut -b -10`;;
 	*)
 	    echo "$1";;
