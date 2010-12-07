@@ -216,7 +216,7 @@ pp_rpm_writefiles () {
 		    farch=ppc;;
 		*"64-bit XCOFF executable"*)
 		    farch=ppc64;;
-		*" ELF ")
+		*" ELF "*)
 		    farch=ELF;;
 		*)
 		    farch=noarch;;
