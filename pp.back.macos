@@ -148,6 +148,7 @@ pp_backend_macos_init () {
     pp_macos_prog_packagemaker=/Developer/usr/bin/packagemaker
     pp_macos_pkg_domain=anywhere
     pp_macos_pkg_extra_flags=
+    pp_macos_sudo=sudo
     # OS X puts the library version *before* the .dylib extension
     pp_shlib_suffix='*.dylib'
 }
@@ -351,20 +352,20 @@ pp_macos_mkbom () {
     bomstage=$pp_wrkdir/bom_stage
     while IFS='	' read path mode ugid size cksumi linkpath; do
 	if test -h "$pp_destdir/$path"; then
-	    sudo /bin/ln -s "$linkpath" "$bomstage/$path"
+	    $pp_macos_sudo /bin/ln -s "$linkpath" "$bomstage/$path"
 	else
 	    if test -d "$pp_destdir/$path"; then
-		sudo /bin/mkdir -p "$bomstage/$path"
+		$pp_macos_sudo /bin/mkdir -p "$bomstage/$path"
 	    else
-		sudo /bin/cp "$pp_destdir/$path" "$bomstage/$path"
+		$pp_macos_sudo /bin/cp "$pp_destdir/$path" "$bomstage/$path"
 	    fi
-	    sudo /bin/chmod $mode "$bomstage/$path"
-	    sudo /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
+	    $pp_macos_sudo /bin/chmod $mode "$bomstage/$path"
+	    $pp_macos_sudo /usr/sbin/chown `echo $ugid| tr / :` "$bomstage/$path"
 	fi
     done <"$1"
-    (cd $bomstage && sudo mkbom . $pp_wrkdir/bom_stage.bom) ||
+    (cd $bomstage && $pp_macos_sudo mkbom . $pp_wrkdir/bom_stage.bom) ||
 	pp_error "mkbom failed"
-    sudo mv $pp_wrkdir/bom_stage.bom "$2"
+    $pp_macos_sudo mv $pp_wrkdir/bom_stage.bom "$2"
 }
 
 #@ pp_backend_macos(): processes output files to generate a package files
@@ -536,7 +537,7 @@ CompressedSize 0
     cat $pp_wrkdir/%files.* | awk '{ print "." $6 }' | sed '/\/$/d' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
     )
 
-	sudo rm -rf $pp_wrkdir/bom_stage
+	$pp_macos_sudo rm -rf $pp_wrkdir/bom_stage
 
     hdiutil create -fs HFS+ -srcfolder $pkgdir -volname $name ${name}-${version}.dmg
 }

@@ -23,6 +23,8 @@ pp_backend_aix_init () {
         pp_aix_start_services_after_install=false
         pp_aix_init_services_after_install=true
 
+        pp_aix_sudo=sudo	# AIX package tools must run as root
+
         case "$pp_aix_os" in
             *) pp_readlink_fn=pp_ls_readlink;;  # XXX
         esac
@@ -553,7 +555,7 @@ pp_backend_aix () {
 	(cd $pp_destdir && pp_verbose  /usr/sbin/backup -i -q -p -f -) \
           < $pp_wrkdir/bff.list \
 	  > $pp_wrkdir/$outbff || pp_error "backup failed"
-        ${SUDO:-sudo} /usr/sbin/installp -l -d $pp_wrkdir/$outbff
+        $pp_aix_sudo /usr/sbin/installp -l -d $pp_wrkdir/$outbff
 }
 
 #@ pp_backend_aix_cleanup(): removes leftover files
