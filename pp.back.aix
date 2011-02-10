@@ -188,8 +188,6 @@ pp_aix_inventory () {
       esac
       echo " type = $type"
       echo " class = inventory,apply,$fileset"
-      set -- `/bin/ls -ld "$pp_destdir$p" 2>/dev/null`
-      owner=$3 group=$4 size=$5
       if test x"$m" = x"-"; then m="$defm"; fi
       if test x"$o" = x"-"; then o="root"; fi
       if test x"$g" = x"-"; then g="system"; fi
