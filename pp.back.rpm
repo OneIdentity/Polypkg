@@ -139,6 +139,10 @@ pp_rpm_detect_distro () {
           /^S[uU]SE LINUX Enterprise Server [0-9]/ { print "sles" $5; exit; }
           /^SuSE SLES-[0-9]/  { print "sles" substr($2,6); exit; }
        ' /etc/SuSE-release`
+    elif test -f /etc/pld-release; then
+       pp_rpm_distro=`awk '
+          /^[^ ]* PLD Linux/ { print "pld" $1; exit; }
+       ' /etc/pld-release`
     elif test X"`uname -s 2>/dev/null`" = X"AIX"; then
 	local r v
 	r=`uname -r`
