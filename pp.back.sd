@@ -92,49 +92,49 @@ pp_sd_service_group_script () {
 .
 
     cat <<-'.' >> $out
-        #-- starts services in order.. stops them all if any break
-        pp_start () {
-            undo=
-            for svc in $svcs; do
-                /sbin/init.d/$svc start
-		case $? in
-		  0|4)
-		    undo="$svc $undo"
-		    ;;
-		  *)
-                    if test -n "$undo"; then
-                        for svc in $undo; do
-                           /sbin/init.d/$svc stop
-                        done
-                        return 1
-                    fi
-		    ;;
-                esac
-            done
-            return 0
+	#-- starts services in order.. stops them all if any break
+	pp_start () {
+	    undo=
+	    for svc in \$svcs; do
+	        /sbin/init.d/\$svc start
+	        case \$? in
+	          0|4)
+	            undo="\$svc \$undo"
+	            ;;
+	          *)
+	            if test -n "\$undo"; then
+	                for svc in \$undo; do
+	                    /sbin/init.d/\$svc stop
+	                done
+	                return 1
+	            fi
+	            ;;
+	        esac
+	    done
+	    return 0
+	}
+
+	#-- stops services in reverse
+	pp_stop () {
+	    reverse=
+	    for svc in \$svcs; do
+	        reverse="\$svc \$reverse"
+	    done
+	    rc=0
+	    for svc in \$reverse; do
+	        /sbin/init.d/\$svc stop || rc=\$?
+	    done
+	    return \$rc
         }
 
-        #-- stops services in reverse
-        pp_stop () {
-            reverse=
-            for svc in $svcs; do
-                reverse="$svc $reverse"
-            done
-            rc=0
-            for svc in $reverse; do
-                /sbin/init.d/$svc stop || rc=$?
-            done
-            return $rc
-        }
-
-        case $1 in
-            start_msg) echo "Starting $svcs";;
-            stop_msg)  echo "Stopping $svcs";;
+	case \$1 in
+	    start_msg) echo "Starting \$svcs";;
+	    stop_msg)  echo "Stopping \$svcs";;
 	    start)     pp_start;;
 	    stop)      pp_stop;;
-            *)	       echo "usage: $0 {start|stop|start_msg|stop_msg}"
-                       exit 1;;
-        esac
+	    *)	       echo "usage: \$0 {start|stop|start_msg|stop_msg}"
+	               exit 1;;
+	esac
 .
 }
 
@@ -187,61 +187,61 @@ pp_sd_service_script () {
 	}
 
 	pp_stop () {
-	    if test ! -s "$pidfile"; then
-		echo "Unable to stop $svc (no pid file)"
-		return 1
+	    if test ! -s "\$pidfile"; then
+	        echo "Unable to stop \$svc (no pid file)"
+	        return 1
 	    else
-		read pid < "$pidfile"
-		if kill -0 "$pid" 2>/dev/null; then
-		    if kill -${stop_signal:-TERM} "$pid"; then
-			rm -f "$pidfile"
-			return 0
-		    else
-			echo "Unable to stop $svc"
-			return 1
-		    fi
-		else
-		    rm -f "$pidfile"
-		    return 0
-		fi
+	        read pid < "\$pidfile"
+	        if kill -0 "\$pid" 2>/dev/null; then
+	            if kill -${stop_signal:-TERM} "\$pid"; then
+	                rm -f "\$pidfile"
+	                return 0
+	            else
+	                echo "Unable to stop \$svc"
+	                return 1
+	            fi
+	        else
+	            rm -f "\$pidfile"
+	            return 0
+	        fi
 	    fi
 	}
 
 	pp_running () {
-	    if test ! -s "$pidfile"; then
-		return 1
+	    if test ! -s "\$pidfile"; then
+	        return 1
 	    else
-		read pid < "$pidfile"
-		kill -0 "$pid" 2>/dev/null
+	        read pid < "\$pidfile"
+	        kill -0 "\$pid" 2>/dev/null
 	    fi
 	}
 
-	case $1 in
-	    start_msg) echo "Starting the $svc service";;
-	    stop_msg)  echo "Stopping the $svc service";;
+	case \$1 in
+	    start_msg) echo "Starting the \$svc service";;
+	    stop_msg)  echo "Stopping the \$svc service";;
 	    start)
-		    if test -f "$config_file"; then
-			. $config_file
-		    fi
-		    if pp_disabled; then
-			exit 2
-		    elif pp_running; then
-			echo "$svc already running";
-			exit 0
-		    elif pp_start; then
-			echo "$svc started";
-			# rc(1M) says we should exit 4, but nobody expects it!
-			exit 0
-		    else
-			exit 1
-		    fi;;
+	            if test -f "\$config_file"; then
+	                . \$config_file
+	            fi
+	            if pp_disabled; then
+	                exit 2
+	            elif pp_running; then
+	                echo "\$svc already running";
+	                exit 0
+	            elif pp_start; then
+	                echo "\$svc started";
+	                # rc(1M) says we should exit 4, but nobody expects it!
+	                exit 0
+	            else
+	                exit 1
+	            fi;;
 	    stop)   if pp_stop; then
-			echo "$svc stopped";
-			exit 0
-		    else
-			exit 1
-		    fi;;
-	    *) echo "usage: $0 {start|stop|start_msg|stop_msg}"
+	                echo "\$svc stopped";
+	                exit 0
+	            else
+	                exit 1
+	            fi;;
+	    *) echo "usage: \$0 {start|stop|start_msg|stop_msg}"
 	       exit 1;;
 	esac
 .
