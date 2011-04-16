@@ -68,8 +68,18 @@ pp_sd_write_files () {
         test x"$m" = x"-" && m=$dm
 
         case $t in
-            s) echo "$line $st $p";;
-            *) echo "$line -o $o -g $g -m $m $pp_destdir$p $p";;
+            s)
+		# swpackage will make unqualified links relative to the
+		# current working (source) directory, not the destination;
+		# we need to qualify them to prevent this.
+		case "$st" in
+		    /*) echo "$line $st $p";;
+		    *) echo "$line `dirname $p`/$st $p";;
+		esac
+		;;
+            *)
+		echo "$line -o $o -g $g -m $m $pp_destdir$p $p"
+		;;
         esac
 
     done
