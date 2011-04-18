@@ -32,6 +32,7 @@ pp_solaris_smf () {
 
     pp_solaris_name=${pp_solaris_name:-$name}
     pp_solaris_manpath=${pp_solaris_manpath:-"/usr/share/man"}
+    pp_solaris_mansect=${pp_solaris_mansect:-1}
     smf_start_timeout=${smf_start_timeout:-60}
     smf_stop_timeout=${smf_stop_timeout:-60}
     smf_restart_timeout=${smf_restart_timeout:-60}
@@ -133,7 +134,7 @@ pp_solaris_smf () {
                   <loctext xml:lang='C'>$description</loctext>
               </common_name>
               <documentation>
-                  <manpage title='$pp_solaris_manpage' section='1' manpath='$pp_solaris_manpath'/>
+                  <manpage title='$pp_solaris_manpage' section='$pp_solaris_mansect' manpath='$pp_solaris_manpath'/>
               </documentation>
           </template>
         </service>
