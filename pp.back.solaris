@@ -222,14 +222,14 @@ pp_solaris_proto () {
 	typeset abi
 
 	while read t m o g f p st; do
-	  if test x"$o" = x"-"; then
-            o="root"
-          fi
-	  if test x"$g" = x"-"; then
-            g="bin"
-          fi
+	  # Use Solaris default mode, owner and group if all unspecified
+	  if test x"$m$o$g" = x"---"; then
+	    m="?"; o="?"; g="?"
+	  fi
+	  test x"$o" = x"-" && o="root"
 	  case "$t" in
-	    f) test x"$m" = x"-" && m=444
+	    f) test x"$g" = x"-" && g="bin"
+	       test x"$m" = x"-" && m=444
 	       case "$f" in
 		*v*) echo "v $1 $p=$pp_destdir$p $m $o $g";;
 		*)   echo "f $1 $p=$pp_destdir$p $m $o $g";;
@@ -248,12 +248,15 @@ pp_solaris_proto () {
 		  fi
 	       fi
                ;;
-	    d) test x"$m" = x"-" && m=555
+	    d) test x"$g" = x"-" && g="sys"
+	       test x"$m" = x"-" && m=555
 	       echo "d $1 $p $m $o $g"
                ;;
-	    s) test x"$m" = x"-" && m=777
-               test x"$m" = x"777" ||
+	    s) test x"$g" = x"-" && g="bin"
+	       test x"$m" = x"-" && m=777
+               if test x"$m" != x"777" -a x"$m" != x"?"; then
                   pp_warn "$p: invalid mode $m for symlink, should be 777 or -"
+	       fi
 	       echo "s $1 $p=$st $m $o $g"
                ;;
 	  esac
