@@ -259,7 +259,7 @@ pp_aix_add_service () {
 
 	set -- $cmd
 	cmd_cmd="$1"; shift
-	cmd_arg="$pp_aix_mkssys_cmd_args";
+	cmd_arg="$*";
 
 	case "$stop_signal" in
 		HUP) stop_signal=1;;
@@ -290,7 +290,7 @@ pp_aix_add_service () {
 # Check if service exists
 svc=$svc
 uid=0
-cmd_cmd=$daemon
+cmd_cmd="$cmd_cmd"
 cmd_arg="$cmd_arg"
 stop_signal=$stop_signal
 force_signal=9
