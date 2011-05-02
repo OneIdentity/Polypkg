@@ -271,9 +271,19 @@ pp_rpm_subname () {
 
 #@ pp_rpm_depend() < %depend: generate Requires rules
 pp_rpm_depend () {
+    local _name _vers
     while read _name _vers; do
         case "$_name" in ""| "#"*) continue ;; esac
         echo "Requires: $_name ${_vers:+>= $_vers}"
+    done
+}
+
+#@ pp_rpm_conflict() < %conflict: generate Conflicts rules
+pp_rpm_conflict () {
+    local _name _vers
+    while read _name _vers; do
+        case "$_name" in ""| "#"*) continue ;; esac
+        echo "Conflicts: $_name ${_vers:+>= $_vers}"
     done
 }
 
@@ -348,6 +358,9 @@ pp_backend_rpm () {
         elif test -s $pp_wrkdir/%depend.run; then
             pp_rpm_depend < $pp_wrkdir/%depend.run >> $specfile
         fi
+        if test -s $pp_wrkdir/%conflict.run; then
+            pp_rpm_conflict < $pp_wrkdir/%conflict.run >> $specfile
+        fi
 
 	pp_rpm_override_requires >> $specfile
 
@@ -386,6 +399,9 @@ pp_backend_rpm () {
                     eval pp_rpm_label Requires ${pp_rpm_name:-$name} $_pkg
                 elif test -s $pp_wrkdir/%depend.$cmp; then
                     pp_rpm_depend < $pp_wrkdir/%depend.$cmp >> $specfile
+                fi
+                if test -s $pp_wrkdir/%conflict.$cmp; then
+                    pp_rpm_conflict < $pp_wrkdir/%conflict.$cmp >> $specfile
                 fi
 
                 eval '_pkg="$pp_rpm_'$cmp'_provides"'

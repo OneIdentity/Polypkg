@@ -111,6 +111,19 @@ pp_deb_version_final() {
     fi
 }
 
+#@ pp_deb_conflict() < %conflict: generate Conflicts rules
+pp_deb_conflict () {
+    local _name _vers _conflicts
+
+    _conflicts="Conflicts:"
+    while read _name _vers; do
+	case "$_name" in ""| "#"*) continue ;; esac
+	_conflicts="$_conflicts $_name"
+	test -n "$_vers" && _conflicts="$_conflicts $_name (>= $vers),"
+    done
+    echo "${_conflicts%,}"
+}
+
 #@ pp_deb_make_control(cmp) > control: creates a debian control file
 pp_deb_make_control() {
     package_name=`pp_deb_cmp_full_name "$1"`
@@ -127,6 +140,9 @@ pp_deb_make_control() {
     if test -s $pp_wrkdir/%depend."$1"; then
 	sed -ne '/^[ 	]*$/!s/^[ 	]*/Depends: /p' \
 	    < $pp_wrkdir/%depend."$1"
+    fi
+    if test -s $pp_wrkdir/%conflict."$1"; then
+	pp_deb_conflict < $pp_wrkdir/%conflict."$1"
     fi
 }
 

@@ -24,6 +24,9 @@
 #   %depend      - common package dependencies (one per line)
 #   %depend.$cpt - $cpt component dependencies
 #
+#   %conflict      - common package conflicts (one per line)
+#   %conflict.$cpt - $cpt component conflicts
+#
 # Internal file output:
 #
 #   frontend.tmp - result of [platform] prefix removal
@@ -248,7 +251,7 @@ pp_frontend () {
              fi
 	     test $# -eq 0 || pp_warn "ignoring extra arguments: $line"
 	     continue;;
-	  %pre|%post|%preun|%postup|%postun|%files|%depend|%check)
+	  %pre|%post|%preun|%postup|%postun|%files|%depend|%check|%conflict)
              pp_debug "processing new component section $*"
              s="$1"; shift
              if test $# -eq 0 || pp_is_qualifier "$1"; then
@@ -343,7 +346,7 @@ pp_frontend () {
 		. $pp_wrkdir/tmp
 		: > $pp_wrkdir/tmp
 		;;
-	%pre.*|%preun.*|%post.*|%postup.*|%postun.*|%depend.*|%check.*|%service.*|%fixup)
+	%pre.*|%preun.*|%post.*|%postup.*|%postun.*|%depend.*|%check.*|%conflict.*|%service.*|%fixup)
                 pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
                 # cat $pp_wrkdir/tmp >&2    # debugging
                 $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
@@ -378,6 +381,10 @@ pp_frontend () {
 	%depend.*)
 		pp_debug "Adding explicit dependency $@ to $cpt"
 		echo "$@" >> $pp_wrkdir/%depend.$cpt
+		;;
+	%conflict.*)
+		pp_debug "Adding explicit conflict $@ to $cpt"
+		echo "$@" >> $pp_wrkdir/%conflict.$cpt
 		;;
      esac
   done

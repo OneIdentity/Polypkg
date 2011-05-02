@@ -551,6 +551,20 @@ The %depend section
 	http://www.debian.org/doc/debian-policy/ch-relationships.html#s-depsyntax
 	for the syntax.
 
+The %conflict section
+
+	A collection of conflicting packages that will prevent
+	installation of the package.  A component can be specified,
+	otherwise the "run" component is assumed.
+
+	Conflicts are specified in the %conflict section up until
+	the next section.  The format of the line is:
+
+	    package_name [version]
+
+	If the version is specified, any installed package_name
+	with a version greater than or equal to version will be
+	considered a conflict.
 
 Output filenames
 

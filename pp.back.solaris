@@ -192,12 +192,23 @@ pp_solaris_procedure () {
 .
 }
 
-#@ pp_solaris_depend(): generate depend(4) output
+#@ pp_solaris_depend(): generate prerequisite depend(4) entries
 pp_solaris_depend () {
     typeset _name _vers
     while read _name _vers; do
 	if test -n "$_name"; then
 	    echo "P $_name $_name"
+	    test -n "$_vers" && echo " $_vers"
+	fi
+    done
+}
+
+#@ pp_solaris_conflict(): generate incompatible depend(4) entries
+pp_solaris_conflict () {
+    typeset _name _vers
+    while read _name _vers; do
+	if test -n "$_name"; then
+	    echo "I $_name $_name"
 	    test -n "$_vers" && echo " $_vers"
 	fi
     done
@@ -343,9 +354,11 @@ pp_backend_solaris () {
                         < $pp_wrkdir/%check.$_cmp \
 			>> $pp_wrkdir/checkinstall
         fi
-        #-- All dependencies are merged together for Solaris pkgs
+        #-- All dependencies and conflicts are merged together for Solaris pkgs
         test -s $pp_wrkdir/%depend.$_cmp &&
-              pp_solaris_depend < $pp_wrkdir/%depend.$_cmp > $pp_wrkdir/depend
+              pp_solaris_depend < $pp_wrkdir/%depend.$_cmp >> $pp_wrkdir/depend
+        test -s $pp_wrkdir/%conflict.$_cmp &&
+              pp_solaris_conflict < $pp_wrkdir/%conflict.$_cmp >> $pp_wrkdir/depend
 	done
 
 
