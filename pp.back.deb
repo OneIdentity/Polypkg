@@ -119,7 +119,8 @@ pp_deb_conflict () {
     while read _name _vers; do
 	case "$_name" in ""| "#"*) continue ;; esac
 	_conflicts="$_conflicts $_name"
-	test -n "$_vers" && _conflicts="$_conflicts $_name (>= $vers),"
+	test -n "$_vers" && _conflicts="$_conflicts $_name (>= $vers)"
+	_conflicts="${_conflicts},"
     done
     echo "${_conflicts%,}"
 }
