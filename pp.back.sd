@@ -422,10 +422,10 @@ pp_backend_sd () {
                 title           "${summary:-cpt}"
                 revision        $version
 .
-        test -s $pp_wrkdir/%depend.$_cmp &&
-              pp_sd_depend < $pp_wrkdir/%depend.$_cmp >> $psf
-        test -s $pp_wrkdir/%conflict.$_cmp &&
-              pp_sd_conflict < $pp_wrkdir/%conflict.$_cmp >> $psf
+        test -s $pp_wrkdir/%depend.$cpt &&
+              pp_sd_depend < $pp_wrkdir/%depend.$cpt >> $psf
+        test -s $pp_wrkdir/%conflict.$cpt &&
+              pp_sd_conflict < $pp_wrkdir/%conflict.$cpt >> $psf
 
 	#-- make sure services are shut down during uninstall
         if test $cpt = run -a -n "$pp_services"; then
