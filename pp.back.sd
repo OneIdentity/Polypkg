@@ -357,7 +357,7 @@ pp_sd_depend () {
     typeset _name _vers
     while read _name _vers; do
 	case "$_name" in ""| "#"*) continue ;; esac
-	echo "prerequisites: $_name ${_vers:+r>= $_vers}"
+	echo "                prerequisites $_name ${_vers:+r>= $_vers}"
     done
 }
 
@@ -366,7 +366,7 @@ pp_sd_conflict () {
     typeset _name _vers
     while read _name _vers; do
 	case "$_name" in ""| "#"*) continue ;; esac
-	echo "exrequisites: $_name ${_vers:+r>= $_vers}"
+	echo "                exrequisites $_name ${_vers:+r>= $_vers}"
     done
 }
 
