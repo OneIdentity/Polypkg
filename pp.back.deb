@@ -272,6 +272,12 @@ pp_deb_make_data() {
     cmp=$1
     data=$pp_wrkdir/`pp_deb_cmp_full_name $cmp`
     cat $pp_wrkdir/%files.${cmp} | while read t m o g f p st; do
+	if test x"$m" = x"-"; then
+	    case "$t" in
+		d) m=755;;
+		f) m=644;;
+	    esac
+	fi
 	test x"$o" = x"-" && o=root
 	test x"$g" = x"-" && g=root
         case "$t" in
