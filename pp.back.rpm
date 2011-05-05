@@ -211,6 +211,8 @@ pp_rpm_writefiles () {
 		    farch=x86_64;;
 		*": ELF 32-bit MSB "*", PowerPC"*)
 		    farch=ppc;;
+		*": ELF 64-bit MSB "*", 64-bit PowerPC"*)
+		    farch=ppc64;;
 		*": ELF 64-bit LSB "*", IA-64"*)
 		    farch=ia64;;
 		*": ELF 32-bit MSB "*", IBM S/390"*)
@@ -236,7 +238,7 @@ pp_rpm_writefiles () {
 			farch=x86_64;;
 		    "ELF32 PowerPC")
 			farch=ppc;;
-		    "ELF64 PowerPC")
+		    "ELF64 PowerPC"*)
 			farch=ppc64;;
 		    "ELF64 IA-64")
 			farch=ia64;;
