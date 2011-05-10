@@ -1,18 +1,11 @@
-#@ pp_backend_deb_init_svc_vars(): initialises deb backend variables
-pp_backend_deb_init_svc_vars () {
-    # Default multi-user runlevel on Debian is 2; 3-5 are also multi-user
-    pp_deb_default_start_runlevels="2 3 4 5"
-    pp_deb_default_svc_description="No description"
-}
-
 #@ pp_backend_deb_init_svc_vars(): initialise deb-specific service variables
 #    pp-provided vars are cmd, pidfile, stop_signal and user
 pp_backend_deb_init_svc_vars () {
 
     reload_signal=
-    start_runlevels=${pp_deb_default_start_runlevels}   # == lsb default-start
-    stop_runlevels="0 1 6"                              # == lsb default-stop
-    svc_description="${pp_deb_default_svc_description}" # == lsb short descr
+    start_runlevels=${pp_deb_default_start_runlevels-"2 3 4 5"} # == lsb default-start
+    stop_runlevels=${pp_deb_default_stop_runlevels-"0 1 6"}     # == lsb default-stop
+    svc_description="${pp_deb_default_svc_description-No description}" # == lsb short descr
     svc_process=
 
     lsb_required_start='$local_fs $network'
