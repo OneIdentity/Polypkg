@@ -39,7 +39,7 @@ pp_solaris_smf () {
 
     svc=${pp_solaris_smf_service_name:-$1}
     _pp_solaris_service_script=${pp_solaris_service_script:-"/etc/init.d/${pp_solaris_service_script_name:-$svc}"}
-    _pp_solaris_manpage=${pp_solaris_manpage:-$pp_solaris_smf_service_name}
+    _pp_solaris_manpage=${pp_solaris_manpage:-$svc}
 
     if [ -z $pp_svc_xml_file ]; then
         pp_svc_xml_file="/var/svc/manifest/$_smf_category/$svc.xml"
