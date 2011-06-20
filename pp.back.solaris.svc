@@ -242,12 +242,13 @@ if [ -x /usr/sbin/svcadm ] && [ "x\$1" != "xstatus" ] && [ "t\$$_smf_method_envv
             /usr/sbin/svcadm enable -s $_smf_category/$svc
             RESULT=\$?
             if [ "\$RESULT" -ne 0 ] ; then
-                echo "Error \$RESULT starting $svc"
-                fi
+                echo "Error \$RESULT starting $svc" >&2
+            fi
             ;;
         stop)
             echo "stopping $svc"
             /usr/sbin/svcadm disable -ts $_smf_category/$svc
+	    RESULT=0
             ;;
         restart)
             echo "restarting $svc"
@@ -256,14 +257,14 @@ if [ -x /usr/sbin/svcadm ] && [ "x\$1" != "xstatus" ] && [ "t\$$_smf_method_envv
             /usr/sbin/svcadm enable -s $_smf_category/$svc
             RESULT=\$?
             if [ "\$RESULT" -ne 0 ] ; then
-                echo "Error \$RESULT starting $svc"
-                    fi
-                    ;;
+                echo "Error \$RESULT starting $svc" >&2
+            fi
+            ;;
         *)
-            echo "Usage: $file {start|stop|restart|status}"
-            exit 1
+            echo "Usage: $file {start|stop|restart|status}" >&2
+            RESULT=1
     esac
-    exit 0
+    exit $RESULT
 fi
 _EOF
     fi
