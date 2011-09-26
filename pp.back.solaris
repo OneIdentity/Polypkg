@@ -332,6 +332,7 @@ pp_backend_solaris () {
         #-- scripts to run before and after install
         : > $pp_wrkdir/postinstall
         : > $pp_wrkdir/preremove
+        : > $pp_wrkdir/postremove
 	for _cmp in $pp_components; do
         #-- add the preinstall scripts in definition order
         if test -s $pp_wrkdir/%pre.$_cmp; then
@@ -347,6 +348,11 @@ pp_backend_solaris () {
         if test -s $pp_wrkdir/%preun.$_cmp; then
             pp_solaris_procedure $_cmp preremove < $pp_wrkdir/%preun.$_cmp |
                     pp_prepend $pp_wrkdir/preremove
+        fi
+        #-- add the postremove scripts in definition order
+        if test -s $pp_wrkdir/%postun.$_cmp; then
+            pp_solaris_procedure $_cmp postremove < $pp_wrkdir/%postun.$_cmp \
+                >> $pp_wrkdir/postremove
         fi
         #-- Add the check script in definition order
         if test -s $pp_wrkdir/%check.$_cmp; then
@@ -373,6 +379,7 @@ pp_backend_solaris () {
                 pp_solaris_make_service $_svc
                 pp_solaris_install_service $_svc | pp_prepend $pp_wrkdir/postinstall
                 pp_solaris_remove_service $_svc | pp_prepend $pp_wrkdir/preremove
+                pp_solaris_remove_service $_svc | pp_prepend $pp_wrkdir/postremove
                 unset pp_svc_xml_file
             done
 
