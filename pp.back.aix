@@ -401,6 +401,7 @@ pp_backend_aix () {
                     -o -s $pp_wrkdir/%pre.$cmp \
                     -o -s $pp_wrkdir/%post.$cmp \
                     -o -s $pp_wrkdir/%preun.$cmp \
+                    -o -s $pp_wrkdir/%postun.$cmp \
                     -o -s $pp_wrkdir/%check.$cmp
             then
                 content=B
@@ -473,6 +474,11 @@ pp_backend_aix () {
 	    if test -r $pp_wrkdir/%preun.$cmp; then
 		pp_aix_make_script $root_wrkdir/$pp_aix_bff_name.$ex.unpost_i \
 			< $pp_wrkdir/%preun.$cmp
+	    fi
+
+	    if test -r $pp_wrkdir/%postun.$cmp; then
+		pp_aix_make_script $root_wrkdir/$pp_aix_bff_name.$ex.unpre_i \
+			< $pp_wrkdir/%postun.$cmp
 	    fi
 
 	    # remove empty files
