@@ -262,6 +262,11 @@ pp_deb_make_DEBIAN() {
         "$pp_wrkdir/%preun.$cmp" "Pre-uninstall script for $cmp_full_name"\
         || exit $?
 
+    # Create postrm
+    pp_deb_make_package_maintainer_script "$data/DEBIAN/postrm" \
+        "$pp_wrkdir/%postun.$cmp" "Post-uninstall script for $cmp_full_name"\
+        || exit $?
+
     umask $old_umask
 }
 
