@@ -259,7 +259,7 @@ description="Hello tool"
        Defaults to "No description".</listitem>
       <term>copyright</term>
       <listitem>copyright message, limit 40 characters.
-       Default is "(c) YYYY, Quest Software..."</listitem>
+       Default is "Copyright YYYY, Quest Software..."</listitem>
      </varlistentry>
     </variablelist>
    </para>
