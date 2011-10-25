@@ -46,10 +46,10 @@ pp_solaris_smf () {
         echo "## Generating the smf service manifest file for $pp_svc_xml_file"
     else
         echo "## SMF service manifest file already defined at $pp_svc_xml_file"
-        if [ -z $pp_solaris_smf_category ] || [ -z $smf_method_envvar_name ]; then
+        if [ -z $pp_solaris_smf_service_name ] || [ -z $pp_solaris_smf_category ] || [ -z $pp_solaris_service_script ] || [ -z $smf_method_envvar_name ]; then
           pp_error "All required variables are not set.\n"\
                    "When using a custom manifest file all of the following variables must be set:\n"\
-                   "pp_solaris_smf_category and smf_method_envvar_name.\n\n"\
+                   "pp_solaris_smf_service_name, pp_solaris_smf_category, pp_solaris_service_script and smf_method_envvar_name.\n\n"\
                    "Example:\n"\
                    " \$pp_solaris_smf_category=application\n"\
                    " \$pp_solaris_smf_service_name=pp\n\n"\
