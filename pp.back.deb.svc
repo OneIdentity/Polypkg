@@ -39,9 +39,10 @@ pp_deb_service_make_init_script () {
     #_process=${svc_process:-"$1"} --? WTF
 
     #-- construct a start command that builds a pid file if needed
+    #-- the command name in /proc/[pid]/stat is limited to 15 characters 
     _cmd="$cmd";
     _cmd_path=`echo $cmd | cut -d" " -f1`
-    _cmd_name=`basename $_cmd_path`
+    _cmd_name=`basename $_cmd_path | cut -c1-15`
     _cmd_args=`echo $cmd | cut -d" " -f2-`
     test x"$_cmd_path" != x"$_cmd_args" || _cmd_args=
 
