@@ -295,6 +295,7 @@ cmd_arg="$cmd_arg"
 stop_signal=$stop_signal
 force_signal=9
 srcgroup="$pp_aix_mkssys_group"
+instances_allowed=${pp_aix_mkssys_instances_allowed:--Q}
 
 lssrc -s \$svc > /dev/null 2>&1
 if [ \$? -eq 0 ]; then
@@ -306,7 +307,7 @@ if [ \$? -eq 0 ]; then
 fi
 
 # install service '$svc'
-mkssys -s \$svc -u \$uid -p "\$cmd_cmd" \${cmd_arg:+-a "\$cmd_arg"} -S -n \$stop_signal -f 9 ${pp_aix_mkssys_args} \${srcgroup:+-G \$srcgroup}
+mkssys -s \$svc -u \$uid -p "\$cmd_cmd" \${cmd_arg:+-a "\$cmd_arg"} -S -n \$stop_signal -f 9 ${pp_aix_mkssys_args} \${srcgroup:+-G \$srcgroup} \$instances_allowed
 .
 
         #-- add code to start the service on reboot
