@@ -1,6 +1,6 @@
 #@ pp_backend_macos_function(func): output one platform-dependent function
 pp_backend_macos_function () {
-    case $1 in
+    case "$1" in
 	_pp_macos_search_unused) cat<<'.';;
 	    # Find an unused value in the given path
 	    # args: path attribute minid [maxid]

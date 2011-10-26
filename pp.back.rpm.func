@@ -1,6 +1,6 @@
 #@ pp_backend_rpm_function(func): emit shell code for a utility function
 pp_backend_rpm_function () {
-    case $1 in
+    case "$1" in
         pp_mkgroup) cat<<'.';;
             /usr/sbin/groupadd -f -r "$1"
 .

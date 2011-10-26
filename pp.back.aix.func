@@ -1,6 +1,6 @@
 #@ pp_backend_aix_function(func): output one platform-dependent function
 pp_backend_aix_function () {
-    case $1 in
+    case "$1" in
     pp_mkgroup) cat <<'.';;
             /usr/sbin/lsgroup "$1" >/dev/null &&
 		return 0

@@ -1,6 +1,6 @@
 #@ pp_backend_sd_function(func): output platform-dependent function
 pp_backend_sd_function () {
-    case $1 in
+    case "$1" in
         pp_mkgroup) cat <<'.';;
 	    /usr/sbin/groupmod "$1" 2>/dev/null ||
 		/usr/sbin/groupadd "$1"

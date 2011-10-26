@@ -50,7 +50,7 @@ cat <<-'.' >> $out
 	        return $rc
 	}
 
-	case $1 in
+	case "$1" in
 	    start_msg) echo "Starting $svcs";;
 	stop_msg)  echo "Stopping $svcs";;
 	start)     pp_start;;
@@ -116,7 +116,7 @@ pp_kit_service_script () {
 	            kill -0 "$pid" 2>/dev/null
 	        fi
 	    }
-	    case $1 in
+	    case "$1" in
 	        start_msg) echo "Starting the $svc service";;
 	        stop_msg)  echo "Stopping the $svc service";;
 	        start)
