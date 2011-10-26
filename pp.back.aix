@@ -62,7 +62,7 @@ pp_aix_detect_os () {
 #   AIX demands version strings of the form a.b.c.d[.e]
 pp_aix_version_fix () {
     typeset v
-    v=`echo $1 | tr -c -d '[0-9].\012'`
+    v=`echo $1 | tr - . | tr -c -d '[0-9].\012'`
     if test x"$v" != x"$1"; then
         pp_warn "stripped version '$1' to '$v'"
     fi
