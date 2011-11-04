@@ -307,7 +307,7 @@ _EOF
 
         # returns true if $svc is running
         pp_running () {
-            test -r "$pidfile" &&
+            test -s "$pidfile" || return 1
             read pid junk < "$pidfile" 2>/dev/null
             test ${pid:-0} -gt 1 &&
             kill -0 "$pid" 2>/dev/null
