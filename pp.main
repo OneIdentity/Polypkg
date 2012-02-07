@@ -1,7 +1,7 @@
 # Polypkg main
 
 pp_version="1.0.0.$pp_revision"
-pp_copyright="Copyright 2011, Quest Software, Inc. ALL RIGHTS RESERVED."
+pp_copyright="Copyright 2012, Quest Software, Inc. ALL RIGHTS RESERVED."
 
 pp_opt_debug=false
 pp_opt_destdir="$DESTDIR"

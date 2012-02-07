@@ -1,4 +1,4 @@
-# Copyright 2011 Quest Software, Inc. ALL RIGHTS RESERVED.
+# Copyright 2012 Quest Software, Inc. ALL RIGHTS RESERVED.
 
 PP_SHELL=	/bin/sh
 INSTALLED_PP = /data/rc/pub/rc/polypkg/pp

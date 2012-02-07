@@ -62,7 +62,7 @@ pp_frontend_init () {
     version=
     summary="no summary"
     description="No description"
-    copyright="Copyright 2011 Quest Software, Inc. ALL RIGHTS RESERVED."
+    copyright="Copyright 2012 Quest Software, Inc. ALL RIGHTS RESERVED."
 
     #-- if the user supplied extra arguments on the command line
     #   then load them now.
