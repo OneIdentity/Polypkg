@@ -148,6 +148,9 @@ pp_backend_macos_init () {
     pp_macos_prog_packagemaker=/Developer/usr/bin/packagemaker
     pp_macos_pkg_domain=anywhere
     pp_macos_pkg_extra_flags=
+    pp_macos_pkg_license=
+    pp_macos_pkg_readme=
+    pp_macos_pkg_welcome=
     pp_macos_sudo=sudo
     # OS X puts the library version *before* the .dylib extension
     pp_shlib_suffix='*.dylib'
@@ -412,6 +415,39 @@ pp_backend_macos () {
             xattr -w "com.apple.TextEncoding" "macintosh;0" "$Contents/PkgInfo"
             ;;
     esac
+
+    # Copy welcome file/dir for display at package install time.
+    if test -n "$pp_macos_pkg_welcome"; then
+	typeset sfx
+	sfx=`echo "$pp_macos_pkg_welcome"|sed 's/^.*\.\([^\.]*\)$/\1/'`
+	case "$sfx" in
+	    rtf|html|rtfd|txt) ;;
+	    *) sfx=txt;;
+	esac
+	cp -R ${pp_macos_pkg_welcome} $Resources/Welcome.$sfx
+    fi
+
+    # Copy readme file/dir for display at package install time.
+    if test -n "$pp_macos_pkg_readme"; then
+	typeset sfx
+	sfx=`echo "$pp_macos_pkg_readme"|sed 's/^.*\.\([^\.]*\)$/\1/'`
+	case "$sfx" in
+	    rtf|html|rtfd|txt) ;;
+	    *) sfx=txt;;
+	esac
+	cp -R ${pp_macos_pkg_readme} $Resources/ReadMe.$sfx
+    fi
+
+    # Copy license file/dir for display at package install time.
+    if test -n "$pp_macos_pkg_license"; then
+	typeset sfx
+	sfx=`echo "$pp_macos_pkg_license"|sed 's/^.*\.\([^\.]*\)$/\1/'`
+	case "$sfx" in
+	    rtf|html|rtfd|txt) ;;
+	    *) sfx=txt;;
+	esac
+	cp -R ${pp_macos_pkg_license} $Resources/License.$sfx
+    fi
 
     # compute the installed size
     size=`cat $pp_wrkdir/%files.* | pp_macos_files_size`
