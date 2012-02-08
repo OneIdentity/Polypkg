@@ -6,6 +6,10 @@
 # http://developer.apple.com/releasenotes/DeveloperTools/Installer.html
 # Packagmeaker Help files
 #
+# PolyPackage builds Mac OS package bundles (i.e. foo.pkg directories).
+# This is different from the "flat packages" introduced in Mac OS 10.5.
+# See http://s.sudre.free.fr/Stuff/Ivanhoe/FLAT.html for flat package details.
+#
 # For online update support, Apple keeps its 'softwareupdate' tool
 # for apple use only. However, see http://code.google.com/p/update-engine/
 
