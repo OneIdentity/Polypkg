@@ -386,7 +386,7 @@ pp_macos_mkbom () {
 pp_backend_macos () {
     typeset pkgdir Contents Resources lprojdir
     typeset Info_plist Description_plist
-    typeset bundle_vendor bundle_version size
+    typeset bundle_vendor bundle_version size cmp filelists
 
     mac_version=`sw_vers -productVersion`
     bundle_vendor=${pp_macos_bundle_vendor:-$vendor}
@@ -453,8 +453,13 @@ pp_backend_macos () {
 	cp -R ${pp_macos_pkg_license} $Resources/License.$sfx
     fi
 
+    # Find file lists (%files.* includes ignore files)
+    for cmp in $pp_components; do
+	test -f $pp_wrkdir/%files.$cmp && filelists="$filelists${filelists:+ }$pp_wrkdir/%files.$cmp"
+    done
+
     # compute the installed size
-    size=`cat $pp_wrkdir/%files.* | pp_macos_files_size`
+    size=`cat $filelists | pp_macos_files_size`
 
     #-- Create Info.plist
     Info_plist=$Contents/Info.plist
@@ -495,8 +500,8 @@ pp_backend_macos () {
 	    key IFPkgDescriptionVersion string "$version" \
  	\} end-plist > $Description_plist
 
- 	# write Resources/files
-    cat $pp_wrkdir/%files.* | awk '{print $6}' > $Resources/files
+    # write Resources/files
+    awk '{print $6}' $filelists > $Resources/files
 
     # write package size file
     printf \
@@ -572,7 +577,7 @@ CompressedSize 0
     fi
 
     # Create the bill-of-materials (Archive.bom)
-    cat $pp_wrkdir/%files.* | pp_macos_files_bom | sort |
+    cat $filelists | pp_macos_files_bom | sort |
 	pp_macos_bom_fix_parents > $pp_wrkdir/tmp.bomls
 
     pp_macos_mkbom $pp_wrkdir/tmp.bomls $Contents/Archive.bom
@@ -581,7 +586,7 @@ CompressedSize 0
     # On 10.5, we used "-f -" to write explicitly to stdout
     (
     cd $pp_destdir &&
-    cat $pp_wrkdir/%files.* | awk '{ print "." $6 }' | sed '/\/$/d' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
+    awk '{ print "." $6 }' $filelists | sed '/\/$/d' | sort | /bin/pax -w -f - | gzip -9 -c > $Contents/Archive.pax.gz
     )
 
     test -d $pp_wrkdir/bom_stage && $pp_macos_sudo rm -rf $pp_wrkdir/bom_stage
