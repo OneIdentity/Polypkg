@@ -316,8 +316,11 @@ pp_macos_bom_fix_parents () {
 		      print "$d\t40755\t0/0\n";
 		  }
 		}
-	m/^\S+/;
-	&chk(&dirname($&));'
+	m/^(\S+)\s+(\d+)/;
+	if (oct($2) & 040000) {
+	    $seen{$1}++; # directory
+	}
+	&chk(&dirname($1));'
 }
 
 #pp_macos_files_size() < %files: compute the occupation size in kB
