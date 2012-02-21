@@ -102,7 +102,7 @@
     Examples found in /System/Library/LaunchDaemons/
     See manual page launchd.plist(5) for details:
 
-    { Label: "com.quest.vintela.foo",                        # required
+    { Label: "com.quest.rc.foo",                        # required
       Program: "/sbin/program",
       ProgramArguments: [ "/sbin/program", "arg1", "arg2" ], # required
       RunAtLoad: true,
@@ -420,7 +420,7 @@ pp_backend_macos () {
 
 #@ pp_backend_macos_bundle(): processes output files to generate a package bundle
 pp_backend_macos_bundle () {
-    typeset pkgdir Contents Resources lprojdir
+    typeset pkgdir Contents Resources lprojdir svc
     typeset Info_plist Description_plist
     typeset bundle_vendor bundle_version size cmp filelists
 
@@ -485,6 +485,12 @@ pp_backend_macos_bundle () {
 	esac
 	cp -R ${pp_macos_pkg_license} $Resources/License.$sfx
     fi
+
+    # Add services (may modify %files)
+    for svc in $pp_services .; do
+	test . = "$svc" && continue
+	pp_macos_add_service $svc
+    done
 
     # Find file lists (%files.* includes ignore files)
     for cmp in $pp_components; do
@@ -868,7 +874,121 @@ pp_backend_macos_install_script () {
 
 #@ pp_backend_macos_init_svc_vars(): initialise service vars
 pp_backend_macos_init_svc_vars () {
-    :
+    pp_macos_start_services_after_install=false
+    pp_macos_service_name=
+    pp_macos_default_service_id_prefix="com.quest.rc."
+    pp_macos_service_id=
+    pp_macos_service_user=
+    pp_macos_service_group=
+    pp_macos_service_initgroups=
+    pp_macos_service_umask=
+    pp_macos_service_cwd=
+    pp_macos_service_nice=
+}
+
+#@ pp_macos_launchd_plist(svc): create a launched plist file for /Library/LaunchDaemons
+pp_macos_launchd_plist () {
+    typeset svc svc_id
+
+    svc=${pp_macos_service_name:-$1}
+    svc_id=${pp_macos_service_id:-$pp_macos_default_service_id_prefix$svc}
+
+    if [ -n "$pp_svc_plist_file" ]; then
+        echo "## Launchd plist file already defined at $pp_svc_plist_file"
+        return
+    fi
+
+    pp_load_service_vars $svc
+    set -- $cmd
+
+    echo "## Generating the launchd plist file for $svc"
+    pp_svc_plist_file=$pp_wrkdir/$svc.plist
+    cat <<-. > $pp_svc_plist_file
+	<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN
+	http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+	<plist version="1.0">
+	<dict>
+	    <key>Label</key>
+	    <string>$svc_id</string>
+	    <key>ProgramArguments</key>
+	    <array>
+.
+    while test $# != 0; do
+	printf "        <string>$1</string>\n" >> $pp_svc_plist_file
+	shift
+    done
+    cat <<-. >> $pp_svc_plist_file
+	    </array>
+	    <key>KeepAlive</key>
+	    <true/>
+.
+    if test -n "$pp_macos_service_user"; then
+	printf "    <key>UserName</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_user</string>\n" >> $pp_svc_plist_file
+    fi
+    if test -n "$pp_macos_service_group"; then
+	printf "    <key>GroupName</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_group</string>\n" >> $pp_svc_plist_file
+    fi
+    if test -n "$pp_macos_service_initgroups"; then
+	printf "    <key>InitGroups</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_initgroups</string>\n" >> $pp_svc_plist_file
+    fi
+    if test -n "$pp_macos_service_umask"; then
+	printf "    <key>Umask</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_umask</string>\n" >> $pp_svc_plist_file
+    fi
+    if test -n "$pp_macos_service_cwd"; then
+	printf "    <key>WorkingDirectory</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_cwd</string>\n" >> $pp_svc_plist_file
+    fi
+    if test -n "$pp_macos_service_nice"; then
+	printf "    <key>Nice</key>\n" >> $pp_svc_plist_file
+	printf "    <string>$pp_macos_service_nice</string>\n" >> $pp_svc_plist_file
+    fi
+    cat <<-. >> $pp_svc_plist_file
+	</dict>
+	</plist>
+.
+}
+
+#@ pp_macos_add_service(svc): adds to %post/%preun files service setup
+pp_macos_add_service () {
+    typeset svc plist_file plist_dir
+
+    #-- create a plist file for svc
+    svc="$1"
+    pp_macos_launchd_plist "$svc"
+
+    #-- copy the plist file into place and add to %files
+    plist_dir="/Library/LaunchDaemons"
+    plist_file="$plist_dir/$svc.plist"
+    mkdir -p "$pp_destdir/$plist_dir"
+    cp "$pp_svc_plist_file" "$pp_destdir/$plist_dir"
+    pp_add_file_if_missing "$plist_file"
+
+    #-- add code to start the service on install
+    ${pp_macos_start_services_after_install} && <<-. >> $pp_wrkdir/%post.$svc
+	# start service '$svc' automatically after install
+	launchctl load "$plist_file"
+.
+}
+
+#@ pp_macos_remove_service($svc): generate commands to remove svc
+#   output is intended to go to preremove
+pp_macos_remove_service () {
+    typeset file svc
+
+    svc="${pp_macos_smf_service_name:-$1}"
+}
+
+#@ pp_macos_install_service($svc): generate commands to install svc
+#   output is intended to go to postinstall
+pp_macos_install_service () {
+    typeset svc
+
+    svc="${pp_macos_smf_service_name:-$1}"
 }
 
 #@ pp_backend_macos_probe(): output local platform's short name
