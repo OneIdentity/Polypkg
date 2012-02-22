@@ -897,10 +897,9 @@ pp_backend_macos_init_svc_vars () {
 pp_macos_launchd_plist () {
     typeset svc svc_id
 
-    svc=${pp_macos_service_name:-$1}
-    svc_id=${pp_macos_service_id:-$pp_macos_default_service_id_prefix$svc}
+    svc="$1"
+    svc_id="$2"
 
-    pp_load_service_vars $svc
     set -- $cmd
 
     if [ -n "$pp_macos_svc_plist_file" ]; then
@@ -962,15 +961,18 @@ pp_macos_launchd_plist () {
 
 #@ pp_macos_add_service(svc): adds to %post/%preun files service setup
 pp_macos_add_service () {
-    typeset svc plist_file plist_dir
+    typeset svc svc_id plist_file plist_dir
+
+    pp_load_service_vars "$1"
+    svc=${pp_macos_service_name:-$1}
+    svc_id=${pp_macos_service_id:-$pp_macos_default_service_id_prefix$svc}
 
     #-- create a plist file for svc
-    svc="$1"
-    pp_macos_launchd_plist "$svc"
+    pp_macos_launchd_plist "$svc" "$svc_id"
 
     #-- copy the plist file into place and add to %files
     plist_dir="/Library/LaunchDaemons"
-    plist_file="$plist_dir/$svc.plist"
+    plist_file="$plist_dir/$svc_id.plist"
     mkdir -p "$pp_destdir/$plist_dir"
     cp "$pp_macos_svc_plist_file" "$pp_destdir/$plist_file"
     pp_add_file_if_missing "$plist_file"
