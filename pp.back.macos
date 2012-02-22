@@ -975,22 +975,6 @@ pp_macos_add_service () {
 .
 }
 
-#@ pp_macos_remove_service($svc): generate commands to remove svc
-#   output is intended to go to preremove
-pp_macos_remove_service () {
-    typeset file svc
-
-    svc="${pp_macos_smf_service_name:-$1}"
-}
-
-#@ pp_macos_install_service($svc): generate commands to install svc
-#   output is intended to go to postinstall
-pp_macos_install_service () {
-    typeset svc
-
-    svc="${pp_macos_smf_service_name:-$1}"
-}
-
 #@ pp_backend_macos_probe(): output local platform's short name
 pp_backend_macos_probe () {
     typeset name vers arch
