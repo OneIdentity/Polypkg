@@ -635,7 +635,7 @@ CompressedSize 0
 
 #@ pp_backend_macos_flat(): processes output files to generate a flat package
 pp_backend_macos_flat () {
-    typeset pkgdir bundledir Resources lprojdir
+    typeset pkgdir bundledir Resources lprojdir svc
     typeset Info_plist Description_plist
     typeset bundle_vendor bundle_version size numfiles cmp filelists
 
@@ -657,6 +657,12 @@ pp_backend_macos_flat () {
     lprojdir=$Resources/en.lproj
     mkdir $pkgdir $bundledir $Resources $lprojdir ||
 	pp_error "Can't make package temporary directories"
+
+    # Add services (may modify %files)
+    for svc in $pp_services .; do
+	test . = "$svc" && continue
+	pp_macos_add_service $svc
+    done
 
     # Find file lists (%files.* includes ignore files)
     for cmp in $pp_components; do
@@ -884,6 +890,7 @@ pp_backend_macos_init_svc_vars () {
     pp_macos_service_umask=
     pp_macos_service_cwd=
     pp_macos_service_nice=
+    pp_macos_svc_plist_file=
 }
 
 #@ pp_macos_launchd_plist(svc): create a launched plist file for /Library/LaunchDaemons
@@ -893,17 +900,17 @@ pp_macos_launchd_plist () {
     svc=${pp_macos_service_name:-$1}
     svc_id=${pp_macos_service_id:-$pp_macos_default_service_id_prefix$svc}
 
-    if [ -n "$pp_svc_plist_file" ]; then
-        echo "## Launchd plist file already defined at $pp_svc_plist_file"
-        return
-    fi
-
     pp_load_service_vars $svc
     set -- $cmd
 
+    if [ -n "$pp_macos_svc_plist_file" ]; then
+        echo "## Launchd plist file already defined at $pp_macos_svc_plist_file"
+        return
+    fi
+
     echo "## Generating the launchd plist file for $svc"
-    pp_svc_plist_file=$pp_wrkdir/$svc.plist
-    cat <<-. > $pp_svc_plist_file
+    pp_macos_svc_plist_file="$pp_wrkdir/$svc.plist"
+    cat <<-. > $pp_macos_svc_plist_file
 	<?xml version="1.0" encoding="UTF-8"?>
 	<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN
 	http://www.apple.com/DTDs/PropertyList-1.0.dtd >
@@ -915,39 +922,39 @@ pp_macos_launchd_plist () {
 	    <array>
 .
     while test $# != 0; do
-	printf "        <string>$1</string>\n" >> $pp_svc_plist_file
+	printf "        <string>$1</string>\n" >> $pp_macos_svc_plist_file
 	shift
     done
-    cat <<-. >> $pp_svc_plist_file
+    cat <<-. >> $pp_macos_svc_plist_file
 	    </array>
 	    <key>KeepAlive</key>
 	    <true/>
 .
     if test -n "$pp_macos_service_user"; then
-	printf "    <key>UserName</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_user</string>\n" >> $pp_svc_plist_file
+	printf "    <key>UserName</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_user</string>\n" >> $pp_macos_svc_plist_file
     fi
     if test -n "$pp_macos_service_group"; then
-	printf "    <key>GroupName</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_group</string>\n" >> $pp_svc_plist_file
+	printf "    <key>GroupName</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_group</string>\n" >> $pp_macos_svc_plist_file
     fi
     if test -n "$pp_macos_service_initgroups"; then
-	printf "    <key>InitGroups</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_initgroups</string>\n" >> $pp_svc_plist_file
+	printf "    <key>InitGroups</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_initgroups</string>\n" >> $pp_macos_svc_plist_file
     fi
     if test -n "$pp_macos_service_umask"; then
-	printf "    <key>Umask</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_umask</string>\n" >> $pp_svc_plist_file
+	printf "    <key>Umask</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_umask</string>\n" >> $pp_macos_svc_plist_file
     fi
     if test -n "$pp_macos_service_cwd"; then
-	printf "    <key>WorkingDirectory</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_cwd</string>\n" >> $pp_svc_plist_file
+	printf "    <key>WorkingDirectory</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_cwd</string>\n" >> $pp_macos_svc_plist_file
     fi
     if test -n "$pp_macos_service_nice"; then
-	printf "    <key>Nice</key>\n" >> $pp_svc_plist_file
-	printf "    <string>$pp_macos_service_nice</string>\n" >> $pp_svc_plist_file
+	printf "    <key>Nice</key>\n" >> $pp_macos_svc_plist_file
+	printf "    <string>$pp_macos_service_nice</string>\n" >> $pp_macos_svc_plist_file
     fi
-    cat <<-. >> $pp_svc_plist_file
+    cat <<-. >> $pp_macos_svc_plist_file
 	</dict>
 	</plist>
 .
@@ -965,7 +972,7 @@ pp_macos_add_service () {
     plist_dir="/Library/LaunchDaemons"
     plist_file="$plist_dir/$svc.plist"
     mkdir -p "$pp_destdir/$plist_dir"
-    cp "$pp_svc_plist_file" "$pp_destdir/$plist_dir"
+    cp "$pp_macos_svc_plist_file" "$pp_destdir/$plist_file"
     pp_add_file_if_missing "$plist_file"
 
     #-- add code to start the service on install
