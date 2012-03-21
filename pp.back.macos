@@ -615,6 +615,8 @@ CompressedSize 0
         echo "requires=$pp_macos_requires" >> $Resources/uninstall
     fi
 
+    . $pp_wrkdir/%fixup
+
     # Create the bill-of-materials (Archive.bom)
     cat $filelists | pp_macos_files_bom | sort |
 	pp_macos_bom_fix_parents > $pp_wrkdir/tmp.bomls
@@ -783,6 +785,8 @@ pp_backend_macos_flat () {
     cat <<-. >>$bundledir/PackageInfo
 	</pkg-info>
 .
+
+    . $pp_wrkdir/%fixup
 
     # Create the bill-of-materials (Bom)
     cat $filelists | pp_macos_files_bom | sort |
