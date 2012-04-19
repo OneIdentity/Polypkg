@@ -62,7 +62,7 @@ pp_aix_detect_os () {
 #   AIX demands version strings of the form a.b.c.d[.e]
 pp_aix_version_fix () {
     typeset v
-    v=`echo $1 | tr - . | tr -c -d '[0-9].\012'`
+    v=`echo $1 | sed 's/[-+]/./' | tr -c -d '[0-9].\012' | awk -F"." '{ printf "%d.%d.%d.%.4s", $1, $2, $3, $4 }' | sed 's/[.]*$//g'`
     if test x"$v" != x"$1"; then
         pp_warn "stripped version '$1' to '$v'"
     fi
@@ -419,7 +419,7 @@ pp_backend_aix () {
 	    bosboot=N; pp_contains_any "$pp_aix_bosboot" $cmp && bosboot=b
 
             echo $pp_aix_bff_name.$ex \
-                 ${pp_aix_version:-`pp_aix_version_fix "$version"`} \
+             `[ $pp_aix_version ] && pp_aix_version_fix $pp_aix_version || pp_aix_version_fix "$version"` \
 	         1 $bosboot $content \
 	         $pp_aix_lang "$summary $briefex"
 	    echo "["
@@ -573,7 +573,7 @@ pp_backend_aix_cleanup () {
 #-- prints the output package name without the $pp_wrkdir prefix.
 #   the name always starts with $name-$version
 pp_backend_aix_names () {
-	echo "$name.${pp_aix_version:-`pp_aix_version_fix "$version"`}.bff"
+    echo "$name.`[ $pp_aix_version ] && pp_aix_version_fix $pp_aix_version || pp_aix_version_fix "$version"`.bff"
 }
 
 #@ pp_backend_aix_install_script(): generate install script
