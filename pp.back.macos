@@ -802,7 +802,13 @@ pp_backend_macos_flat () {
     test -d $pp_wrkdir/bom_stage && $pp_macos_sudo rm -rf $pp_wrkdir/bom_stage
 
     # Create the flat package with xar (like pkgutil --flatten does)
-    (cd $pkgdir && /usr/bin/xar --distribution --no-compress Scripts --no-compress Payload -jcf "../$name-$version.pkg" *)
+    # Note that --distribution is only supported by Mac OS X 10.6 and above
+    xar_flags="--compression=bzip2 --no-compress Scripts --no-compress Payload"
+    case $mac_version in
+        "10.5"*) ;;
+	*)	 xar_flags="$xar_flags --distribution";;
+    esac
+    (cd $pkgdir && /usr/bin/xar $xar_flags -cf "../$name-$version.pkg" *)
 }
 
 #@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
