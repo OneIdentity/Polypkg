@@ -252,18 +252,55 @@ pp_macos_rewrite_cpio () {
 	undef %users;
 	undef %groups;
 	# parse the cpio file
-	while (read(STDIN, my $header, 76)) {
-	    die "bad magic" unless $header =~ m/^070707/;
-	    my $namesize = oct(substr($header, 59, 6));
-	    my $filesize = oct(substr($header, 65, 11));
-	    read(STDIN, my $name, $namesize);
-	    # update uid, gid and mode
+	my $hdrlen = 76;
+	while (read(STDIN, my $header, $hdrlen)) {
+	    my ($name, $namesize, $filesize);
+	    my $filepad = 0;
+	    if ($header =~ m/^07070[12]/) {
+	        # SVR4 ASCII format, convert to ODC
+	        if ($hdrlen == 76) {
+	            # Read in rest of header and update header len for SVR4
+	            read(STDIN, $header, 110 - 76, 76);
+	            $hdrlen = 110;
+	        }
+	        my $ino = hex(substr($header, 6, 8)) & 0x3ffff;
+	        my $mode = hex(substr($header, 14, 8)) & 0x3ffff;
+	        my $uid = hex(substr($header, 22, 8)) & 0x3ffff;
+	        my $gid = hex(substr($header, 30, 8)) & 0x3ffff;
+	        my $nlink = hex(substr($header, 38, 8)) & 0x3ffff;
+	        my $mtime = hex(substr($header, 46, 8)) & 0xffffffff;
+	        $filesize = hex(substr($header, 54, 8)) & 0xffffffff;
+	        my $dev_maj = hex(substr($header, 62, 8));
+	        my $dev_min = hex(substr($header, 70, 8));
+	        my $dev = &makedev($dev_maj, $dev_min) & 0x3ffff;
+	        my $rdev_maj = hex(substr($header, 78, 8));
+	        my $rdev_min = hex(substr($header, 86, 8));
+	        my $rdev = &makedev($rdev_maj, $rdev_min) & 0x3ffff;
+	        $namesize = hex(substr($header, 94, 8)) & 0x3ffff;
+	        read(STDIN, $name, $namesize);
+	        # Header + name is padded to a multiple of 4 bytes
+	        my $namepad = (($hdrlen + $namesize + 3) & 0xfffffffc) - ($hdrlen + $namesize);
+	        read(STDIN, my $padding, $namepad) if ($namepad);
+	        # File data is padded to be a multiple of 4 bytes
+	        $filepad = (($filesize + 3) & 0xfffffffc) - $filesize;
+
+	        my $new_header = sprintf("070707%06o%06o%06o%06o%06o%06o%06o%011o%06o%011o", $dev, $ino, $mode, $uid, $gid, $nlink, $rdev, $mtime, $namesize, $filesize);
+	        $header = $new_header;
+	    } elsif ($header =~ m/^070707/) {
+	        # POSIX Portable ASCII Format
+	        $namesize = oct(substr($header, 59, 6));
+	        $filesize = oct(substr($header, 65, 11));
+	        read(STDIN, $name, $namesize);
+	    } else {
+	        die "bad magic";
+	    }
+	    # update uid, gid and mode (already in octal)
 	    substr($header, 24, 6) = $uid{$name} if exists $uid{$name};
 	    substr($header, 30, 6) = $gid{$name} if exists $gid{$name};
 	    substr($header, 18, 6) = $mode{$name} if exists $mode{$name};
 	    print($header, $name);
 	    # check for trailer at EOF
-	    last if $filesize == 0 && $name eq "TRAILER!!!\0";
+	    last if $filesize == 0 && $name =~ /^TRAILER!!!\0/;
 	    # copy-through the file data
 	    while ($filesize > 0) {
 	        my $seg = 8192;
@@ -272,6 +309,8 @@ pp_macos_rewrite_cpio () {
 	        print $data;
 	        $filesize -= $seg;
 	    }
+	    # If file data is padded, skip it
+	    read(STDIN, my $padding, $filepad) if ($filepad);
 	}
 	# pass through any padding at the end (blocksize-dependent)
 	for (;;) {
@@ -280,6 +319,10 @@ pp_macos_rewrite_cpio () {
 	    print $data;
 	}
 	exit(0);
+
+	sub makedev {
+	    (((($_[0] & 0xff)) << 24) | ($_[1] & 0xffffff));
+	}
 	__DATA__
 .
     # Append to the script the %files data
