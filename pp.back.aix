@@ -259,7 +259,7 @@ pp_aix_add_service () {
 
 	set -- $cmd
 	cmd_cmd="$1"; shift
-	cmd_arg="$*";
+	cmd_arg="${pp_aix_mkssys_cmd_args:-$*}";
 
 	case "$stop_signal" in
 		HUP) stop_signal=1;;
