@@ -129,6 +129,7 @@ pp_rpm_detect_distro () {
        pp_rpm_distro=`awk '
           /^Red Hat Enterprise Linux/ { print "rhel" $7; exit; }
           /^CentOS release/           { print "centos" $3; exit; }
+          /^CentOS Linux release/     { print "centos" $4; exit; }
           /^Red Hat Linux release/    { print "rh" $5; exit; }
        ' /etc/redhat-release`
     elif test -f /etc/SuSE-release; then
