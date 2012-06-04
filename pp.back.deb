@@ -80,7 +80,7 @@ pp_deb_munge_description () {
     # Insert a leading space on each line, replace blank lines with a
     #space followed by a full-stop.
     pp_deb_control_description="`echo ${pp_deb_description:-$description} | \
-        sed 's,^\(.*\)$, \1, " \ | sed 's,^[ \t]*$, .,g' | fmt -w 80`"
+        sed 's,^\(.*\)$, \1, ' | sed 's,^[ \t]*$, .,g' | fmt -w 80`"
 }
 
 #@ pp_deb_detect_arch: sets pp_deb_arch, pp_deb_arch_std
