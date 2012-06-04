@@ -46,9 +46,6 @@ pp_backend_deb_init () {
 
     # Make sure any programs we require are installed
     pp_deb_check_required_programs
-
-    # Set generated/interrogated platforms variables
-    pp_deb_munge_description
 }
 
 #@ pp_deb_check_required_programs(): looks for required programs
@@ -351,6 +348,9 @@ pp_deb_makedeb () {
 #@ pp_backend_deb(): processes output files to generate a package files
 pp_backend_deb () {
     local debname
+
+    # Munge description for control file inclusion
+    pp_deb_munge_description
 
     # Handle services
     pp_deb_handle_services $cmp
