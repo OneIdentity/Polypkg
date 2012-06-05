@@ -204,19 +204,19 @@ pp_deb_handle_services() {
 	    test x"yes" = x"$enable" &&
             cat<<-. >> $pp_wrkdir/%post.run
 		# Install the service links
-		/usr/sbin/update-rc.d $svc defaults
+		update-rc.d $svc defaults
 .
 
             #-- prepend %preun code to stop svc
             cat<<-. | pp_prepend $pp_wrkdir/%preun.run
 		# Stop the $svc service
-		if test -x /usr/sbin/invoke-rc.d; then
-		    /usr/sbin/invoke-rc.d $svc stop
-		else
-		    /etc/init.d/$svc stop
-		fi
+		invoke-rc.d $svc stop
+.
+
+            #-- prepend %preun code to remove service
+            cat<<-. | pp_prepend $pp_wrkdir/%postun.run
 		# Remove the service links
-		/usr/sbin/update-rc.d -f $svc remove
+		update-rc.d -f $svc remove
 .
         done
         #pp_deb_service_remove_common | pp_prepend $pp_wrkdir/%preun.run

@@ -10,7 +10,7 @@ pp_backend_deb_init_svc_vars () {
 
     lsb_required_start='$local_fs $network'
     lsb_should_start=
-    lsb_required_stop=
+    lsb_required_stop='$local_fs'
     lsb_description=
 
     start_priority=50
@@ -27,7 +27,7 @@ pp_deb_service_make_init_script () {
     local out=$pp_destdir$script
     local _process _cmd
 
-    pp_add_file_if_missing $script run 755 || return 0
+    pp_add_file_if_missing $script run 755 v || return 0
 
     #-- start out as an empty shell script
     cat <<-'.' >$out
