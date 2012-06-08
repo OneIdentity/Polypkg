@@ -73,9 +73,9 @@ pp_sd_write_files () {
 		# current working (source) directory, not the destination;
 		# we need to qualify them to prevent this.
 		case "$st" in
-		    /*) echo "$line $st $p";;
-		    *) echo "$line `dirname $p`/$st $p";;
+		    [!/]*) st="`dirname \"$p\"`/$st";;
 		esac
+		echo "$line -o $o -g $g -m $m $st $p"
 		;;
             *)
 		echo "$line -o $o -g $g -m $m $pp_destdir$p $p"
