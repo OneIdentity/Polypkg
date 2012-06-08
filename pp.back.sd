@@ -70,10 +70,10 @@ pp_sd_write_files () {
         case $t in
             s)
 		# swpackage will make unqualified links relative to the
-		# current working (source) directory, not the destination;
-		# we need to qualify them to prevent this.
+		# current working (source) directory, not the destination,
+		# unless we specify a default source dir.
 		case "$st" in
-		    [!/]*) st="`dirname \"$p\"`/$st";;
+		    [!/]*) echo "                directory `dirname \"$p\"`";;
 		esac
 		echo "$line -o $o -g $g -m $m $st $p"
 		;;
