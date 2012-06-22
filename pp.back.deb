@@ -203,20 +203,32 @@ pp_deb_handle_services() {
             #-- append %post code to install the svc
 	    test x"yes" = x"$enable" &&
             cat<<-. >> $pp_wrkdir/%post.run
-		# Install the service links
-		update-rc.d $svc defaults
+		case "\$1" in
+		    configure)
+		        # Install the service links
+		        update-rc.d $svc defaults
+		        ;;
+		esac
 .
 
             #-- prepend %preun code to stop svc
             cat<<-. | pp_prepend $pp_wrkdir/%preun.run
-		# Stop the $svc service
-		invoke-rc.d $svc stop
+		case "\$1" in
+		    remove|deconfigure|upgrade)
+		        # Stop the $svc service
+		        invoke-rc.d $svc stop
+		        ;;
+		esac
 .
 
-            #-- prepend %preun code to remove service
+            #-- prepend %postun code to remove service
             cat<<-. | pp_prepend $pp_wrkdir/%postun.run
-		# Remove the service links
-		update-rc.d -f $svc remove
+		case "\$1" in
+		    purge)
+		        # Remove the service links
+		        update-rc.d $svc remove
+		        ;;
+		esac
 .
         done
         #pp_deb_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
