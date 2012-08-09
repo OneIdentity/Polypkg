@@ -277,9 +277,14 @@ pp_deb_make_DEBIAN() {
 	cp $pp_wrkdir/%conffiles.$cmp $data/DEBIAN/conffiles
     fi
 
+    # Create preinst
+    pp_deb_make_package_maintainer_script "$data/DEBIAN/preinst" \
+        "$pp_wrkdir/%pre.$cmp" "Pre-install script for $cmp_full_name"\
+        || exit $?
+
     # Create postinst
     pp_deb_make_package_maintainer_script "$data/DEBIAN/postinst" \
-        "$pp_wrkdir/%post.$cmp" "Post install script for $cmp_full_name"\
+        "$pp_wrkdir/%post.$cmp" "Post-install script for $cmp_full_name"\
         || exit $?
 
     # Create prerm
