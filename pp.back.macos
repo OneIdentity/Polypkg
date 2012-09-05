@@ -155,6 +155,7 @@ pp_backend_macos_init () {
     pp_macos_pkg_readme=
     pp_macos_pkg_welcome=
     pp_macos_sudo=sudo
+    pp_macos_installer_plugin=
     # OS X puts the library version *before* the .dylib extension
     pp_shlib_suffix='*.dylib'
 }
@@ -684,6 +685,15 @@ CompressedSize 0
     awk '{ print "." $6 }' $filelists | sed 's:/$::' | sort | /usr/bin/cpio -o | pp_macos_rewrite_cpio $filelists | gzip -9f -c > $Contents/Archive.pax.gz
     )
 
+    # Copy installer plugins if any
+    if test -n "$pp_macos_installer_plugin"; then
+	if test ! -f "$pp_macos_installer_plugin/InstallerSections.plist"; then
+	    pp_error "Missing InstallerSections.plist file in $pp_macos_installer_plugin"
+	fi
+	mkdir -p $pkgdir/Plugins
+	cp -R "$pp_macos_installer_plugin"/* $pkgdir/Plugins
+    fi
+
     test -d $pp_wrkdir/bom_stage && $pp_macos_sudo rm -rf $pp_wrkdir/bom_stage
 
     rm -f ${name}-${version}.dmg
@@ -853,6 +863,15 @@ pp_backend_macos_flat () {
     cd $pp_destdir || pp_error "Can't cd to $pp_destdir"
     awk '{ print "." $6 }' $filelists | sed 's:/$::' | sort | /usr/bin/cpio -o | pp_macos_rewrite_cpio $filelists | gzip -9f -c > $bundledir/Payload
     )
+
+    # Copy installer plugins if any
+    if test -n "$pp_macos_installer_plugin"; then
+	if test ! -f "$pp_macos_installer_plugin/InstallerSections.plist"; then
+	    pp_error "Missing InstallerSections.plist file in $pp_macos_installer_plugin"
+	fi
+	mkdir -p $pkgdir/Plugins
+	cp -R "$pp_macos_installer_plugin"/* $pkgdir/Plugins
+    fi
 
     test -d $pp_wrkdir/bom_stage && $pp_macos_sudo rm -rf $pp_wrkdir/bom_stage
 
