@@ -121,19 +121,13 @@ do_start()
     then
         group_opt="--group $GROUP"
     fi
-    if [ "$VERBOSE" = no ]
-    then
-        quiet_opt="--quiet"
-    else
-        quiet_opt="--verbose"
-    fi
 
-	start-stop-daemon --start $quiet_opt $pidfile_opt $user_opt --exec $DAEMON --test > /dev/null \
+	start-stop-daemon --start --quiet $pidfile_opt $user_opt --exec $DAEMON --test > /dev/null \
 	    || return 1
 
     # Note: there seems to be no way to tell whether the daemon will fork itself or not, so pass
     # --background for now
-    start-stop-daemon --start $quiet_opt $pidfile_opt $user_opt --exec $DAEMON -- \
+    start-stop-daemon --start --quiet $pidfile_opt $user_opt --exec $DAEMON -- \
     	$DAEMON_ARGS \
     	|| return 2
 }
@@ -162,13 +156,7 @@ do_stop()
     then
         signal_opt="--signal $STOP_SIGNAL"
     fi
-    if [ "$VERBOSE" = "no" ]
-    then
-        quiet_opt="--quiet"
-    else
-        quiet_opt="--verbose"
-    fi
-	start-stop-daemon --stop $quiet_opt $signal_opt --retry=TERM/30/KILL/5 $pidfile_opt --name $NAME
+	start-stop-daemon --stop --quiet $signal_opt --retry=TERM/30/KILL/5 $pidfile_opt --name $NAME
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks
@@ -177,7 +165,7 @@ do_stop()
 	# that waits for the process to drop all resources that could be
 	# needed by services started subsequently.  A last resort is to
 	# sleep for some time.
-	start-stop-daemon --stop $quiet_opt --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
 	[ "$?" = 2 ] && return 2
 	# Many daemons don't delete their pidfiles when they exit.
 	test -z $PIDFILE || rm -f $PIDFILE
@@ -201,7 +189,7 @@ do_reload() {
     fi
     if [ -n "$RELOAD_SIGNAL" ]
     then
-	    start-stop-daemon --stop --signal $RELOAD_SIGNAL $quiet_opt $pidfile_opt --name $NAME
+	    start-stop-daemon --stop --signal $RELOAD_SIGNAL --quiet $pidfile_opt --name $NAME
     fi
 	return 0
 }
