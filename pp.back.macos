@@ -383,8 +383,7 @@ pp_macos_bom_fix_parents () {
 		    # Make sure we do not override system directories
 		    if ($d =~ m:^\./(etc|var)$:) {
 		      my $tgt = "private/$1";
-		      my $_ = `/usr/bin/printf "$tgt" | /usr/bin/cksum /dev/stdin`;
-		      my ($sum, $len) = split;
+		      my ($sum, $len) = split(/\s+/, `/usr/bin/printf "$tgt" | /usr/bin/cksum /dev/stdin`);
 		      print "$d\t120755\t0/0\t$len\t$sum\t$tgt\n";
 		    } elsif ($d eq "." || $d eq "./Library") {
 		      print "$d\t41775\t0/80\n";
