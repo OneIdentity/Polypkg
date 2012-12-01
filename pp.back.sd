@@ -217,14 +217,20 @@ pp_sd_service_script () {
 	    fi
 	}
 
-	pp_running () {
-	    if test ! -s "\$pidfile"; then
-	        return 1
-	    else
-	        read pid < "\$pidfile"
-	        kill -0 "\$pid" 2>/dev/null
-	    fi
-	}
+        pp_running () {
+            if test -s "\$pidfile"; then
+                read pid < "\$pidfile" 2>/dev/null
+                if test \${pid:-0} -gt 1 && kill -0 "\$pid" 2>/dev/null; then
+                    # make sure command name matches
+                    c=\`basename $cmd\`
+                    pid="\`ps -p \$pid 2>/dev/null | sed -n \"s/^ *\(\$pid\) .*\$c *\$/\1/p\"\`"
+                    if test -n "\$pid"; then
+                        return 0
+                    fi
+                fi
+            fi
+            return 1
+        }
 
 	case \$1 in
 	    start_msg) echo "Starting the \$svc service";;
