@@ -311,7 +311,7 @@ _EOF
                 read pid < "$pidfile" 2>/dev/null
                 if test ${pid:-0} -gt 1 && kill -0 "$pid" 2>/dev/null; then
                     # make sure command name matches up to the first 8 chars
-                    c="`basename $_cmd | /usr/bin/cut -c 1-8`"
+                    c="`echo $_cmd | sed -e 's: .*::' -e 's:^.*/::' -e 's/^\(........\).*$/\1/'`"
                     pid="`ps -p $pid 2>/dev/null | sed -n \"s/^ *\($pid\) .*$c *$/\1/p\"`"
                     if test -n "$pid"; then
                         return 0
