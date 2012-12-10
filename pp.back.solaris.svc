@@ -387,13 +387,13 @@ pp_solaris_remove_service () {
     file=${pp_solaris_service_script:-"/etc/init.d/${pp_solaris_service_script_name:-$svc}"}
 
     echo '
-'$file' stop >/dev/null 2>/dev/null
-# Remove the service from SMF if present
+# Stop the service and remove it from SMF if present
 if [ "x${PKG_INSTALL_ROOT}" = 'x' ]; then
     if [ -x /usr/sbin/svcadm ] ; then
-        # Likely un-needed, but just in case.
         /usr/sbin/svcadm disable -s '$svc' 2>/dev/null
         /usr/sbin/svccfg delete '$svc' 2>/dev/null
+    else
+        '$file' stop >/dev/null 2>/dev/null
     fi
 fi
     '
