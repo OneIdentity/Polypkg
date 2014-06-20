@@ -77,7 +77,7 @@ pp_load_service_vars () {
 #    flags contains the letter v if the file is volatile
 pp_files_expand () {
     typeset _p _mode _group _owner _flags _path _optional _has_target _tree
-    typeset _path _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
+    typeset _target _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx
     typeset _ignore _a
 
     test $# -eq 0 && return
