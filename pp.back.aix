@@ -561,7 +561,9 @@ pp_backend_aix () {
 	(cd $pp_destdir && pp_verbose  /usr/sbin/backup -i -q -p -f -) \
           < $pp_wrkdir/bff.list \
 	  > $pp_wrkdir/$outbff || pp_error "backup failed"
-        $pp_aix_sudo /usr/sbin/installp -l -d $pp_wrkdir/$outbff
+	if test -n "$pp_aix_sudo" -o -x /usr/sbin/installp; then
+	    $pp_aix_sudo /usr/sbin/installp -l -d $pp_wrkdir/$outbff
+	fi
 }
 
 #@ pp_backend_aix_cleanup(): removes leftover files
