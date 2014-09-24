@@ -24,6 +24,10 @@ pp_backend_rpm_init () {
     pp_rpm_packager=
     pp_rpm_provides=
     pp_rpm_requires=
+    pp_rpm_requires_pre=
+    pp_rpm_requires_post=
+    pp_rpm_requires_preun=
+    pp_rpm_requires_postun=
     pp_rpm_release=
     pp_rpm_epoch=
     pp_rpm_dev_group="Development/Libraries"
@@ -33,8 +37,20 @@ pp_backend_rpm_init () {
     pp_rpm_dbg_description=
     pp_rpm_doc_description=
     pp_rpm_dev_requires=
+    pp_rpm_dev_requires_pre=
+    pp_rpm_dev_requires_post=
+    pp_rpm_dev_requires_preun=
+    pp_rpm_dev_requires_postun=
     pp_rpm_dbg_requires=
+    pp_rpm_dbg_requires_pre=
+    pp_rpm_dbg_requires_post=
+    pp_rpm_dbg_requires_preun=
+    pp_rpm_dbg_requires_postun=
     pp_rpm_doc_requires=
+    pp_rpm_doc_requires_pre=
+    pp_rpm_doc_requires_post=
+    pp_rpm_doc_requires_preun=
+    pp_rpm_doc_requires_postun=
     pp_rpm_dev_provides=
     pp_rpm_dbg_provides=
     pp_rpm_doc_provides=
@@ -317,7 +333,7 @@ EOF
 #-- Reads output files from the frontend and generates multiple output
 #   package files under $pp_wrkdir/
 pp_backend_rpm () {
-    local cmp specfile _summary _group _desc _pkg _subname svc
+    local cmp specfile _summary _group _desc _pkg _subname svc _script
 
 	specfile=$pp_wrkdir/$name.spec
         : > $specfile
@@ -340,12 +356,14 @@ pp_backend_rpm () {
 		Group:   ${pp_rpm_group}
 		License: ${pp_rpm_license}
 .
-	if test -n "$pp_rpm_url"; then
-	    pp_rpm_label "URL"  "$pp_rpm_url"               >>$specfile
-	fi
-	pp_rpm_label "Vendor"   "${pp_rpm_vendor:-$vendor}" >>$specfile
-	pp_rpm_label "Packager" "$pp_rpm_packager"          >>$specfile
-	pp_rpm_label "Provides" "$pp_rpm_provides"          >>$specfile
+	pp_rpm_label "URL"              "$pp_rpm_url"             >>$specfile
+	pp_rpm_label "Vendor"           "${pp_rpm_vendor:-$vendor}" >>$specfile
+	pp_rpm_label "Packager"         "$pp_rpm_packager"        >>$specfile
+	pp_rpm_label "Provides"         "$pp_rpm_provides"        >>$specfile
+	pp_rpm_label "Requires(pre)"    "$pp_rpm_requires_pre"    >>$specfile
+	pp_rpm_label "Requires(post)"   "$pp_rpm_requires_post"   >>$specfile
+	pp_rpm_label "Requires(preun)"  "$pp_rpm_requires_preun"  >>$specfile
+	pp_rpm_label "Requires(postun)" "$pp_rpm_requires_postun" >>$specfile
 
 	test -n "$pp_rpm_serial" && pp_warn "pp_rpm_serial deprecated"
 	if test -n "$pp_rpm_epoch"; then
@@ -399,6 +417,12 @@ pp_backend_rpm () {
 			Summary: $name $_summary
 			Group: $_group
 .
+                for _script in pre post preun postun; do
+                    eval '_pkg="$pp_rpm_'$cmp'_requires_'$_script'"'
+                    if test -n "$_pkg"; then
+                        eval pp_rpm_label "Requires($_script)" $_pkg
+                    fi
+                done
                 eval '_pkg="$pp_rpm_'$cmp'_requires"'
                 if test -n "$_pkg"; then
                     eval pp_rpm_label Requires ${pp_rpm_name:-$name} $_pkg
