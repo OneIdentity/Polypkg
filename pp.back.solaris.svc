@@ -217,7 +217,7 @@ pp_solaris_make_service_group () {
 #   creates and adds the file /etc/init.d/$svc to %files.run if
 #   it isn't there already.
 pp_solaris_make_service () {
-    typeset file out _cmd svc
+    typeset file out svc
 
     svc="${pp_solaris_smf_service_name:-$1}"
     file=${pp_solaris_service_script:-"/etc/init.d/${pp_solaris_service_script_name:-$svc}"}
@@ -269,37 +269,57 @@ fi
 _EOF
     fi
 
-    #-- construct a start command that builds a pid file as needed
-    #   and forks the daemon
-    _cmd="$cmd";
+    #-- Construct a start command that builds a pid file as needed
+    #   and forks the daemon.  Services started by smf may not fork.
     if test -z "$pidfile"; then
 	# The service does not define a pidfile, so we have to make
 	# our own up. On Solaris systems where there is no /var/run
 	# we must use /tmp to guarantee the pid files are removed after
 	# a system crash.
-	cat <<. >>$out
+	if test -z "$pp_piddir"; then
 	    pp_piddir="/var/run"
-	    test -d "\$pp_piddir/." || pp_piddir="/tmp"
+	fi
+	cat <<. >>$out
+	    pp_isdaemon=0
+	    pp_piddirs="${pp_piddir}${pp_piddir+ }/var/run /tmp"
+	    for pp_piddir in \$pp_piddirs; do
+		test -d "\$pp_piddir/." && break
+	    done
 	    pidfile="\$pp_piddir/$svc.pid"
 .
-        _cmd="$cmd & echo \$! > \$pidfile"
     else
 	# The service is able to write its own PID file
 	cat <<. >>$out
+	    pp_isdaemon=1
 	    pidfile="$pidfile"
 .
     fi
 
+    pp_su=
     if test "${user:-root}" != "root"; then
-        _cmd="su $user -c exec $_cmd";
+	pp_su="su $user -c exec "
     fi
 
     cat <<. >>$out
 	stop_signal="${stop_signal:-TERM}"
 	svc="${svc}"
 
-        # generated command to run $svc as a daemon process
-        pp_exec () { $_cmd; }
+        # generated command to run $svc as a service
+	pp_exec () {
+	    if [ \$pp_isdaemon -ne 1 ]; then
+		if [ "t\$PP_SMF_SERVICE" = "t" ]; then
+		    ${pp_su}$cmd &
+		    echo \$! > \$pidfile
+		else
+		    echo "via exec."
+		    echo \$$ > \$pidfile
+		    exec ${pp_su}$cmd
+		    return 1
+		fi
+	    else
+		${pp_su}$cmd
+	    fi
+	}
 .
 
     #-- write the invariant section of the init script
@@ -311,7 +331,7 @@ _EOF
                 read pid < "$pidfile" 2>/dev/null
                 if test ${pid:-0} -gt 1 && kill -0 "$pid" 2>/dev/null; then
                     # make sure command name matches up to the first 8 chars
-                    c="`echo $_cmd | sed -e 's: .*::' -e 's:^.*/::' -e 's/^\(........\).*$/\1/'`"
+                    c="`echo $cmd | sed -e 's: .*::' -e 's:^.*/::' -e 's/^\(........\).*$/\1/'`"
                     pid="`ps -p $pid 2>/dev/null | sed -n \"s/^ *\($pid\) .*$c *$/\1/p\"`"
                     if test -n "$pid"; then
                         return 0
