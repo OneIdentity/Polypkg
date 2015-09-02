@@ -55,6 +55,10 @@ pp_backend_rpm_init () {
     pp_rpm_dbg_provides=
     pp_rpm_doc_provides=
 
+    pp_rpm_autoprov=
+    pp_rpm_autoreq=
+    pp_rpm_autoreqprov=
+
     pp_rpm_dbg_pkgname=debug
     pp_rpm_dev_pkgname=devel
     pp_rpm_doc_pkgname=doc
@@ -364,6 +368,9 @@ pp_backend_rpm () {
 	pp_rpm_label "Requires(post)"   "$pp_rpm_requires_post"   >>$specfile
 	pp_rpm_label "Requires(preun)"  "$pp_rpm_requires_preun"  >>$specfile
 	pp_rpm_label "Requires(postun)" "$pp_rpm_requires_postun" >>$specfile
+	pp_rpm_label "AutoProv"         "$pp_rpm_autoprov"        >>$specfile
+	pp_rpm_label "AutoReq"          "$pp_rpm_autoreq"         >>$specfile
+	pp_rpm_label "AutoReqProv"      "$pp_rpm_autoreqprov"     >>$specfile
 
 	test -n "$pp_rpm_serial" && pp_warn "pp_rpm_serial deprecated"
 	if test -n "$pp_rpm_epoch"; then
