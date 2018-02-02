@@ -42,9 +42,12 @@ install: hello hello.conf
 	rm -f $(DESTDIR)$(bindir)/goodbye
 	ln -s hello $(DESTDIR)$(bindir)/goodbye
 	mkdir -p $(DESTDIR)$(libdir)/hello
+	rm -f $(DESTDIR)$(libdir)/slink
+	ln -s hello/ $(DESTDIR)$(libdir)/slink
 
 clean:
 	rm -rf $(DESTDIR) inst.sh
+	rm -rf pp.work.*
 
 inst-clean:
 	rm -f $(DESTDIR)$(sysconfdir)/hello.conf \
@@ -55,4 +58,6 @@ inst-clean:
 	-rmdir $(DESTDIR)$(sbindir)
 	-rmdir $(DESTDIR)$(bindir)
 	-rmdir $(DESTDIR)$(sysconfdir)
-	rmdir $(DESTDIR)
+	-rmdir $(DESTDIR)$(libdir)/hello
+	-rmdir $(DESTDIR)$(libdir)
+	rm -rf $(DESTDIR)
