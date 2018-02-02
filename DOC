@@ -206,7 +206,7 @@ The %set section
 				  will be replaced by spaces.
 				  [defaults to "No description"]
 		copyright	- copyright message, limit 40 characters
-				  [default is "Copyright YYYY, Quest Software..."]
+				  [default is "Copyright YYYY, One Identity..."]
 
         The %set section is *not* subject to %{} or %() expansion.
 

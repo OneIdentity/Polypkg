@@ -1,4 +1,4 @@
-# Copyright 2012 Quest Software, Inc. ALL RIGHTS RESERVED.
+# Copyright 2018 One Identity, LLC. ALL RIGHTS RESERVED.
 
 PP_SHELL=	/bin/sh
 INSTALLED_PP = /data/rc/pub/rc/polypkg/pp
@@ -60,7 +60,7 @@ pp: $(PP_SRCS)
 # removed and are concatenated together to make the shippable pp script.
 pp-stripped: $(PP_SRCS)
 	(echo '#!$(PP_SHELL)';                \
-	 echo "# Copyright `date +%Y` Quest Software, Inc. ALL RIGHTS RESERVED"; \
+	 echo "# Copyright `date +%Y` One Identity, LLC. ALL RIGHTS RESERVED"; \
 	 echo 'pp_revision="$(shell date +%Y%m%d)"'; \
 	 cat pp.licence; \
 	 sed -e '/^#/d' $(PP_SRCS);	\
