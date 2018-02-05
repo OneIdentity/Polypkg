@@ -31,6 +31,8 @@ PP_SRCS= \
 	 pp.back.macos.func \
 	 pp.back.inst \
 	 pp.back.null \
+	 pp.back.bsd \
+	 pp.back.bsd.func \
 	 pp.quest
 
 all: pp pp-stripped check
