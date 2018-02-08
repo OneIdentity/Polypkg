@@ -5,6 +5,7 @@
 #
 #
 
+# Add bsd to the list of platforms to be considered
 pp_platforms="$pp_platforms bsd"
 
 #@ pp_backend_bsd_detect(): return true if this platform uses FreeBSD pkgs
@@ -26,26 +27,41 @@ pp_backend_bsd_init () {
     pp_bsd_origin=
     pp_bsd_comment=
     pp_bsd_arch=
-    pp_bsd_www="https://www.oneidentity.com"
-    pp_bsd_maintainer="One Identity, LLC <support@oneidentity.com>"
-    pp_bsd_prefix="/"
+    pp_bsd_www=
+    pp_bsd_maintainer=
+    pp_bsd_prefix="/usr/local"
     pp_bsd_desc=
     pp_bsd_message=
+
+    # pp_bsd_category must be in array format comma seperated
+    # pp_bsd_category=[security,network]
     pp_bsd_category=
-    pp_bsd_depends=
+
+    # pp_bsd_licenselogic can be one of the following: single, and, or unset
+    pp_bsd_licenselogic=
+
+    # pp_bsd_licenses must be in array format comma seperated
+    # pp_bsd_licenses=[GPLv2,MIT]
+    pp_bsd_licenses=
+
+    # pp_bsd_annotations. These can be any key: value pair
+    # key must be seperated by a :
+    # keyvalue pairs must be comma seperated
+    # pp_bsd_annotations="repo_type: binary, somekey: somevalue"
+    # since all packages created by PolyPackage will be of type binary
+    # let's just set it now.
+    pp_bsd_annotations="repo_type: binary"
 
     pp_bsd_dbg_pkgname="debug"
     pp_bsd_dev_pkgname="devel"
     pp_bsd_doc_pkgname="doc"
-
-    pp_bsd_pkg_plist="$pp_wrkdir/files.plist"
 
     # Make sure any programs we require are installed
     pp_bsd_check_required_programs
 
 }
 
-#@ 
+#@ pp_bsd_cmp_full_name(cmp): 
 pp_bsd_cmp_full_name () {
     typeset prefix
     prefix="${pp_bsd_name:-$name}"
@@ -58,14 +74,13 @@ pp_bsd_cmp_full_name () {
     esac
 }
 
-
 #@ pp_bsd_check_required_programs(): looks for required programs
 pp_bsd_check_required_programs () {
     local p needed notfound ok
     needed= notfound=
 
     # list of programs FreeBSD needs in order to create a binary package
-    for prog in pkg
+    for prog in ${pp_bsd_required_programs:-"pkg"}
     do
         if which $prog 2>&1 > /dev/null; then
             pp_debug "$prog: found"
@@ -85,6 +100,7 @@ pp_bsd_check_required_programs () {
     fi
 }
 
+#@pp_bsd_detect_os: sets pp_bsd_os and pp_bsd_os_rev
 pp_bsd_detect_os () {
     typeset revision
 
@@ -103,24 +119,134 @@ pp_bsd_detect_arch() {
     esac
 }
 
-#@ pp_bsd_make_manifest: creates a pkg manifest file
-pp_bsd_make_manifest() { 
-    package_name=`pp_bsd_cmp_full_name $cmp`
-    cat <<-.
-    name: "${package_name}"
-    origin: "${pp_bsd_origin}"
-    category: "${pp_bsd_category}"
-    arch: "${pp_bsd_arch}"
-    version: "${pp_bsd_version:-$version}"
-    maintainer: "${pp_bsd_maintainer}"
-    prefix: "${pp_bsd_prefix}"
-    desc: "${pp_bsd_desc:-$description}"
-    comment: "${pp_bsd_comment:-$summary}"
-    www: "${pp_bsd_www}"
-    message: "${pp_bsd_message}"
-.
+#@ pp_bsd_label(arg) writes a label in format of label
+pp_bsd_label () {
+    local label arg
+    label="$1"; shift
+    for arg
+    do
+        test -z "$arg" || echo "$label: $arg"
+    done
 }
 
+#@ pp_bsd_make_annotations(manifest): Annotations are freeform tag-value pairs.
+#@ pp_bsd_annotations should be in the form of: "key:value, key:value, ..."
+#@ see man pkg-annotate(8) 
+pp_bsd_make_annotations () {
+
+    test -z $1 && pp_die "pp_bsd_make_annotations requires a parameter"
+    manifest=$1
+
+    # Add annotations. These can be any key: value pair
+    # key must be seperated by a :
+    # key:value pairs must be comma seperated.
+    if test -n "$pp_bsd_annotations"; then
+        pp_debug "Processing annotations:"
+        pp_bsd_label "annotations" "{" >> $manifest
+
+        SAVEIFS=$IFS
+        IFS=,
+        for annotate in $pp_bsd_annotations; do
+            # Remove any spaces at the start of the line
+            annotate=`echo $annotate | sed 's/^ *//'`
+            pp_debug "  $annotate"
+            echo "  $annotate" >> $manifest
+        done
+        IFS=$SAVEIFS
+        echo "}" >> $manifest
+    fi
+}
+
+#@ pp_bsd_make_depends(cmp manifest): convert %depends into pkg deps
+pp_bsd_make_depends() {
+    typeset package origin version
+    cmp=$1
+    manifest=$2
+
+    if test -s $pp_wrkdir/%depend.${cmp}; then
+        echo "deps: {" >> $manifest
+        cat $pp_wrkdir/%depend.${cmp} | while read package origin version; do
+            if test x != x$package; then
+                pp_debug "Processing dependency: $package"
+                if test x != x$origin -a x != x$version; then
+                    pp_debug "  $package: {origin: \"$origin\", version: \"$version\"}"
+                    echo "  $package: {origin: \"$origin\", version: \"$version\"}" >> $manifest
+                else
+                    pp_warn "Dependency $package is missing origin or version or both"
+                fi
+            fi
+        done
+        echo "}" >> $manifest
+    fi
+}
+
+#@ pp_bsd_make_messages(manifest): convert pp_bsd_message or pp_bsd_messages[1..n] into pkg manifest format
+#@ For a single message use pp_bsd_message
+#@   pp_bsd_message="message"
+#@ For multiple messages use pp_bsd_message[1..n]
+#@   pp_bsd_messages1="message 1"
+#@   pp_bsd_messages2="message 2"
+#@   pp_bsd_messages[3..n]="message [3..n]
+#@
+#@ In the case where both pp_bsd_message and pp_bsd_messages[1..n] are supplied treat pp_bsd_message as pp_bsd_messages0
+#@
+pp_bsd_make_messages () {
+    test -z $1 && pp_die "pp_bsd_make_messages requires a parameter"
+    manifest=$1
+   
+    pp_debug "Processing messsages"
+
+    # Empty messages: [ ] is OK in the manifest
+    pp_bsd_label "messages" "[" >> $manifest
+    # Look for a single message in the variable pp_bsd_message
+    if test -n "$pp_bsd_message"; then
+        echo "  { message: $pp_bsd_message }," >> $manifest
+    fi
+    local a=1
+    # Look for messages in the variables pp_bsd_message_[1..n]
+    var="pp_bsd_messages_1"
+    while [ -n "${!var}" ]; do
+        echo "  { message: ${!var} }," >> $manifest
+        a=`expr $a + 1`
+        var="pp_bsd_messages_$a"
+    done
+    echo "]" >> $manifest
+}
+
+#@ pp_bsd_make_manifest(cmp manifest): creates a pkg manifest file
+pp_bsd_make_manifest() { 
+    local cmp manifest
+
+    cmp="$1"
+    manifest="$2"
+
+    package_name=`pp_bsd_cmp_full_name $cmp`
+
+    # Required for pkg +MANIFEST
+    cat <<-. >> $manifest
+  name: "${package_name}"
+  version: "${pp_bsd_version:-$version}"
+  origin: "${pp_bsd_origin}"
+  www: "${pp_bsd_www}"
+  desc: "${pp_bsd_desc:-$description}"
+  comment: "${pp_bsd_comment:-$summary}"
+  maintainer: "${pp_bsd_maintainer}"
+  prefix: "${pp_bsd_prefix}"
+.
+
+    # Optional, so if they are not included in the pkg-product.pp file then do not create the label
+    pp_bsd_label "categories" "${pp_bsd_categories}" >> $manifest
+    pp_bsd_label "arch" "${pp_bsd_arch}" >> $manifest
+    pp_bsd_label "licenselogic" "${pp_bsd_licenselogic}" >> $manifest
+    pp_bsd_label "licenses" "${pp_bsd_licenses}" >> $manifest
+
+    pp_bsd_make_annotations $manifest
+    pp_bsd_make_depends $cmp $manifest
+
+    pp_bsd_make_messages $manifest
+}
+
+#@ pp_bsd_fakeroot(): run a command in an environment faking root privs for file manipulation
 pp_bsd_fakeroot () {
     if test -s $pp_wrkdir/fakeroot.save; then
     fakeroot -i $pp_wrkdir/fakeroot.save -s $pp_wrkdir/fakeroot.save "$@"
@@ -129,13 +255,7 @@ pp_bsd_fakeroot () {
     fi
 }
 
-#@ pp_bsd_convert_mtree_pkg_list(file): convert the format of $file from mtree to pkg-list
-pp_bsd_convert_mtree_pkg_list() {
-echo pp_bsd_convert_mtree_pkg_list    
-
-}
-
-#@ pp_bsd_make_data(component): convert %file.$cmp to the correct output for pkg creation
+#@ pp_bsd_make_data(component): convert %file.$cmp to the correct output for pkg creation: cmp
 pp_bsd_make_data() {
     # t = file type
     # m = file mode
@@ -152,10 +272,10 @@ pp_bsd_make_data() {
     datadir=$pp_wrkdir/`pp_bsd_cmp_full_name $cmp`
     local path
 
-
-    echo "***** pp_destdir: $pp_destdir"
     outfilelist="$pp_wrkdir/files.list.$cmp"
     outdirslist="$pp_wrkdir/dirs.list.$cmp"
+
+    pp_debug "Processing $pp_wrkdir/%file.${cmp}"
 
     echo "files: {" > $outfilelist
     echo "directories: {" > $outdirslist
@@ -167,19 +287,21 @@ pp_bsd_make_data() {
         case "$t" in
             f) # Files
                 # For now just skip the file if it is volatile, we will need to remove it in the pre uninstall script
-                echo "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
+                pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
                 pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
                 if [ x"$f" != x"v" ]; then
                     echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
+                else
+                    pp_debug "file $f was marked as volatile, skipping"
                 fi;
                 ;; 
             d) # Directories
-                echo "install -D $datadir -o $o -g $g -m ${m} -d -v $datadir$path";
+                pp_debug "install -D $datadir -o $o -g $g -m ${m} -d -v $datadir$path";
                 pp_bsd_fakeroot install -D $datadir -o $o -g $g -m ${m} -d -v $datadir$path;
                 echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outdirslist;
                  ;;
             s) # Symlinks
-                echo "Symlink: $datadir$path";
+                pp_debug "Found symlink: $datadir$path";
                 # Remove leading /
                 rel_p=`echo $p | sed s,^/,,`
                 (cd $datadir$pp_bsd_prefix; ln -sf $st $rel_p);                 
@@ -193,15 +315,12 @@ pp_bsd_make_data() {
         esac    
     done     
 
-    # Process the pp_bsd_pkg_plist-$cmp file and add to $manifest
-    #
     echo "}" >> $outfilelist
     echo "}" >> $outdirslist
     cat $outfilelist >> $manifest
     cat $outdirslist >> $manifest
-    
-    echo "Done processing files"
 
+    pp_debug "Finished processing $pp_wrkdir/%file.${cmp}"
 }
 
 #@ pp_bsd_makebsd(component): creates directory structure reeady for pkg create
@@ -220,9 +339,6 @@ pp_bsd_makebsd() {
     _subname=`pp_bsd_cmp_full_name $cmp`
     package_build_dir=$pp_wrkdir/$_subname
 
-    echo "package build dir: $package_build_dir"
-    echo "subname: $_subname"
-
     manifest="$package_build_dir/+MANIFEST"
     postinstall="$package_build_dir/+POST_INSTALL"
     preinstall="$package_build_dir/+PRE_INSTALL"
@@ -232,51 +348,46 @@ pp_bsd_makebsd() {
     # Create package dir
     mkdir -p $package_build_dir
 
-    # //TODO: Copy in the data or point files to the correct place
-
-    # See: man pkg-create(8)
-    # //TODO: Add code to handle %depend.$cmp > dependencies in MANIFEST
-    # //TODO: Add code to handle %files.$cmp > plist or MANIFEST (plist would be best so I don't have to format it)
-
-    pp_bsd_make_manifest $cmp > $manifest
+    pp_bsd_make_manifest $cmp $manifest
     pp_bsd_make_data $cmp
 
-    echo "+++++ Creating install scripts"
+    pp_debug "Processing pre/post install scripts"
 
     if test -s $pp_wrkdir/%pre.$cmp; then
-        echo "+++++Processing %pre.$cmp"
-             echo "+++++Processing %pre.$cmp"
+         pp_debug "Found %pre.$cmp"
          {
              cat "$pp_wrkdir/%pre.$cmp"
          } > $preinstall
-         echo "wrote out to $preinstall"
+         pp_debug "Created $preinstall"
     fi
 
     if test -s $pp_wrkdir/%post.$cmp; then
-         echo "+++++Processing %post.$cmp"
+         pp_debug "Found %post.$cmp"
          {
              echo "# Post install script for "
              cat "$pp_wrkdir/%post.$cmp"
          } > $postinstall
-         echo "wrote out to $postinstall"
+         pp_debug "Created $postinstall"
     fi
 
+    pp_debug "Processing pre/post uninstall scripts"
+
     if test -s $pp_wrkdir/%preun.$cmp; then
-        echo "+++++Processing %preun.$cmp"
+        pp_debug "Found %preun.$cmp"
         {   
-            echo "# Pre uninstall script for $name"
+            echo "# Pre uninstall script for ${pp_bsd_name:-$name}"
             cat "$pp_wrkdir/%preun.$cmp"
         } > $preuninstall
-        echo "wrote out to $preuninstall"
+        pp_debug "Created pkg $preuninstall"
     fi
 
     if test -s $pp_wrkdir/%postun.$cmp; then
-        echo "+++++Processing %postun.$cmp"
+        pp_debug "Found %postun.$cmp"
         {   
-            echo "# Post uninstall script for $name"
+            echo "# Post uninstall script for ${pp_bsd_name:-$name}"
             cat "$pp_wrkdir/%postun.$cmp"
         } > $postuninstall
-        echo "wrote out to $postuninstall"
+        pp_debug "Created $postuninstall"
     fi
 }
 
@@ -304,23 +415,48 @@ pp_backend_bsd() {
         package_build_dir=$pp_wrkdir/$_subname
     	# Build the actual packages now
         pp_debug "Building FreeBSD $_subname"
-        echo "pkg create -m $package_build_dir -r $pp_wrkdir/`pp_bsd_cmp_full_name $cmp` -o $pp_wrkdir"
+        pp_debug "Running package create command: pkg create -m $package_build_dir -r $pp_wrkdir/`pp_bsd_cmp_full_name $cmp` -o $pp_wrkdir"
         pp_bsd_fakeroot pkg create -m $package_build_dir -r $pp_wrkdir/`pp_bsd_cmp_full_name $cmp` -o $pp_wrkdir -v
     done
 
 }
 
+#@ pp_bsd_name(component): print the name of the FreeBSD package files
 pp_bsd_name () {
     typeset cmp="${1:-run}"
     echo `pp_bsd_cmp_full_name $cmp`"-${pp_bsd_version:-$version}.txz"
 }
 
+#@ pp_backend_bsd_names(): print the names of the FreeBSD package files
 pp_backend_bsd_names () {
     for cmp in $pp_components; do
-	echo `pp_bsd_cmp_full_name $cmp`"-${pp_bsd_version:-$version}.txz"
+    	echo `pp_bsd_cmp_full_name $cmp`"-${pp_bsd_version:-$version}.txz"
     done
 }
 
+#@ pp_backend_bsd_cleanup(): removes leftover files
+pp_backend_bsd_cleanup () {
+    :
+}
+
+#@ pp_backend_bsd_probe(): print the local platform's short name
+pp_backend_bsd_probe () {
+        echo "${pp_bsd_os}-${pp_bsd_platform_std}"
+        echo "${pp_bsd_os}${pp_bsd_os_rev}-${pp_bsd_platform_std}"
+}
+
+
+#@ pp_backend_bsd_vas_platforms(): print the VAS platform identifiers
+pp_backend_bsd_vas_platforms() {
+    case "${pp_bsd_platform_std}" in
+        x86_64) echo "FreeBSD-x86_64.txz FreeBSD-i386.txz";;
+        i386)   echo "FreeBSD-i386.txz";;
+        *) pp_die "unknown architecture $pp_bsd_platform_std";;
+    esac
+}
+
+
+#@ pp_backend_bsd_install_script(); Generates an script to manipulate the created pkg.txz
 pp_backend_bsd_install_script () {
     typeset cmp _cmp_full_name
 
@@ -397,15 +533,11 @@ pp_backend_bsd_install_script () {
             print-platform)
                 test \$# -eq 0 || usage \$op
                 echo "${pp_bsd_os}-${pp_bsd_platform}"
-                echo "${pp_bsd_os}${pp_bsd_os_rev}-${pp_bsd_platform_std}"
+                echo '`pp_backend_bsd_probe`'
                 ;;
             *)
                 usage
                 ;;
         esac
 .
-}
-
-pp_backend_bsd_probe () {
-    echo "${pp_bsd_os}${pp_bsd_os_rev}-${pp_bsd_platform_std}"
 }

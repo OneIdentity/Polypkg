@@ -580,6 +580,7 @@ Output filenames
 	sd	    <name>-<version>.depot
 	solaris	    <name>-<version>.pkg
 	macos	    <name>-<version>.dmg
+        FreeBSD     <name>-<version>.txz
 
 
 Interface names

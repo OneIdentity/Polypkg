@@ -7,13 +7,43 @@
   description="Engenders a global greeting"
 
 %set [bsd]
-  pp_bsd_message="Greetings!"
-  pp_bsd_category="security"
+  pp_bsd_name="${name}"
+# For a single message use pp_bsd_message
+#   pp_bsd_message="message"
+# For multiple messages use pp_bsd_message[1..n]
+#   pp_bsd_messages1="message 1"
+#   pp_bsd_messages2="message 2"
+#   pp_bsd_messages[3..n]="message [3..n]
+#
+# In the case where both pp_bsd_message and pp_bsd_messages[1..n] are supplied treat pp_bsd_message as pp_bsd_messages0
+  pp_bsd_message="Greetings from hello world!"
+  pp_bsd_messages_1="2nd Message"
+  pp_bsd_messages_2="3rd Message"
+
   pp_bsd_origin="security/${pp_bsd_name:-$name}"
   pp_bsd_prefix="/tmp/${pp_bsd_name:-$name}"
+  pp_bsd_www="https://www.oneidentity.com"
+  pp_bsd_maintainer="One Identity, LLC <support@oneidentity.com>"
 
+  # pp_bsd_licenses need to be in array formating, each value seperated by a ,
+  # i.e. [ value, value ]
+  pp_bsd_licenses="[GPLv2,MIT]"
+
+  # pp_bsd_annotations need to be in a keyvalue:pair list, each key:pair being seperated by a ,
+  # i.e. key:value, key:value 
+  pp_bsd_annotations="repo_type:binary, hello:world"
+
+  # pp_bsd_categories need to be in array formating, each value seperated by a ,
+  # i.e. [ value, value ]
+  pp_bsd_categories="[devel,security]"
+
+  #%depends should inclue 3 things. 1. package name 2. package origin 3 package version
+  #Invalid depend statments will be ignored
+  # i.e. grep
 %depend
   grep
+
+  ctags devel/ctags 5.8
 
 %pre
   echo This is the PRE-INSTALL script
@@ -21,7 +51,6 @@
 %post
   echo This is the POST-INSTALL script
   %(pp_functions pp_mkuser)
-
 
 %preun
   echo This is the PRE-UNINSTALL script
