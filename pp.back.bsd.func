@@ -18,7 +18,7 @@ pp_backend_bsd_function() {
                 -s "${4:-/bin/false}"
 .
         pp_havelib) cat<<'.';;
-            for pp_tmp_dir in `echo "/usr/lib:/lib${3:+:$3}" | tr : ' '`; do
+            for pp_tmp_dir in `echo "/usr/local/lib:/usr/lib:/lib${3:+:$3}" | tr : ' '`; do
                 test -r "$pp_tmp_dir/lib$1.so{$2:+.$2}" && return 0
             done
             return 1
