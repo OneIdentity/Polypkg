@@ -1,0 +1,28 @@
+#@ pp_backend_bsd_function(func): output platform-dependent function
+pp_backend_bsd_function() {
+    case "$1" in
+        pp_mkgroup) cat<<'.';;
+            /usr/sbin/pw group show "$1" 2>/dev/null && return 0
+            /usr/sbin/pw group add "$1"
+.
+        pp_mkuser:depends) echo pp_mkgroup;;
+        pp_mkuser) cat<<'.';;
+            #Check if user exists
+            /usr/sbin/pw user show "$1" 2>/dev/null && return 0
+            pp_mkgroup "${2:-$1}" || return 1
+            echo "Creating user $1"
+            /usr/sbin/pw user add \
+                -n "$1" \
+                -d "${3:-/nonexistent}" \
+                -g "${2:-$1}" \
+                -s "${4:-/bin/false}"
+.
+        pp_havelib) cat<<'.';;
+            for pp_tmp_dir in `echo "/usr/local/lib:/usr/lib:/lib${3:+:$3}" | tr : ' '`; do
+                test -r "$pp_tmp_dir/lib$1.so{$2:+.$2}" && return 0
+            done
+            return 1
+.
+        *) false;;
+    esac
+}

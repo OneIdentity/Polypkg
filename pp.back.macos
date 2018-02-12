@@ -64,7 +64,7 @@
 
     <http://developer.apple.com/documentation/DeveloperTools/Conceptual/SoftwareDistribution4/Concepts/sd_pkg_flags.html>
     Info.plist = {
-     CFBundleGetInfoString: "1.2.3, Quest Software, Inc.",
+     CFBundleGetInfoString: "1.2.3, One Identity, LLC.",
      CFBundleIdentifier: "com.quest.rc.openssh",
      CFBundleShortVersionString: "1.2.3",
      IFMajorVersion: 1,

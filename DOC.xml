@@ -10,8 +10,8 @@
  <bookinfo>
   <author><firstname>David</firstname>
           <surname>Leonard</surname></author>
-  <copyright><year>2006</year>
-             <holder>Quest Software, Inc.</holder></copyright>
+  <copyright><year>2018</year>
+             <holder>One Identity, LLC.</holder></copyright>
  </bookinfo>
 
  <preface>
@@ -259,7 +259,7 @@ description="Hello tool"
        Defaults to "No description".</listitem>
       <term>copyright</term>
       <listitem>copyright message, limit 40 characters.
-       Default is "Copyright YYYY, Quest Software..."</listitem>
+       Default is "Copyright YYYY, One Identity..."</listitem>
      </varlistentry>
     </variablelist>
    </para>
