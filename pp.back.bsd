@@ -292,7 +292,7 @@ pp_bsd_make_data() {
                 if [ x"$f" != x"v" ]; then
                     echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
                 else
-                    pp_debug "file $f was marked as volatile, skipping"
+                    pp_warning "file $f was marked as volatile, skipping"
                 fi;
                 ;; 
             d) # Directories
