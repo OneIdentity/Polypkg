@@ -208,13 +208,13 @@ pp_bsd_make_messages () {
     pp_bsd_label "messages" "[" >> $manifest
     # Look for a single message in the variable pp_bsd_message
     if test -n "$pp_bsd_message"; then
-        echo "  { message: `pp_bsd_munge_text "$pp_bsd_message"` }," >> $manifest
+        echo "  { message: \"`pp_bsd_munge_text "$pp_bsd_message"`\" }," >> $manifest
     fi
     local a=1
     # Look for messages in the variables pp_bsd_message_[1..n]
     var="pp_bsd_messages_1"
     while [ -n "${!var}" ]; do
-        echo "  { message: `pp_bsd_munge_text "${!var}"` }," >> $manifest
+        echo "  { message: \"`pp_bsd_munge_text "${!var}"`\" }," >> $manifest
         a=`expr $a + 1`
         var="pp_bsd_messages_$a"
     done
@@ -295,9 +295,15 @@ pp_bsd_make_data() {
         case "$t" in
             f) # Files
                 # For now just skip the file if it is volatile, we will need to remove it in the pre uninstall script
-                pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
-                pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
                 if [ x"$f" != x"v" ]; then
+                    # If the directory doesn't exist where we are going to copy this file, then create it first
+                    if [ ! -d `dirname "$datadir$path"` ]; then
+                        pp_debug "creating directory `dirname "$datadir$path"`"
+                        mkdir -p `dirname "$datadir$path"`
+                    fi
+
+                    pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
+                    pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
                     echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
                 else
                     pp_warn "file $f was marked as volatile, skipping"
