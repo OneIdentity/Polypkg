@@ -8,6 +8,14 @@
 # Add bsd to the list of platforms to be considered
 pp_platforms="$pp_platforms bsd"
 
+#@ pp_bsd_munge_text: Fixes the text so the pkg create won't complain
+pp_bsd_munge_text () {
+    # Insert a leading space on each line, replace blank lines with a
+    #space followed by a full-stop.
+    test -z "$1" && pp_die "pp_bsd_munge_text requires a parameter"
+    echo ${1} | sed "s,^\(.*\)$, \1, " | sed "s,^[ \t]*$, .,g"
+}
+
 #@ pp_backend_bsd_detect(): return true if this platform uses FreeBSD pkgs
 pp_backend_bsd_detect () {
 	test x"$1" = x"FreeBSD"
@@ -200,13 +208,13 @@ pp_bsd_make_messages () {
     pp_bsd_label "messages" "[" >> $manifest
     # Look for a single message in the variable pp_bsd_message
     if test -n "$pp_bsd_message"; then
-        echo "  { message: $pp_bsd_message }," >> $manifest
+        echo "  { message: `pp_bsd_munge_text "$pp_bsd_message"` }," >> $manifest
     fi
     local a=1
     # Look for messages in the variables pp_bsd_message_[1..n]
     var="pp_bsd_messages_1"
     while [ -n "${!var}" ]; do
-        echo "  { message: ${!var} }," >> $manifest
+        echo "  { message: `pp_bsd_munge_text "${!var}"` }," >> $manifest
         a=`expr $a + 1`
         var="pp_bsd_messages_$a"
     done
@@ -228,7 +236,7 @@ pp_bsd_make_manifest() {
   version: "${pp_bsd_version:-$version}"
   origin: "${pp_bsd_origin}"
   www: "${pp_bsd_www}"
-  desc: "${pp_bsd_desc:-$description}"
+  desc: "`pp_bsd_munge_text "${pp_bsd_desc:-$description}"`"
   comment: "${pp_bsd_comment:-$summary}"
   maintainer: "${pp_bsd_maintainer}"
   prefix: "${pp_bsd_prefix}"
@@ -292,7 +300,7 @@ pp_bsd_make_data() {
                 if [ x"$f" != x"v" ]; then
                     echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
                 else
-                    pp_warning "file $f was marked as volatile, skipping"
+                    pp_warn "file $f was marked as volatile, skipping"
                 fi;
                 ;; 
             d) # Directories
