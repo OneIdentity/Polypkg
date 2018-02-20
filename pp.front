@@ -251,7 +251,7 @@ pp_frontend () {
              fi
 	     test $# -eq 0 || pp_warn "ignoring extra arguments: $line"
 	     continue;;
-	  %pre|%post|%preun|%postup|%postun|%files|%depend|%check|%conflict)
+	  %pre|%post|%preun|%postup|%preup|%postun|%files|%depend|%check|%conflict)
              pp_debug "processing new component section $*"
              s="$1"; shift
              if test $# -eq 0 || pp_is_qualifier "$1"; then
@@ -346,7 +346,7 @@ pp_frontend () {
 		. $pp_wrkdir/tmp
 		: > $pp_wrkdir/tmp
 		;;
-	%pre.*|%preun.*|%post.*|%postup.*|%postun.*|%depend.*|%check.*|%conflict.*|%service.*|%fixup)
+	%pre.*|%preun.*|%post.*|%postup.*|%preup.*|%postun.*|%depend.*|%check.*|%conflict.*|%service.*|%fixup)
                 pp_debug "leaving $section: substituting $pp_wrkdir/tmp"
                 # cat $pp_wrkdir/tmp >&2    # debugging
                 $pp_opt_debug && pp_substitute < $pp_wrkdir/tmp >&2
@@ -370,7 +370,7 @@ pp_frontend () {
 	%_initial)
 		case "$line" in "") continue;; esac # ignore non-section blanks
 		pp_die "Ignoring text before % section introducer";;
-	%set|%pre.*|%preun.*|%post.*|%postup.*|%postun.*|%check.*|%service.*|%fixup)
+	%set|%pre.*|%preun.*|%post.*|%postup.*|%preup.*|%postun.*|%check.*|%service.*|%fixup)
                 pp_debug "appending line to \$pp_wrkdir/tmp"
 		echo "$line" >> $pp_wrkdir/tmp
 		;;

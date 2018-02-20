@@ -8,6 +8,14 @@
 # Add bsd to the list of platforms to be considered
 pp_platforms="$pp_platforms bsd"
 
+#@ pp_bsd_munge_text: Fixes the text so the pkg create won't complain
+pp_bsd_munge_text () {
+    # Insert a leading space on each line, replace blank lines with a
+    #space followed by a full-stop.
+    test -z "$1" && pp_die "pp_bsd_munge_text requires a parameter"
+    echo ${1} | sed "s,^\(.*\)$, \1, " | sed "s,^[ \t]*$, .,g"
+}
+
 #@ pp_backend_bsd_detect(): return true if this platform uses FreeBSD pkgs
 pp_backend_bsd_detect () {
 	test x"$1" = x"FreeBSD"
@@ -200,13 +208,13 @@ pp_bsd_make_messages () {
     pp_bsd_label "messages" "[" >> $manifest
     # Look for a single message in the variable pp_bsd_message
     if test -n "$pp_bsd_message"; then
-        echo "  { message: $pp_bsd_message }," >> $manifest
+        echo "  { message: \"`pp_bsd_munge_text "$pp_bsd_message"`\" }," >> $manifest
     fi
     local a=1
     # Look for messages in the variables pp_bsd_message_[1..n]
     var="pp_bsd_messages_1"
     while [ -n "${!var}" ]; do
-        echo "  { message: ${!var} }," >> $manifest
+        echo "  { message: \"`pp_bsd_munge_text "${!var}"`\" }," >> $manifest
         a=`expr $a + 1`
         var="pp_bsd_messages_$a"
     done
@@ -228,7 +236,7 @@ pp_bsd_make_manifest() {
   version: "${pp_bsd_version:-$version}"
   origin: "${pp_bsd_origin}"
   www: "${pp_bsd_www}"
-  desc: "${pp_bsd_desc:-$description}"
+  desc: "`pp_bsd_munge_text "${pp_bsd_desc:-$description}"`"
   comment: "${pp_bsd_comment:-$summary}"
   maintainer: "${pp_bsd_maintainer}"
   prefix: "${pp_bsd_prefix}"
@@ -287,12 +295,18 @@ pp_bsd_make_data() {
         case "$t" in
             f) # Files
                 # For now just skip the file if it is volatile, we will need to remove it in the pre uninstall script
-                pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
-                pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
                 if [ x"$f" != x"v" ]; then
+                    # If the directory doesn't exist where we are going to copy this file, then create it first
+                    if [ ! -d `dirname "$datadir$path"` ]; then
+                        pp_debug "creating directory `dirname "$datadir$path"`"
+                        mkdir -p `dirname "$datadir$path"`
+                    fi
+
+                    pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
+                    pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
                     echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
                 else
-                    pp_warning "file $f was marked as volatile, skipping"
+                    pp_warn "file $f was marked as volatile, skipping"
                 fi;
                 ;; 
             d) # Directories
@@ -305,11 +319,12 @@ pp_bsd_make_data() {
                 # Remove leading /
                 rel_p=`echo $p | sed s,^/,,`
                 (cd $datadir$pp_bsd_prefix; ln -sf $st $rel_p);                 
-                if [ -e "$datadir$path" ]; then
-                    echo "  \"$path\": \"$st\"" >> $outfilelist;
-                else
-                    pp_error "$datadir$path does not exist"
+                # Do we care if the file doesn't exist? Just symnlink it regardless and throw a warning? This will be important in the case 
+                # where we depend on other packages to be installed and will be using the libs from that package.
+                if [ ! -e "$datadir$path" ]; then
+                    pp_warn "$datadir$path does not exist"
                 fi
+                echo "  \"$path\": \"$st\"" >> $outfilelist;
                 ;;
             *)  pp_error "Unsupported data file type: %t";;
         esac    
@@ -327,7 +342,7 @@ pp_bsd_make_data() {
 pp_bsd_makebsd() {
     typeset cmp
     typeset package_build_dir
-    local manifest
+    local manifest postinstall preinstall preuninstall postuninstall preupgrade postupgrade
 
     cmp="$1"
 
@@ -344,6 +359,8 @@ pp_bsd_makebsd() {
     preinstall="$package_build_dir/+PRE_INSTALL"
     preuninstall="$package_build_dir/+PRE_DEINSTALL"
     postuninstall="$package_build_dir/+POST_DEINSTALL"
+    preupgrade="$package_build_dir/+PRE_UPGRADE"
+    postupgrade="$package_build_dir/+POST_UPGRADE"
 
     # Create package dir
     mkdir -p $package_build_dir
@@ -388,6 +405,24 @@ pp_bsd_makebsd() {
             cat "$pp_wrkdir/%postun.$cmp"
         } > $postuninstall
         pp_debug "Created $postuninstall"
+    fi
+
+    if test -s $pp_wrkdir/%preup.$cmp; then
+        pp_debug "Found %preup.$cmp"
+        {
+            echo "# Pre upgrade script for ${pp_bsd_name:-$name}"
+            cat "$pp_wrkdir/%preup.$cmp"
+        } > $preupgrade
+        pp_debug "Created pkg $preupgrade"
+    fi
+
+    if test -s $pp_wrkdir/%postup.$cmp; then
+        pp_debug "Found %postup.$cmp"
+        {
+            echo "# Post upgrade script for ${pp_bsd_name:-$name}"
+            cat "$pp_wrkdir/%postup.$cmp"
+        } > $postupgrade
+        pp_debug "Created $postupgrade"
     fi
 }
 

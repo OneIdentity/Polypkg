@@ -2,7 +2,7 @@
 
 %set
   name=hello
-  version=1.0.0.0
+  version=1.0.0.1
   summary="Hello world"
   description="Engenders a global greeting"
 
@@ -56,6 +56,11 @@
   echo This is the PRE-UNINSTALL script
 %postun
   echo This is the POST-UNINSTALL script
+
+%preup [bsd]
+  echo This is the PRE-UPGRADE script
+%postup [bsd]
+  echo This is the POST-UPRADE script
 
 %service hellod
   cmd=${sbindir}/hellod
