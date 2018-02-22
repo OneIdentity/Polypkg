@@ -37,10 +37,7 @@
   # i.e. [ value, value ]
   pp_bsd_categories="[devel,security]"
 
-  #%depends should inclue 3 things. 1. package name 2. package origin 3 package version
-  #Invalid depend statments will be ignored
-  # i.e. grep
-%depend
+%depend [bsd]
   grep
 
   ctags devel/ctags 5.8
