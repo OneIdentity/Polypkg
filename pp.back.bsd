@@ -35,6 +35,7 @@ pp_backend_bsd_init () {
     pp_bsd_origin=
     pp_bsd_comment=
     pp_bsd_arch=
+    pp_bsd_abi=
     pp_bsd_www=
     pp_bsd_maintainer=
     pp_bsd_prefix="/usr/local"
@@ -245,6 +246,7 @@ pp_bsd_make_manifest() {
     # Optional, so if they are not included in the pkg-product.pp file then do not create the label
     pp_bsd_label "categories" "${pp_bsd_categories}" >> $manifest
     pp_bsd_label "arch" "${pp_bsd_arch}" >> $manifest
+    pp_bsd_label "abi" "${pp_bsd_abi}" >> $manifest
     pp_bsd_label "licenselogic" "${pp_bsd_licenselogic}" >> $manifest
     pp_bsd_label "licenses" "${pp_bsd_licenses}" >> $manifest
 

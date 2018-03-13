@@ -36,11 +36,11 @@
   # pp_bsd_categories need to be in array formating, each value seperated by a ,
   # i.e. [ value, value ]
   pp_bsd_categories="[devel,security]"
+ 
+  pp_bsd_abi="FreeBSD:*:amd64"
 
 %depend [bsd]
   grep
-
-  ctags devel/ctags 5.8
 
 %pre
   echo This is the PRE-INSTALL script
