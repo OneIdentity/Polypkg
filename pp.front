@@ -60,9 +60,10 @@ pp_if_false=0
 pp_frontend_init () {
     name=
     version=
+    build_number=
     summary="no summary"
     description="No description"
-    copyright="Copyright 2018 One Identity, LLC. ALL RIGHTS RESERVED."
+    copyright="Copyright 2018 One Identity LLC. ALL RIGHTS RESERVED."
 
     #-- if the user supplied extra arguments on the command line
     #   then load them now.

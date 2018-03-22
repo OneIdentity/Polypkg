@@ -23,7 +23,7 @@
   pp_bsd_origin="security/${pp_bsd_name:-$name}"
   pp_bsd_prefix="/tmp/${pp_bsd_name:-$name}"
   pp_bsd_www="https://www.oneidentity.com"
-  pp_bsd_maintainer="One Identity, LLC <support@oneidentity.com>"
+  pp_bsd_maintainer="One Identity LLC <support@oneidentity.com>"
 
   # pp_bsd_licenses need to be in array formating, each value seperated by a ,
   # i.e. [ value, value ]

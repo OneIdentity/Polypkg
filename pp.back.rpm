@@ -102,7 +102,7 @@ pp_rpm_detect_arch () {
 		pp_rpm_arch_std=i386
 		break
 		;;
-	    x86_64|ppc|ppc64|ia64|s390|s390x)
+	    x86_64|ppc|ppc64|ppc64le|ia64|s390|s390x)
 		pp_rpm_arch_std="$arch"
 		break
 		;;
@@ -235,6 +235,8 @@ pp_rpm_writefiles () {
 		    farch=x86_64;;
 		*": ELF 32-bit MSB "*", PowerPC"*)
 		    farch=ppc;;
+        *": ELF 64-bit LSB "*", 64-bit PowerPC"*)
+            farch=ppc64le;;
 		*": ELF 64-bit MSB "*", 64-bit PowerPC"*)
 		    farch=ppc64;;
 		*": ELF 64-bit LSB "*", IA-64"*)
@@ -247,6 +249,8 @@ pp_rpm_writefiles () {
 		    farch=ppc;;
 		*"64-bit XCOFF executable"*)
 		    farch=ppc64;;
+        *": ELF 64-bit LSB "*", ARM aarch64"*)
+            farch=aarch64;;
 		*" ELF "*)
 		    farch=ELF;;
 		*)
@@ -270,6 +274,8 @@ pp_rpm_writefiles () {
 			farch=s390;;
 		    "ELF64 IBM S/390")
 			farch=s390x;;
+            "ELF64 AArch64")
+            farch=aarch64;;
 		    *)
 			farch=noarch;;
 		esac
@@ -515,28 +521,22 @@ pp_backend_rpm () {
             if test -s $pp_wrkdir/%post.$cmp; then
                 echo ""
                 echo "%post $_subname"
-#               echo 'if test "$1" -eq 1; then # first install'
                 cat $pp_wrkdir/%post.$cmp
                 echo :   # causes script to exit true
-#               echo 'fi'
             fi
 
             if test -s $pp_wrkdir/%preun.$cmp; then
                 echo ""
                 echo "%preun $_subname"
-#               echo 'if test "$1" -eq 0; then # uninstall'
                 cat $pp_wrkdir/%preun.$cmp
                 echo :   # causes script to exit true
-#               echo 'fi'
             fi
 
             if test -s $pp_wrkdir/%postun.$cmp; then
                 echo ""
                 echo "%postun $_subname"
-#               echo 'if test "$1" -eq 0; then # uninstall'
                 cat $pp_wrkdir/%postun.$cmp
                 echo :   # causes script to exit true
-#               echo 'fi'
             fi
 	done >>$specfile
 
@@ -556,6 +556,8 @@ pp_backend_rpm () {
 		    pp_rpm_arch_seen=x86_64;;
 		*"s390 s390x"* | *"s390x s390"* )
 		    pp_rpm_arch_seen=s390x;;
+        *"aarch64"* )
+            pp_rpm_arch_seen=aarch64;;
 		*" "*)
 		    pp_error "detected multiple targets: $pp_rpm_arch_seen"
 		    pp_rpm_arch_seen=unknown;;	    # not detected

@@ -64,7 +64,7 @@
 
     <http://developer.apple.com/documentation/DeveloperTools/Conceptual/SoftwareDistribution4/Concepts/sd_pkg_flags.html>
     Info.plist = {
-     CFBundleGetInfoString: "1.2.3, One Identity, LLC.",
+     CFBundleGetInfoString: "1.2.3, One Identity LLC.",
      CFBundleIdentifier: "com.quest.rc.openssh",
      CFBundleShortVersionString: "1.2.3",
      IFMajorVersion: 1,
@@ -963,7 +963,7 @@ pp_backend_macos_install_script () {
 
 #@ pp_backend_macos_init_svc_vars(): initialise service vars
 pp_backend_macos_init_svc_vars () {
-    pp_macos_start_services_after_install=false
+    pp_macos_start_services_after_install=true
     pp_macos_service_name=
     pp_macos_default_service_id_prefix="com.quest.rc."
     pp_macos_service_id=
@@ -1060,10 +1060,17 @@ pp_macos_add_service () {
     cp "$pp_macos_svc_plist_file" "$pp_destdir/$plist_file"
     pp_add_file_if_missing "$plist_file"
 
-    #-- add code to start the service on install
+    #-- add code to start the service on install & upgrade
     ${pp_macos_start_services_after_install} && <<-. >> $pp_wrkdir/%post.$svc
 	# start service '$svc' automatically after install
 	launchctl load "$plist_file"
+.
+    ${pp_macos_start_services_after_install} && <<-. >> $pp_wrkdir/%postup.$svc
+        # start service '$svc' automatically after upgrade
+        # This is necessary if the service is new since the previous version.
+        # XXX: Does launchd automatically reload an service if its binary
+        # is replaced?
+        launchctl load "$plist_file"
 .
 }
 

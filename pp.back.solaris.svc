@@ -411,7 +411,11 @@ pp_solaris_remove_service () {
 if [ "x${PKG_INSTALL_ROOT}" = 'x' ]; then
     if [ -x /usr/sbin/svcadm ] ; then
         /usr/sbin/svcadm disable -s '$svc' 2>/dev/null
-        /usr/sbin/svccfg delete '$svc' 2>/dev/null
+        if [ `uname -r` = 5.10 ]; then
+          /usr/sbin/svccfg delete '$svc' 2>/dev/null
+        else
+          /usr/sbin/svcadm restart manifest-import 2>/dev/null
+        fi
     else
         '$file' stop >/dev/null 2>/dev/null
     fi
@@ -433,7 +437,11 @@ pp_solaris_install_service () {
     echo '
 if [ "x${PKG_INSTALL_ROOT}" != "x" ]; then
   if [ -x ${PKG_INSTALL_ROOT}/usr/sbin/svcadm ]; then
-    echo "/usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
+    if [ `uname -r` = 5.10 ]; then
+      echo "/usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
+    else
+      echo "/usr/sbin/svcadm restart manifest-import 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
+    fi
   else'
     test -n "${solaris_sysv_init_start_states}" &&
         for state in ${solaris_sysv_init_start_states}; do
@@ -455,8 +463,26 @@ else
     if [ -x /usr/sbin/svcadm ]; then
         echo "Registering '$svc' with SMF"
         /usr/sbin/svcadm disable -s '$svc' 2>/dev/null
-        /usr/sbin/svccfg delete '$svc' 2>/dev/null
-        /usr/sbin/svccfg import '$pp_svc_xml_file'
+        if [ `uname -r` = 5.10 ]; then
+          /usr/sbin/svccfg delete '$svc' 2>/dev/null
+          /usr/sbin/svccfg import '$pp_svc_xml_file'
+        else
+          /usr/sbin/svcadm restart manifest-import
+          # Wait for import to complete, otherwise it will not know
+          # about our service until after we try to start it
+          echo Waiting for manifest-import...
+          typeset waited
+          waited=0
+          while [ $waited -lt 15 ] && ! /usr/bin/svcs -l '$svc' >/dev/null 2>&1; do
+              sleep 1
+              waited=`expr $waited + 1`
+          done
+          if /usr/bin/svcs -l '$svc' >/dev/null 2>&1; then
+              echo OK
+          else
+              echo manifest-import took to long, you might have to control '$svc' manually.
+          fi
+        fi
     else'
     test -n "${solaris_sysv_init_start_states}" &&
         for state in ${solaris_sysv_init_start_states}; do
