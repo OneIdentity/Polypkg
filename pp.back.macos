@@ -564,7 +564,7 @@ pp_backend_macos_bundle () {
 	key CFBundleIdentifier string \
 	    "${pp_macos_bundle_id}" \
     key CFBundleName string "$name" \
-	key CFBundleShortVersionString string "$bundle_version" \
+    key CFBundleShortVersionString string "$bundle_version.$source_version" \
 	key IFMajorVersion integer 1 \
 	key IFMinorVersion integer 0 \
 	key IFPkgFlagAllowBackRev false \
@@ -591,7 +591,7 @@ pp_backend_macos_bundle () {
         key IFPkgDescriptionDeleteWarning string "" \
 	    key IFPkgDescriptionDescription string "$pp_macos_bundle_info_string" \
 	    key IFPkgDescriptionTitle       string "$name" \
-	    key IFPkgDescriptionVersion string "$version" \
+	    key IFPkgDescriptionVersion string "$bundle_version.$source_version" \
  	\} end-plist > $Description_plist
 
     # write Resources/files
