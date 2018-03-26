@@ -41,7 +41,6 @@ pp_backend_macos_function () {
 	    /usr/bin/dscl . -create /Users/"$1" RealName "$1"
 	    /usr/bin/dscl . -create /Users/"$1" UniqueID $pp_tmp_uid
 	    /usr/bin/dscl . -create /Users/"$1" Password '*'
-#	    /usr/bin/dscl . -passwd /Users/$user "$passwd"
 .
         pp_havelib) cat<<'.';;
 	    # (use otool -L to find dependent libraries)

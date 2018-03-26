@@ -15,7 +15,7 @@ pp_backend_sd_init () {
     pp_sd_stoplevels=auto
     pp_sd_config_file=
     pp_sd_vendor=
-    pp_sd_vendor_tag=Quest
+    pp_sd_vendor_tag=OneIdentity
     pp_sd_default_start=1           # config_file default start value
 
     pp_readlink_fn=pp_ls_readlink   # HPUX has no readlink

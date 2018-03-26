@@ -106,10 +106,6 @@ pp_aix_copy_root () {
            f) pp_add_transient_file "$1$p"
 	      pp_verbose ln "$pp_destdir$p" "$pp_destdir$1$p" ||
 		pp_error "can't link $p into $1";;
-#           s) pp_add_transient_file "$1$p"
-#              #target=`$pp_readlink_fn $pp_destdir$p`
-#              pp_verbose ln -s "$st" "$pp_destdir$1$p" ||
-#		pp_error "can't create symbolic link $p to $st";;
            *) pp_warn "pp_aix_copy_root: filetype $t not handled";;
         esac
     done
@@ -127,7 +123,6 @@ pp_aix_copy_root () {
 #	/usr/lib 115
 #   if the sum size in blocks of ls and mv is 61, and libc.a is 115 blocks.
 #   note that directories themselves are ignored
-
 pp_aix_size () {
     typeset prefix t m o g f p st
 

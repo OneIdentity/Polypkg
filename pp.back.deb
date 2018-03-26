@@ -30,7 +30,7 @@ pp_backend_deb_init () {
     pp_deb_release=
     pp_deb_arch=
     pp_deb_arch_std=
-    pp_deb_maintainer="One Identity, LLC <support@oneidentity.com>"
+    pp_deb_maintainer="One Identity LLC <support@oneidentity.com>"
     pp_deb_copyright=
     pp_deb_distro=
     pp_deb_control_description=
@@ -244,7 +244,7 @@ pp_deb_fakeroot () {
     fi
 }
 
-## pp_deb_files_size() < %files: estimate installed disk usage in kB
+# pp_deb_files_size() < %files: estimate installed disk usage in kB
 pp_deb_files_size () {
     local t m o g f p st
     while read t m o g f p st; do
@@ -578,6 +578,15 @@ pp_backend_deb_probe() {
 		squeeze)
 		    release="60"
 		    ;;
+        wheezy)
+            release="70"
+            ;;
+        jessie)
+            release="80"
+            ;;
+        stretch)
+            release="90"
+            ;;
 	    esac
 	    ;;
 	*)
