@@ -435,6 +435,7 @@ pp_backend_bsd() {
     #create-postinstall
     #create-package
     #
+    pp_bsd_handle_services
 
     for cmp in $pp_components
     do

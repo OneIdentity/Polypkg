@@ -32,6 +32,7 @@ PP_SRCS= \
 	 pp.back.inst \
 	 pp.back.null \
 	 pp.back.bsd \
+	 pp.back.bsd.svc \
 	 pp.back.bsd.func \
 	 pp.quest
 
