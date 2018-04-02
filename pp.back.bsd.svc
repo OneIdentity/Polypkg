@@ -1,0 +1,322 @@
+#@ pp_backend_deb_init_svc_vars(): initialise deb-specific service variables
+#    pp-provided vars are cmd, pidfile, stop_signal and user
+pp_backend_bsd_init_svc_vars () {
+	svc_process_regex="${pp_bsd_svc_process_regex}"
+    svc_description=$summary
+    svc_init_filename="${pp_bsd_svc_init_filename}"     # == $svc.init
+    svc_init_filepath="${pp_bsd_svc_init_filepath}"     # == /etc/rc.d/ by default
+
+    bsd_svc_before="${pp_bsd_svc_before}"
+    bsd_svc_require="${pp_bsd_svc_require}"
+    bsd_svc_keyword="${pp_bsd_svc_keyword}"
+
+	svc_command="$cmd"
+	svc_command_args=
+	svc_pre_command="${pp_bsd_svc_pre_command}"
+	svc_pre_command_args="${pp_bsd_svc_pre_command_args}"
+    
+}
+
+pp_bsd_service_make_init_info() {
+	local svc=$1
+	local out=$2
+	cat <<-. >$out
+	#!/bin/sh
+	#
+	# FreeBSD Script Header Detail
+	#
+	# PROVIDE: $svc
+.
+
+	if [ ! -z "$bsd_svc_before" ]; then
+	cat <<-. >>$out
+		# BEFORE: $bsd_svc_before
+.
+	fi
+
+	if [ ! -z "$bsd_svc_require" ]; then
+    cat <<-. >>$out
+		# REQUIRE: $bsd_svc_require
+.
+	fi
+
+	if [ ! -z "$bsd_svc_keyword" ]; then
+    cat <<-. >>$out
+		# KEYWORD: $bsd_svc_keyword
+.
+	fi
+
+	cat <<-'.' >>$out
+		### END INIT INFO
+
+.
+
+}
+
+pp_bsd_service_make_init_set_vars() {
+	local svc=$1
+    local out=$2
+
+	local run_command="${svc_pre_command:-$svc_command}"
+	local run_pre_command_args="${svc_pre_command:+"${svc_pre_command_args}"}"
+	local run_post_command_args="${svc_command:+"${svc_command_args}"}"
+    local run_post_command_without_pre_command="${svc_pre_command:+"$svc_command"}"
+	local run_post_command_with_args="${run_post_command_without_pre_command}${run_post_command_args:+" $run_post_command_args"}"
+	local run_command_args="${run_pre_command_args:+"$run_pre_command_args"}${run_post_command_with_args:+" $run_post_command_with_args"}"
+
+    # https://www.freebsd.org/cgi/man.cgi?query=rc.subr
+	cat <<-. >>$out
+	# FreeBSD rc subroutines
+	. /etc/rc.subr
+
+	# 0: Not running.
+	# 1: Running normally
+	# 2: Running, but no PID file.
+	# 3: Running, but PID file doesn't match running processes.
+	# If the PID file is found but no process, the file is removed and 0 is returned.
+	DAEMON_RUNNING=0
+
+	name="$svc"
+	desc="${svc_description:-\$name}"
+
+	start_cmd="\${name}_start"
+	status_cmd="\${name}_status"
+	stop_cmd="\${name}_stop"
+
+	# Loads any variables set in /etc/rc.conf.d/\$name
+	load_rc_config \$name
+
+	: \${${svc}_enable:="Yes"}
+	: \${${svc}_pidfile:="${pidfile:-/var/run/\${name\}.pid}"}
+	: \${${svc}_args:="$run_command_args"}
+	: \${${svc}_cmd:="$run_command"}
+
+	# Regex used in the pp_check_daemon_running ps check to find our running processe(s)
+	# If it's set in /etc/rc.conf.d/\$name this will be used first
+	# then check if pp_bsd_svc_process_regex is set, finally set to the \${name}_cmd
+	# When set to \${name}_cmd pp_check_daemon_running will only find the parent process pid
+	: \${${svc}_process_regex:="${pp_bsd_svc_process_regex:-\$${svc}_cmd}"}
+
+	# For additional information about the rc.subr see:
+	# https://www.freebsd.org/cgi/man.cgi?query=rc.subr
+	rcvar="\${name}_enable"
+
+	pidfile=\${${svc}_pidfile}
+
+	command="\$${svc}_cmd"
+	command_args="\$${svc}_args"
+
+.
+
+}
+
+pp_bsd_service_make_init_body() {
+	local svc=$1
+	local out=$2
+
+	cat<<-'.' >>$out
+	pp_exec_cmd() { $command $command_args; }
+
+	pp_success_msg () { echo ${1:+"$*:"} OK; }
+	pp_failure_msg () { echo ${1:+"$*:"} FAIL; }
+	pp_warning_msg () { echo ${1:+"$*:"} WARNING; }
+
+	#-- prints a status message
+	pp_msg () { echo -n "$*: "; }
+
+	# Kills process $1.
+	# First a sigterm, then wait up to 10 seconds
+	# before issuing a sig kill.
+	pp_signal () {
+	    # Kill the processes the nice way first
+	    if [ -z "$1" ]; then
+	        # No pid file. Use the list from pp_check_daemon_running
+	        kill $PROCESSES 2>/dev/null
+	    else
+	        kill $1 2>/dev/null
+	    fi
+	    count=1
+
+	    #Check to make sure the processes died, if not kill them the hard way
+	    while [ $count -le 10 ]; do
+	        sleep 1
+	        pp_check_daemon_running
+	        if [ $DAEMON_RUNNING -eq 0 ]; then
+	            break;
+	        fi
+	        if [ $count -eq 1 ]; then
+	            # We tried killing the pid associated to the pidfile, now try the ones we found from pp_check_daemon_running
+	            kill $PROCESSES 2>/dev/null
+	        fi
+	        count=`expr $count + 1`
+	    done
+	    # Check one more time to make sure we got them all
+	    if [ $DAEMON_RUNNING -ne 0 ]; then
+	       # These guys don't want to go down the nice way, now just kill them
+	       kill -9 $PROCESSES 2>/dev/null
+	    fi
+	    # make sure to remove the pidfile
+	    rm -f $pidfile
+	}
+
+	# Check to see if the daemon process is running
+	# Sets the PROCESSES global variable with all pids that match
+	# ${name}_process_regex 
+	# Sets global variable DAEMON_RUNNING to one of the following:
+	# 0: Not Running
+	# 1: Running normally
+	# 2: Running, but no PID file
+	# 3: Running, but PID file doesn't match running processes.
+	# 
+	pp_check_daemon_running()
+	{
+		DAEMON_RUNNING=0
+.
+	cat<<-. >>$out
+
+		PROCESSES="\`eval ps -axo pid,args | grep \${${svc}_process_regex} | grep -v grep | awk '{print \$1}'\`"
+
+.
+	cat<<-'.' >>$out
+    if [ -f $pidfile ]; then
+        if [ ! -z "$PROCESSES" ]; then
+            PARENT_PID=`cat $pidfile 2>/dev/null`
+            PPROCESS=`echo $PROCESSES | grep "${PARENT_PID:-"NOPID"}"`
+            if [ $? -eq 0 ]; then
+                DAEMON_RUNNING=1
+            else
+                DAEMON_RUNNING=3
+            fi
+        else
+            rm -r $pidfile
+        fi
+    else
+        if [ ! -z "$PROCESSES" ]; then
+            DAEMON_RUNNING=2
+        fi
+    fi
+	}
+.
+	cat <<-. >>$out
+
+	# starts the service
+	${svc}_start()
+.
+	cat <<-'.' >>$out
+	{
+	    pp_msg "Starting ${desc}"
+	    pp_check_daemon_running
+
+	    if [ $DAEMON_RUNNING -eq 0 ]; then
+	        pp_exec_cmd
+	        RETVAL=$?
+	        if [ $RETVAL -eq 0 ]; then
+	            pp_success_msg
+	        else
+	            pp_failure_msg "cannot start"
+	        fi
+	    else
+	        if [ $DAEMON_RUNNING -eq 1 ]; then
+	            pp_success_msg "${name} appears to be running already"
+	        else
+	            pp_warning_msg "${name} is already running but without a pid file"
+	        fi
+	    fi
+	}
+
+.
+
+	cat <<-. >>$out
+	# stops the service
+	${svc}_stop()
+.
+
+	cat <<-'.' >>$out
+	{
+	    pp_msg "Stopping ${desc}"
+	    pp_check_daemon_running
+
+	    if [ $DAEMON_RUNNING -ne 0 ]; then
+	        pp_signal `cat $pidfile 2>/dev/null`
+	        if [ -n "$pidfile" ]; then
+	            loop_cnt=1
+	            while [ -e ${pidfile} ]; do
+	                sleep 1
+	                loop_cnt=`expr $loop_cnt + 1`
+	                if [ $loop_cnt -eq 10 ]; then
+	                    break
+	                fi
+	            done
+	        fi
+	        rm -f $pidfile
+
+	        pp_success_msg
+	    else
+	        pp_failure_msg
+	        echo -n "$desc does not appear to be running."
+	        echo
+	    fi
+	}
+.
+
+	cat <<-. >>$out
+	# prints information about the service status
+	# returns:
+	# 0=running
+	# 1=Not running
+	# 2=Running without pidfile
+	# 3=Running with pid that doesn't match pidfile
+	${svc}_status()
+.
+	
+	cat <<-'.' >>$out
+	{
+	    pp_msg "Checking ${desc}"
+	    pp_check_daemon_running
+	    if [ $DAEMON_RUNNING -eq 1 ]; then
+	        pp_success_msg "PID $PARENT_PID: running"
+	        return 0
+	    else
+	        if [ $DAEMON_RUNNING -eq 0 ]; then
+	            pp_failure_msg "not running"
+	            return 1
+	        elif [ $DAEMON_RUNNING -eq 2 ]; then
+	            pp_warning_msg "running without a pid file"
+	            return 2
+	        else
+	            pp_warning_msg "running but pid file doesn't match running processe()"
+	            return 3
+	        fi
+	    fi
+	}
+
+	run_rc_command "$1"
+.
+}
+
+#@ pp_bsd_service_make_init_script(svc): generates a serfice init script
+pp_bsd_service_make_init_script () {
+    local svc=${svc_init_filename:-$1}
+    local script="${svc_init_filepath:-"/etc/rc.d"}/$svc"
+    local out=$pp_destdir$script
+
+	pp_add_file_if_missing $script run 755 || return 0
+
+	pp_bsd_service_make_init_info "$svc" "$out"
+	pp_bsd_service_make_init_set_vars "$svc" "$out"
+	pp_bsd_service_make_init_body "$svc" "$out"
+
+	chmod 755 $out
+
+}
+
+pp_bsd_handle_services () {
+	if test -n "$pp_services"; then
+		for svc in $pp_services; do
+			pp_load_service_vars $svc
+ 			# Append some code to %post to install the svc TODO: Figure out why/what
+			pp_bsd_service_make_init_script $svc
+			# prepend some code to %preun to uninstall svc TODO: Figure out why/what
+		done
+	fi
+}
