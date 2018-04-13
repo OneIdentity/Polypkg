@@ -49,7 +49,7 @@
 %pre
   echo This is the PRE-INSTALL script
 
-%post
+%post [bsd]
   name=%{pp_bsd_svc_init_filename}
   echo This is the POST-INSTALL script
   %(pp_functions pp_mkuser)
@@ -66,7 +66,7 @@
     echo "Done"
   fi
 
-%preun
+%preun [bsd]
   name=%{pp_bsd_svc_init_filename}
   echo This is the PRE-UNINSTALL script
   if [ -x "%{pp_bsd_svc_init_filepath}/${name}" ]; then
