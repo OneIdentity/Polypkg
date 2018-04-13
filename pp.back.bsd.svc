@@ -3,17 +3,13 @@
 pp_backend_bsd_init_svc_vars () {
 	svc_process_regex="${pp_bsd_svc_process_regex}"
     svc_description=$summary
-    svc_init_filename="${pp_bsd_svc_init_filename}"     # == $svc.init
-    svc_init_filepath="${pp_bsd_svc_init_filepath}"     # == /etc/rc.d/ by default
+    svc_init_prefix="${pp_bsd_prefix}"
+    svc_init_filename="${pp_bsd_svc_init_filename}"     # == $svc
+    svc_init_filepath="${pp_bsd_svc_init_filepath}"     # == $pp_bsd_prefix/etc/rc.d/ by default
 
     bsd_svc_before="${pp_bsd_svc_before}"
     bsd_svc_require="${pp_bsd_svc_require}"
     bsd_svc_keyword="${pp_bsd_svc_keyword}"
-
-	svc_command="$cmd"
-	svc_command_args=
-	svc_pre_command="${pp_bsd_svc_pre_command}"
-	svc_pre_command_args="${pp_bsd_svc_pre_command_args}"
     
 }
 
@@ -57,6 +53,10 @@ pp_bsd_service_make_init_set_vars() {
 	local svc=$1
     local out=$2
 
+	svc_command="$cmd"
+	svc_pre_command="${pp_bsd_svc_pre_command}"
+	svc_pre_command_args="${pp_bsd_svc_pre_command_args}"
+
 	local run_command="${svc_pre_command:-$svc_command}"
 	local run_pre_command_args="${svc_pre_command:+"${svc_pre_command_args}"}"
 	local run_post_command_args="${svc_command:+"${svc_command_args}"}"
@@ -95,7 +95,7 @@ pp_bsd_service_make_init_set_vars() {
 	# If it's set in /etc/rc.conf.d/\$name this will be used first
 	# then check if pp_bsd_svc_process_regex is set, finally set to the \${name}_cmd
 	# When set to \${name}_cmd pp_check_daemon_running will only find the parent process pid
-	: \${${svc}_process_regex:="${pp_bsd_svc_process_regex:-\$${svc}_cmd}"}
+	: \${${svc}_process_regex:="${pp_bsd_svc_process_regex:-${cmd}}"}
 
 	# For additional information about the rc.subr see:
 	# https://www.freebsd.org/cgi/man.cgi?query=rc.subr
@@ -115,7 +115,7 @@ pp_bsd_service_make_init_body() {
 	local out=$2
 
 	cat<<-'.' >>$out
-	pp_exec_cmd() { $command $command_args; }
+	pp_exec_cmd() { (eval $command $command_args) }
 
 	pp_success_msg () { echo ${1:+"$*:"} OK; }
 	pp_failure_msg () { echo ${1:+"$*:"} FAIL; }
@@ -174,7 +174,7 @@ pp_bsd_service_make_init_body() {
 .
 	cat<<-. >>$out
 
-		PROCESSES="\`eval ps -axo pid,args | grep \${${svc}_process_regex} | grep -v grep | awk '{print \$1}'\`"
+		PROCESSES="\`eval ps -axo pid,args | grep "\${${svc}_process_regex}" | grep -v grep | awk '{print \$1}'\`"
 
 .
 	cat<<-'.' >>$out
@@ -297,7 +297,7 @@ pp_bsd_service_make_init_body() {
 #@ pp_bsd_service_make_init_script(svc): generates a serfice init script
 pp_bsd_service_make_init_script () {
     local svc=${svc_init_filename:-$1}
-    local script="${svc_init_filepath:-"/etc/rc.d"}/$svc"
+    local script="${svc_init_filepath:-"${svc_init_prefix}/etc/rc.d"}/$svc"
     local out=$pp_destdir$script
 
 	pp_add_file_if_missing $script run 755 || return 0

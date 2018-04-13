@@ -1,7 +1,7 @@
 
 srcdir= 	.
 
-prefix= 	/usr
+prefix= 	/usr/local
 bindir= 	$(prefix)/bin
 libdir= 	$(prefix)/lib
 sbindir=	$(prefix)/sbin

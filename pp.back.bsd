@@ -38,7 +38,7 @@ pp_backend_bsd_init () {
     pp_bsd_abi=
     pp_bsd_www=
     pp_bsd_maintainer=
-    pp_bsd_prefix="/usr/local"
+    pp_bsd_prefix="/usr/local/"
     pp_bsd_desc=
     pp_bsd_message=
 
@@ -293,7 +293,7 @@ pp_bsd_make_data() {
     cat $pp_wrkdir/%files.${cmp} | while read t m o g f p st; do
         test x"$o" = x"-" && o="${pp_bsd_defattr_uid:-root}"
         test x"$g" = x"-" && g="${pp_bsd_defattr_gid:-wheel}"
-        path=$pp_bsd_prefix$p
+        path=$p
         case "$t" in
             f) # Files
                 # For now just skip the file if it is volatile, we will need to remove it in the pre uninstall script
@@ -320,7 +320,7 @@ pp_bsd_make_data() {
                 pp_debug "Found symlink: $datadir$path";
                 # Remove leading /
                 rel_p=`echo $p | sed s,^/,,`
-                (cd $datadir$pp_bsd_prefix; ln -sf $st $rel_p);                 
+                (cd $datadir; ln -sf $st $rel_p);
                 # Do we care if the file doesn't exist? Just symnlink it regardless and throw a warning? This will be important in the case 
                 # where we depend on other packages to be installed and will be using the libs from that package.
                 if [ ! -e "$datadir$path" ]; then
