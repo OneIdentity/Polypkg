@@ -298,6 +298,7 @@ pp_bsd_service_make_init_body() {
 pp_bsd_service_make_init_script () {
     local svc=${svc_init_filename:-$1}
     local script="${svc_init_filepath:-"${svc_init_prefix}/etc/rc.d"}/$svc"
+    script=`echo $script | sed 's://*:/:g'`
     local out=$pp_destdir$script
 
 	pp_add_file_if_missing $script run 755 || return 0
