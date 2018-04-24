@@ -21,7 +21,8 @@
   pp_bsd_messages_2="3rd Message"
 
   pp_bsd_origin="security/${pp_bsd_name:-$name}"
-  pp_bsd_prefix="/tmp/${pp_bsd_name:-$name}"
+  # In this example pp_bsd_prefix should always match the Makefile $prefix value
+  pp_bsd_prefix="${prefix}"
   pp_bsd_www="https://www.oneidentity.com"
   pp_bsd_maintainer="One Identity LLC <support@oneidentity.com>"
 
@@ -38,19 +39,44 @@
   pp_bsd_categories="[devel,security]"
  
   pp_bsd_abi="FreeBSD:*:amd64"
+  pp_bsd_svc_init_filename="hellod"
+  pp_bsd_svc_init_filepath="${pp_bsd_prefix}/etc/rc.d"
 
-%depend [bsd]
+%depend dev [bsd]
   grep
+  hello hello 1.0.0.1
 
 %pre
   echo This is the PRE-INSTALL script
 
-%post
+%post [bsd]
+  name=%{pp_bsd_svc_init_filename}
   echo This is the POST-INSTALL script
   %(pp_functions pp_mkuser)
 
-%preun
+  if [ -x "%{pp_bsd_svc_init_filepath}/${name}" ]; then
+        service /${name} status > /dev/null 2>&1
+        RUNNING=$?
+        if [ $RUNNING -eq 0 ]; then
+            service /${name} restart
+        else
+            service /${name} start
+        fi
+    sleep 2
+    echo "Done"
+  fi
+
+%preun [bsd]
+  name=%{pp_bsd_svc_init_filename}
   echo This is the PRE-UNINSTALL script
+  if [ -x "%{pp_bsd_svc_init_filepath}/${name}" ]; then
+    service /${name} status > /dev/null 2>&1
+    RUNNING=$?
+    if [ $RUNNING -eq 0 ]; then
+        service /${name} stop
+    fi
+  fi
+
 %postun
   echo This is the POST-UNINSTALL script
 
@@ -58,9 +84,6 @@
   echo This is the PRE-UPGRADE script
 %postup [bsd]
   echo This is the POST-UPRADE script
-
-%service hellod
-  cmd=${sbindir}/hellod
 
 %files
   ${bindir}/
@@ -73,6 +96,12 @@
   ${sysconfdir}/hello.conf  644 volatile
   ${libdir}/hello/
   ${libdir}/slink
+
+%service hellod
+  cmd=$sbindir/hellod
+  pidfile="/var/run/${pp_bsd_svc_init_filename}.pid"
+  pp_bsd_svc_pre_command="/usr/sbin/daemon"
+  pp_bsd_svc_pre_command_args="-f \${${pp_bsd_svc_init_filename}_pidfile:+\"-P \$${pp_bsd_svc_init_filename}_pidfile\"}"
 
 %files dev
   ${bindir}/
