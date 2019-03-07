@@ -26,7 +26,7 @@ pp_set_expand_converter_or_reexec () {
     else
 	test x"$pp_expand_rexec" != x"true" ||
 	    pp_die "problem finding shell that can do brace expansion"
-	for shell in ksh ksh93 bash; do
+	for shell in bash ksh ksh93; do
 	    if ($shell -c 'echo /{usr,bin}' |
 			pp_expand_test_usr_bin) 2>/dev/null ||
 	       ($shell -c 'echo /@(usr|bin)' |
