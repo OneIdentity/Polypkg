@@ -85,7 +85,7 @@ pp_deb_munge_description () {
 
 #@ pp_deb_detect_arch: sets pp_deb_arch, pp_deb_arch_std
 pp_deb_detect_arch () {
-   pp_deb_arch=`dpkg --print-architecture`
+   pp_deb_arch=`dpkg-architecture -qDEB_HOST_ARCH`
    pp_deb_arch_std=`uname -m`
 }
 
