@@ -130,6 +130,8 @@ pp_solaris_smf () {
                 exec='$_pp_solaris_service_script restart'
                 timeout_seconds='$smf_restart_timeout' />
 
+          $pp_solaris_smf_property_groups
+
           <template>
               <common_name>
                   <loctext xml:lang='C'>$description</loctext>
