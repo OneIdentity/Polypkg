@@ -32,8 +32,8 @@ usage: pp [options] [input.pp]
 ```
 
 ## Examples
-* Sudo
-* DNSUpdate
+* [sudo](https://github.com/sudo-project/sudo/blob/master/sudo.pp)
+* [DNSUpdate](https://github.com/OneIdentity/dnsupdate/blob/master/dnsupdate.pp)
 
 ## Architecture
 As a shell script, **pp** has a simple design:
@@ -52,5 +52,5 @@ This is the platform-specific code which takes the collection of script fragment
 
 ## See Also
 Other cross-platform packaging tools with similar goals to **pp** include:
-* pkgutils
-* EPM
+* [pkgutils](http://www.thewrittenword.com/projects/pkgutils/)
+* [ESP Package Manager](https://www.msweet.org/epm/)
