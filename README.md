@@ -14,6 +14,16 @@ A cross-platform packaging tool that attempts to automate package building for U
 * Can automatically copy packages into a snapshot distribution area with a sane layout
 * Parameter substitution in post-install/service script fragments
 
+## Supported Package Types
+* IBM AIX (bff)
+* FreeBSD (pkg)
+* Debian (deb)
+* SGI IRIX (inst)
+* HP Tru64 (tar.gz)
+* macOS (pkg)
+* Redhat Package Manager (rpm)
+* Oracle Solaris (pkg)
+
 ## Synopsis
 ```
 usage: pp [options] [input.pp]
@@ -30,11 +40,6 @@ usage: pp [options] [input.pp]
     -v --verbose                -- write info to stderr
        --version                -- display version and quit
 ```
-
-## Examples
-* [sudo](https://github.com/sudo-project/sudo/blob/master/sudo.pp)
-* [DNSUpdate](https://github.com/OneIdentity/dnsupdate/blob/master/dnsupdate.pp)
-
 ## Architecture
 As a shell script, **pp** has a simple design:
 ```
@@ -49,6 +54,10 @@ This stage parses the spec file; removes comments, and performs section handling
 The model stage is just an internal representation of the package: the number of components defined, names of declared services, and also provides a generic view of the file set. The result of this stage is a directory full of well-known file names containing pre-examined/processed filenames, script fragments etc.
 ### Back end
 This is the platform-specific code which takes the collection of script fragment files, fileset lists and generates the output package file(s).
+
+## Examples
+* [sudo](https://github.com/sudo-project/sudo/blob/master/sudo.pp)
+* [DNSUpdate](https://github.com/OneIdentity/dnsupdate/blob/master/dnsupdate.pp)
 
 ## See Also
 Other cross-platform packaging tools with similar goals to **pp** include:
