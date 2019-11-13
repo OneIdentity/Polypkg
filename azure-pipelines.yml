@@ -23,5 +23,4 @@ steps:
     echo Installing PolyPackage
     make install
   displayName: 'Copy PolyPackage to Installation Directories'
-  condition: and(succeeded(), eq(variables['BUild.SourceBranch'], 'refs/heads/master'), ne(variables['build.installdirs'], '')
-
+  condition: and(succeeded(), eq(variables['BUild.SourceBranch'], 'refs/heads/master'), ne(variables['build.installdirs'], ''))
