@@ -23,5 +23,5 @@ steps:
     echo Installing PolyPackage
     make install
   displayName: 'Copy PolyPackage to Installation Directories'
-  condition: ne(variables['build.installdirs', 'NULL'])
+  condition: ne(variables['build.installdirs'], NULL)
 
