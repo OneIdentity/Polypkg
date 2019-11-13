@@ -1,7 +1,8 @@
 # Copyright 2019 One Identity LLC. ALL RIGHTS RESERVED.
 
 PP_SHELL=	/bin/sh
-PP_INSTALLDIRS = /data/rc/pub/rc/polypkg /data/endpoint/rc/polypkg
+## Set this value to a path(s) where PolyPackage is installed or can be installed
+PP_INSTALLDIRS = ""
 
 PP_SRCS= \
 	 pp.main \
@@ -37,7 +38,7 @@ PP_SRCS= \
 	 pp.quest
 
 all: pp pp-stripped check
-#	cd example && $(MAKE)
+	cd example && $(MAKE)
 	@echo "Polypkg versions:"; \
 	for d in $(PP_INSTALLDIRS); do \
 	    if test -x $$d/pp; then \
@@ -100,7 +101,7 @@ install: pp-stripped
 		    exit 1;; \
 	    esac
 	@for d in $(PP_INSTALLDIRS); do \
-	    if test -d $$d; then\
+	    if test -d "$$d"; then\
 	        cp -f pp-stripped $$d/pp; \
 	    fi; \
 	done
