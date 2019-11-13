@@ -12,14 +12,14 @@ pool:
 steps:
 
 - script: |
-    export PP_INSTALLDIRS=$(build.installdirs)
+    export PP_INSTALLDIRS="$(build.installdirs)"
     echo Building PolyPackage
     make clean
     make all
   displayName: 'Building PolyPackage'
 
 - script: |
-    export PP_INSTALLDIRS=$(build.installdirs)
+    export PP_INSTALLDIRS="$(build.installdirs)"
     echo Installing PolyPackage
     make install
   displayName: 'Copy PolyPackage to Installation Directories'
