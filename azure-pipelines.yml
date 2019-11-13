@@ -1,7 +1,6 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
+# If 
 
 trigger:
 - master
@@ -9,18 +8,20 @@ trigger:
 pool:
   #vmImage: 'ubuntu-latest'
   name: 'PASU'
-  
+
 steps:
 
 - script: |
+    export PP_INSTALLDIRS=$(build.installdirs)
     echo Building PolyPackage
     make clean
     make all
   displayName: 'Building PolyPackage'
 
 - script: |
+    export PP_INSTALLDIRS=$(build.installdirs)
     echo Installing PolyPackage
     make install
-  displayName: 'Copy PolyPackage to Mount'
-
+  displayName: 'Copy PolyPackage to Installation Directories'
+  condition: ne(variables['build.installdirs', NULL])
 
