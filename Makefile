@@ -1,7 +1,7 @@
-# Copyright 2018 One Identity LLC. ALL RIGHTS RESERVED.
+# Copyright 2019 One Identity LLC. ALL RIGHTS RESERVED.
 
 PP_SHELL=	/bin/sh
-INSTALLED_PP = /data/rc/pub/rc/polypkg/pp
+PP_INSTALLDIRS = /data/rc/pub/rc/polypkg /data/endpoint/rc/polypkg
 
 PP_SRCS= \
 	 pp.main \
@@ -37,12 +37,14 @@ PP_SRCS= \
 	 pp.quest
 
 all: pp pp-stripped check
-	cd example && $(MAKE)
-	@if test -x $(INSTALLED_PP); then \
-	    echo "Polypkg versions:"; \
-	    echo " installed (public): "`$(INSTALLED_PP) --version | cut -d' ' -f2`; \
-	    echo " local:              "`./$< --version | cut -d' ' -f2`; \
-	fi
+#	cd example && $(MAKE)
+	@echo "Polypkg versions:"; \
+	for d in $(PP_INSTALLDIRS); do \
+	    if test -x $$d/pp; then \
+	        echo " installed: `$$d/pp --version | cut -d' ' -f2` at $$d/pp"; \
+	    fi; \
+	done
+	@echo " local:     "`./$< --version | cut -d' ' -f2`;
 
 # Generate a pp that includes the sources with the '.' operator.
 # This is most handy for development because the source line numbers
@@ -97,4 +99,8 @@ install: pp-stripped
 		    echo "Refusing to install unclean version $$PPVER" >&2; \
 		    exit 1;; \
 	    esac
-	cp -f pp-stripped $(INSTALLED_PP)
+	@for d in $(PP_INSTALLDIRS); do \
+	    if test -d $$d; then\
+	        cp -f pp-stripped $$d/pp; \
+	    fi; \
+	done
