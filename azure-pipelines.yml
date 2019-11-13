@@ -1,0 +1,27 @@
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+# Set the build variable build.installdirs to install 
+# PolyPkg to that location.
+
+trigger:
+- master
+
+pool:
+  name: 'PASU'
+
+steps:
+
+- script: |
+    export PP_INSTALLDIRS=$(build.installdirs)
+    echo Building PolyPackage
+    make clean
+    make all
+  displayName: 'Building PolyPackage'
+
+- script: |
+    export PP_INSTALLDIRS=$(build.installdirs)
+    echo Installing PolyPackage
+    make install
+  displayName: 'Copy PolyPackage to Installation Directories'
+  condition: ne(variables['build.installdirs'], '')
+
