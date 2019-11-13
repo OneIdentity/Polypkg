@@ -2,7 +2,7 @@
 
 PP_SHELL=	/bin/sh
 ## Set this value to a path(s) where PolyPackage is installed or can be installed
-PP_INSTALLDIRS = ${PP_INSTALLDIRS}
+PP_INSTALLDIRS := ${PP_INSTALLDIRS}
 
 PP_SRCS= \
 	 pp.main \
