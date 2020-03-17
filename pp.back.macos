@@ -718,7 +718,7 @@ pp_backend_macos_flat () {
 
     # build the flat package layout
     pkgdir=$pp_wrkdir/pkg
-    bundledir=$pp_wrkdir/pkg/$name-${version}.pkg
+    bundledir=$pp_wrkdir/pkg/$name.pkg
     Resources=$pkgdir/Resources
     lprojdir=$Resources/en.lproj
     mkdir $pkgdir $bundledir $Resources $lprojdir ||
@@ -862,7 +862,6 @@ pp_backend_macos_flat () {
     cd $pp_destdir || pp_error "Can't cd to $pp_destdir"
     awk '{ print "." $6 }' $filelists | sed 's:/$::' | sort | /usr/bin/cpio -o | pp_macos_rewrite_cpio $filelists | gzip -9f -c > $bundledir/Payload
     )
-    awk '{print $6}' $filelists > $name.files
 
     # Copy installer plugins if any
     if test -n "$pp_macos_installer_plugin"; then
@@ -883,13 +882,6 @@ pp_backend_macos_flat () {
 	*)	 xar_flags="$xar_flags --distribution";;
     esac
     (cd $pkgdir && /usr/bin/xar $xar_flags -cf "../$name-$version.pkg" *)
-
-    rm -rf $pkgdir/*
-    echo "version=$version" > $name.uninstall
-    if [ -f "${name}-${version}.dmg" ]; then
-        rm -f ${name}-${version}.dmg
-    fi
-    hdiutil create -fs HFS+ -srcfolder $pkgdir -volname $name ${name}-${version}.dmg
 }
 
 #@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
