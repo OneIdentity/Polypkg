@@ -884,12 +884,7 @@ pp_backend_macos_flat () {
     esac
     (cd $pkgdir && /usr/bin/xar $xar_flags -cf "../$name-$version.pkg" *)
 
-    rm -rf $pkgdir/*
     echo "version=$version" > $name.uninstall
-    if [ -f "${name}-${version}.dmg" ]; then
-        rm -f ${name}-${version}.dmg
-    fi
-    hdiutil create -fs HFS+ -srcfolder $pkgdir -volname $name ${name}-${version}.dmg
 }
 
 #@ pp_backend_macos_cleanup(): removes any files created outside $pp_wrkdir
