@@ -87,11 +87,8 @@ pp_rpm_service_remove_common () {
 .
 }
 
-
 #@ pp_rpm_service_install(svc): emit code to install/start a service
 pp_rpm_service_install () {
-    pp_rpm_service_make_init_script $1 >/dev/null ||
-        pp_error "could not create init script for service $1"
     echo "_pp_install_service $1"
     test $enable = yes && echo "_pp_enable_service $1"
 }
@@ -116,6 +113,8 @@ pp_backend_rpm_init_svc_vars () {
     stop_runlevels=${pp_rpm_default_stop_runlevels-"0 1 6"} # == lsb default-stop
     svc_description="${pp_rpm_default_svc_description}" # == lsb short descr
     svc_process=
+    svc_init_filename="${pp_rpm_svc_init_filename}"     # == $svc.init
+    svc_init_filepath="${pp_rpm_svc_init_filepath}"     # == /etc/init.d/ by default
 
     lsb_required_start='$local_fs $network'
     lsb_should_start=
@@ -224,8 +223,8 @@ pp_rpm_service_group_make_init_script () {
 #   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
 #   broken on Red Hat, chkconfig is tried first.
 pp_rpm_service_make_init_script () {
-    local svc=$1
-    local script=/etc/init.d/$svc
+    local svc=${svc_init_filename:-$1}
+    local script="${svc_init_filepath:-"/etc/init.d"}/$svc"
     local out=$pp_destdir$script
     local _process _cmd _rpmlevels
 

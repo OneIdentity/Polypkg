@@ -35,6 +35,7 @@ PP_SRCS= \
 	 pp.back.bsd \
 	 pp.back.bsd.svc \
 	 pp.back.bsd.func \
+	 pp.back.systemd.svc \
 	 pp.quest
 
 all: pp pp-stripped check

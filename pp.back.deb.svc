@@ -7,6 +7,8 @@ pp_backend_deb_init_svc_vars () {
     stop_runlevels=${pp_deb_default_stop_runlevels-"0 1 6"}     # == lsb default-stop
     svc_description="${pp_deb_default_svc_description}" # == lsb short descr
     svc_process=
+    svc_init_filename="${pp_deb_svc_init_filename}"     # == $svc.init
+    svc_init_filepath="${pp_deb_svc_init_filepath}"     # == /etc/init.d/ by default
 
     lsb_required_start='$local_fs $network'
     lsb_should_start=
@@ -22,8 +24,8 @@ pp_backend_deb_init_svc_vars () {
 #   Does nothing if an /etc/init.d/$svc script exists already.
 #   Otherwise creates an /etc/init.d/$svc script
 pp_deb_service_make_init_script () {
-    local svc=$1
-    local script=/etc/init.d/$svc
+    local svc=${svc_init_filename:-$1}
+    local script="${svc_init_filepath:-"/etc/init.d"}/$svc"
     local out=$pp_destdir$script
     local _process _cmd
 
