@@ -256,4 +256,7 @@ esac
 :
 .
     chmod 755 $out
+
+    # Create systemd service file
+    pp_systemd_make_service_file $svc
 }

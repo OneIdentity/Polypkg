@@ -464,8 +464,6 @@ pp_backend_rpm () {
         #-- add service start/stop code
         if test -n "$pp_services"; then
             pp_rpm_service_install_common >> $pp_wrkdir/%post.run
-            pp_systemd_service_install_common >> $pp_wrkdir/%post.run
-            pp_systemd_service_install_enable >> $pp_wrkdir/%post.run
 
             #-- record the uninstall commands in reverse order
             for svc in $pp_services; do
@@ -473,31 +471,16 @@ pp_backend_rpm () {
 
                 pp_rpm_service_make_init_script $svc ||
 		    pp_error "could not create init script for service $svc"
-		pp_systemd_make_service_file $svc ||
-		    pp_error "could not create service file for service $svc"
 
                 #-- append %post code to install the svc
                 pp_rpm_service_install $svc >> $pp_wrkdir/%post.run
-                pp_systemd_service_install $svc >> $pp_wrkdir/%post.run
 
                 #-- prepend %preun code to uninstall svc
                 # (use files in case vars are modified)
-                pp_systemd_service_disable $svc | pp_prepend $pp_wrkdir/%preun.run
                 pp_rpm_service_remove $svc | pp_prepend $pp_wrkdir/%preun.run
-
-                #-- prepend %postun code to remove svc
-                # (the init script must be removed first or systemd will use it)
-                pp_systemd_service_remove $svc | pp_prepend $pp_wrkdir/%postun.run
             done
 
-            pp_systemd_service_disable_common | pp_prepend $pp_wrkdir/%preun.run
-            pp_systemd_service_install_common | pp_prepend $pp_wrkdir/%preun.run
             pp_rpm_service_remove_common | pp_prepend $pp_wrkdir/%preun.run
-
-            # Actual systemd service removal is done in %postun.
-            # Otherwise, systemd may pick up the init.d script if it exists.
-            pp_systemd_service_remove_common | pp_prepend $pp_wrkdir/%postun.run
-            pp_systemd_service_install_common | pp_prepend $pp_wrkdir/%postun.run
         fi
 
 	# make convenience service groups
