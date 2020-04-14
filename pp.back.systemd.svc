@@ -5,7 +5,7 @@ pp_systemd_make_service_file() {
 
     svc="$1"
     f="${pp_systemd_service_dir:-'/opt/quest/libexec/vas'}/$svc.service"
-    pp_add_file_if_missing $f || return 0
+    pp_add_file_if_missing $f run 644 v || return 0
 
     cat <<. >$pp_destdir$f
 # Systemd unit file for $svc

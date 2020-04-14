@@ -211,9 +211,13 @@ pp_deb_handle_services() {
 		case "\$1" in
 		    configure)
 		        # Install the service links
-		        update-rc.d $svc defaults
-		        _pp_systemd_install $svc
-		        _pp_systemd_enable $svc
+		        _pp_systemd_init
+		        if test -n "\$systemctl_cmd"; then
+		            _pp_systemd_install $svc
+		            _pp_systemd_enable $svc
+		        else
+		            update-rc.d $svc defaults
+		        fi
 		        ;;
 		esac
 .
