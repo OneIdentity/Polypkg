@@ -197,35 +197,3 @@ pp_systemd_service_remove_common () {
         }
 .
 }
-
-#@ pp_systemd_service_install(svc): emit code to install/start a service
-pp_systemd_service_install () {
-cat <<.
-
-    _pp_systemd_enable $1
-.
-}
-
-#@ pp_systemd_service_disable(svc): emit code to stop a service
-pp_systemd_service_disable () {
-cat <<.
-
-    # XXX - this only makes sense for rpm, not deb
-    if [ "\$1" = "remove" -o "\$1" = "0" ]; then
-        # only remove the systemd service if not upgrade
-        _pp_systemd_disable $1
-    fi
-.
-}
-
-#@ pp_systemd_service_remove(svc): emit code to remove a service
-pp_systemd_service_remove () {
-cat <<.
-
-    # XXX - this only makes sense for rpm, not deb
-    if [ "\$1" = "remove" -o "\$1" = "0" ]; then
-        # only remove the systemd service if not upgrade
-        _pp_systemd_remove $1
-    fi
-.
-}
