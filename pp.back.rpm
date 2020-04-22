@@ -469,8 +469,8 @@ pp_backend_rpm () {
             for svc in $pp_services; do
                 pp_load_service_vars $svc
 
-                pp_rpm_service_make_init_script $svc ||
-		    pp_error "could not create init script for service $svc"
+                pp_rpm_service_make_service_files $svc ||
+		    pp_error "could not create service files for $svc"
 
                 #-- append %post code to install the svc
                 pp_rpm_service_install $svc >> $pp_wrkdir/%post.run

@@ -201,8 +201,8 @@ pp_deb_handle_services() {
             pp_load_service_vars $svc
 
             # Create init script and systemd service file (unless they exists)
-            pp_deb_service_make_init_script $svc ||
-		pp_error "could not create init script for service $svc"
+            pp_deb_service_make_service_files $svc ||
+		pp_error "could not create service files for $svc"
 
             #-- append %post code to install the svc
 	    test x"yes" = x"$enable" &&

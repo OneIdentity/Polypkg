@@ -228,13 +228,13 @@ pp_rpm_service_group_make_init_script () {
     chmod 755 $out
 }
 
-#@ pp_rpm_service_make_init_script(svc): generates a service init script
-#   Assumes %service variables have been set before invocation
-#   Does nothing if an /etc/init.d/$svc script exists already.
-#   Otherwise creates an /etc/init.d/$svc script that should work
-#   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
-#   broken on Red Hat, chkconfig is tried first.
-pp_rpm_service_make_init_script () {
+#@ pp_rpm_service_make_service_files(svc): generates a service init script
+#   Assumes %service variables have been set before invocation.
+#   Creates an /etc/init.d/$svc script if one does not already exist.
+#   The init script should work with both Red Hat's chkconfig and LSB.
+#   LSB support is sometimes broken on Red Hat, so chkconfig is tried first.
+#   Also creates a systemd service file for $svc.
+pp_rpm_service_make_service_files () {
     local svc=${svc_init_filename:-$1}
     local script="${svc_init_filepath:-"/etc/init.d"}/$svc"
     local out=$pp_destdir$script
