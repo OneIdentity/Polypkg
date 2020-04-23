@@ -59,6 +59,7 @@ pp_rpm_service_install_common () {
             fi
         }
 .
+    pp_systemd_service_install_common
 }
 
 #@ pp_rpm_service_remove_common(): emit common code for service removal
@@ -85,24 +86,32 @@ pp_rpm_service_remove_common () {
             fi
         }
 .
+    pp_systemd_service_remove_common
 }
-
 
 #@ pp_rpm_service_install(svc): emit code to install/start a service
 pp_rpm_service_install () {
-    pp_rpm_service_make_init_script $1 >/dev/null ||
-        pp_error "could not create init script for service $1"
-    echo "_pp_install_service $1"
-    test $enable = yes && echo "_pp_enable_service $1"
+    echo ""
+    echo "_pp_systemd_init"
+    echo 'if test -n "$systemctl_cmd"; then'
+    echo "    _pp_systemd_install $1"
+    test $enable = yes && echo "    _pp_systemd_enable $1"
+    echo "else"
+    echo "    _pp_install_service $1"
+    test $enable = yes && echo "    _pp_enable_service $1"
+    echo "fi"
 }
 
 #@ pp_rpm_service_remove(svc): emit code to stop/remove a service
 pp_rpm_service_remove () {
     cat <<-.
-        if [ "\$1" = "remove" -o "\$1" = "0" ]; then
-            # only remove the service if not upgrade
-            _pp_remove_service $1
-        fi
+
+	if [ "\$1" = "remove" -o "\$1" = "0" ]; then
+	    # only remove the service if not upgrade
+	    _pp_remove_service $1
+	    _pp_systemd_disable $1
+	    _pp_systemd_remove $1
+	fi
 .
 }
 
@@ -116,6 +125,8 @@ pp_backend_rpm_init_svc_vars () {
     stop_runlevels=${pp_rpm_default_stop_runlevels-"0 1 6"} # == lsb default-stop
     svc_description="${pp_rpm_default_svc_description}" # == lsb short descr
     svc_process=
+    svc_init_filename="${pp_rpm_svc_init_filename}"     # == $svc.init
+    svc_init_filepath="${pp_rpm_svc_init_filepath}"     # == /etc/init.d/ by default
 
     lsb_required_start='$local_fs $network'
     lsb_should_start=
@@ -217,15 +228,15 @@ pp_rpm_service_group_make_init_script () {
     chmod 755 $out
 }
 
-#@ pp_rpm_service_make_init_script(svc): generates a service init script
-#   Assumes %service variables have been set before invocation
-#   Does nothing if an /etc/init.d/$svc script exists already.
-#   Otherwise creates an /etc/init.d/$svc script that should work
-#   under both Red Hat's chkconfig and LSB. Because LSB support is sometimes
-#   broken on Red Hat, chkconfig is tried first.
-pp_rpm_service_make_init_script () {
-    local svc=$1
-    local script=/etc/init.d/$svc
+#@ pp_rpm_service_make_service_files(svc): generates a service init script
+#   Assumes %service variables have been set before invocation.
+#   Creates an /etc/init.d/$svc script if one does not already exist.
+#   The init script should work with both Red Hat's chkconfig and LSB.
+#   LSB support is sometimes broken on Red Hat, so chkconfig is tried first.
+#   Also creates a systemd service file for $svc.
+pp_rpm_service_make_service_files () {
+    local svc=${svc_init_filename:-$1}
+    local script="${svc_init_filepath:-"/etc/init.d"}/$svc"
     local out=$pp_destdir$script
     local _process _cmd _rpmlevels
 
@@ -433,4 +444,7 @@ pp_rpm_service_make_init_script () {
 
 .
     chmod 755 $out
+
+    # Create systemd service file
+    pp_systemd_make_service_file $svc
 }
