@@ -413,7 +413,7 @@ pp_solaris_remove_service () {
 if [ "x${PKG_INSTALL_ROOT}" = 'x' ]; then
     if [ -x /usr/sbin/svcadm ] ; then
         /usr/sbin/svcadm disable -s '$svc' 2>/dev/null
-        if [ `uname -r` = 5.10 ]; then
+        if [ `uname -r` = 5.10 ] || [ "'${pp_svc_xml_file%/*/*}'" != "/var/svc/manifest" ]; then
           /usr/sbin/svccfg delete '$svc' 2>/dev/null
         else
           /usr/sbin/svcadm restart manifest-import 2>/dev/null
@@ -439,7 +439,7 @@ pp_solaris_install_service () {
     echo '
 if [ "x${PKG_INSTALL_ROOT}" != "x" ]; then
   if [ -x ${PKG_INSTALL_ROOT}/usr/sbin/svcadm ]; then
-    if [ `uname -r` = 5.10 ]; then
+    if [ `uname -r` = 5.10 ] || [ "'${pp_svc_xml_file%/*/*}'" != "/var/svc/manifest" ]; then
       echo "/usr/sbin/svccfg import '$pp_svc_xml_file' 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
     else
       echo "/usr/sbin/svcadm restart manifest-import 2>/dev/null" >> ${PKG_INSTALL_ROOT}/var/svc/profile/upgrade
@@ -465,7 +465,7 @@ else
     if [ -x /usr/sbin/svcadm ]; then
         echo "Registering '$svc' with SMF"
         /usr/sbin/svcadm disable -s '$svc' 2>/dev/null
-        if [ `uname -r` = 5.10 ]; then
+        if [ `uname -r` = 5.10 ] || [ "'${pp_svc_xml_file%/*/*}'" != "/var/svc/manifest" ]; then
           /usr/sbin/svccfg delete '$svc' 2>/dev/null
           /usr/sbin/svccfg import '$pp_svc_xml_file'
         else
