@@ -27,6 +27,7 @@ ${pp_systemd_service_conflicts:+"Conflicts=$pp_systemd_service_conflicts"}
 ExecStart=${pp_systemd_service_exec:-"/opt/quest/sbin/$svc"} ${pp_systemd_service_exec_args}
 KillMode=${pp_systemd_service_killmode:-process}
 Type=${pp_systemd_service_type:-forking}
+${pp_systemd_service_pidfile:+"PIDFile=$pp_systemd_service_pidfile"}
 
 [Install]
 WantedBy=${pp_systemd_system_target:-"multi-user.target"}
