@@ -14,7 +14,7 @@
 #		          called without pp_backend_P_init/pp_backend_P
 #                         being invoked.
 #  pp_backend_P_detect  - Returns true if running on the given platform.
-#                         First arguement is output of 'uname -s'
+#                         First argument is output of 'uname -s'
 #  pp_backend_P_init_svc_vars - Initialise per-service variables
 #  pp_backend_P_install_script - Generates a script file that installs/
 #                           upgrades the recently package built

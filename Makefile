@@ -87,7 +87,7 @@ check: pp
 	done; exit $$ex
 
 # Create a tags file (used by vi). Shell functions are detected
-# by being preceeded by a descriptive comment starting with '#@'
+# by being preceded by a descriptive comment starting with '#@'
 tags: $(PP_SRCS)
 	for f in $(PP_SRCS); do \
 	    sed -n -e 's,^\(\([a-zA-Z_][a-zA-Z_0-9]*\)[ 	]*(\))[ 	]*{.*,\2	'$$f'	/^\1/,p' \

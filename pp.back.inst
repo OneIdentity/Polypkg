@@ -24,7 +24,7 @@
 #      mach "<machtag>"
 #
 #   The idb file contains one line for each file or directory with
-#   optioanl extra attributes
+#   optional extra attributes
 #      config([update|suggest|noupdate])
 #      symval(<symlink-target>)
 #      postop(cmd)
