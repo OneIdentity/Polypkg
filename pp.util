@@ -282,7 +282,7 @@ pp_create_dir_if_missing () {
 #   directory, that directory is also created under $pp_destdir.
 #   This is usually used for system scripts. The mode defaults to 755
 #   and the component defaults to run. The file is scheduled for removal
-#   after packaing is complete.
+#   after packaging is complete.
 pp_add_file_if_missing () {
     typeset dir
     #-- check that the file isn't already declared in the component

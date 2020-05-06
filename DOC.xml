@@ -192,7 +192,7 @@ description="Hello tool"
    <para>
     PolyPackage will detect if the Bourne Shell has this featured,
     and if not it will find a suitable shell that does. On Solaris,
-    this usally means an invocation of the Korn shell.
+    this usually means an invocation of the Korn shell.
    </para>
   </section>
  </chapter>
@@ -496,7 +496,7 @@ The %pp section
 
 	This optional section has no body. It specifies a version of
 	the PolyPackage API that the script was written to use. This
-	document descibes version 1.0.
+	document describes version 1.0.
 
 		%pp 1.0
 -->

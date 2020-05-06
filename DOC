@@ -106,7 +106,7 @@ Helper install script
            list-services              -- lists services defined in the pkg
            list-components            -- lists components defined in the pkg
            list-files {cpt...|all}    -- lists package files containing cpts
-           install {cpt...|all}       -- installs pkgs containig cpts
+           install {cpt...|all}       -- installs pkgs containing cpts
            uninstall {cpt...|all}     -- uninstalls pkgs containing cpts
            start {svc...}             -- starts the service
            stop {svc...}              -- stops the service
@@ -328,12 +328,12 @@ The %post and %preun sections
     %{} and %() expansion
 
         Because most sections (%set being an exception) are deferred
-        until later for exection, it is sometimes useful to be able
+        until later for execution, it is sometimes useful to be able
         to perform variable expansion early. Otherwise, later %set
         sections may change variables, and variable used in the
         other sections will be different when they eventually get run.
 
-        Subtrings of the form "%{FOO}" are replaced by the content of
+        Substrings of the form "%{FOO}" are replaced by the content of
         the shell variable $FOO. (Other shell variable forms such as
         "%{FOO:-default}" are possible: the '%' is replaced by a '$'
         and then evaluated up to the '}'.
@@ -489,7 +489,7 @@ The %check section
         or %preun.
 
 	If the script calls 'exit 1', installation will be
-	cancelled. The script *must* write an explanation
+	canceled. The script *must* write an explanation
 	to the standard output before calling 'exit 1'.
 
             %check [component]
@@ -521,7 +521,7 @@ The %pp section
 
 	This optional section has no body. It specifies a version of
 	the PolyPackage API that the file expects to use. This
-	document descibes version 1.0.
+	document describes version 1.0.
 
 		%pp 1.0
 

@@ -26,15 +26,15 @@
   pp_bsd_www="https://www.oneidentity.com"
   pp_bsd_maintainer="One Identity LLC <support@oneidentity.com>"
 
-  # pp_bsd_licenses need to be in array formating, each value seperated by a ,
+  # pp_bsd_licenses need to be in array formatting, each value separated by a ,
   # i.e. [ value, value ]
   pp_bsd_licenses="[GPLv2,MIT]"
 
-  # pp_bsd_annotations need to be in a keyvalue:pair list, each key:pair being seperated by a ,
+  # pp_bsd_annotations need to be in a keyvalue:pair list, each key:pair being separated by a ,
   # i.e. key:value, key:value 
   pp_bsd_annotations="repo_type:binary, hello:world"
 
-  # pp_bsd_categories need to be in array formating, each value seperated by a ,
+  # pp_bsd_categories need to be in array formatting, each value separated by a ,
   # i.e. [ value, value ]
   pp_bsd_categories="[devel,security]"
  
