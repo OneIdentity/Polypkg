@@ -1086,7 +1086,7 @@ pp_backend_macos_probe () {
          "Mac OS X") name="macos";;
 	 *)          name="unknown";;
     esac
-    vers=`sw_vers -productVersion | sed -e 's/^\([^.]*\)\.\([^.]*\).*/\1\2/'`
+    vers=`sw_vers -productVersion | awk -F. '{ printf "%d%02d\n", $1, $2 }'`
     arch=`arch`
     echo "$name$vers-$arch"
 }
