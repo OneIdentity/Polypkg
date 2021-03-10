@@ -82,17 +82,15 @@ pp_aix_version_fix () {
 }
 
 #@ pp_aix_select(-user|-root) < file-list:
-#   Selects out the %files lines that are in /usr or /opt (-user)
-#   or otherwise (-root).
+#   Selects out the %files lines that are in /dev, /etc, /sbin or /var (-root)
+#   or otherwise (-user).
 pp_aix_select () {
 	case "$1" in
-	    -user) op="";;
-	    -root) op="!";;
+	    -user) op="!";;
+	    -root) op="";;
 	    *) pp_die "pp_aix_select: bad argument";;
 	esac
-	#pp_debug awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
-	#awk '$5 '$op' /^\/(usr|opt)(\/|$)/ { print; }'
-	awk $op'($6 ~ /^\/usr\// || $6 ~ /^\/opt\//) { print; }'
+	awk $op'($6 ~ /^\/(dev|etc|sbin|var)\//) { print }'
 }
 
 #@ pp_aix_copy_root($root) < root-file-list:
