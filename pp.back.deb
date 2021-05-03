@@ -339,13 +339,15 @@ pp_deb_make_data() {
         case "$t" in
         f) # Files
            pp_deb_fakeroot install -D -o $o -g $g -m ${m} $pp_destdir/$p $data/$p;
-           if [ x"$f" = x"v" ]
-           then
+           case "$f" in
+           *v*)
                # File marked as "volatile". Assume this means it's a conffile
-	       # TODO: check this as admins like modified conffiles to be left
-	       #       behind
+               # TODO: check this as admins like modified conffiles to be left
+               #       behind
                echo "$p" >> $pp_wrkdir/%conffiles.$cmp
-           fi;;
+               ;;
+           esac
+           ;;
 
         d) # Directories
            pp_deb_fakeroot install -m ${m} -o $o -g $g -d $data/$p;;
@@ -358,7 +360,7 @@ pp_deb_make_data() {
 	   # the debian policy of relative links when in the same top-level
 	   # directory
            (cd $data; ln -sf $st $rel_p);;
-	    *) pp_error "Unsupported data file type: $t";;
+        *) pp_error "Unsupported data file type: $t";;
 	esac
     done
 
