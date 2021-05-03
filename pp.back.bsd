@@ -296,20 +296,24 @@ pp_bsd_make_data() {
         path=$p
         case "$t" in
             f) # Files
-                # For now just skip the file if it is volatile, we will need to remove it in the pre uninstall script
-                if [ x"$f" != x"v" ]; then
-                    # If the directory doesn't exist where we are going to copy this file, then create it first
-                    if [ ! -d `dirname "$datadir$path"` ]; then
-                        pp_debug "creating directory `dirname "$datadir$path"`"
-                        mkdir -p `dirname "$datadir$path"`
-                    fi
+                case "$f" in
+                    *v*)
+                        # For now just skip the file if it is volatile, we
+                        # will need to remove it in the pre uninstall script
+                        pp_warn "file $path was marked as volatile, skipping"
+                        ;; 
+                    *)
+                        # If the directory doesn't exist where we are going to copy this file, then create it first
+                        if [ ! -d `dirname "$datadir$path"` ]; then
+                            pp_debug "creating directory `dirname "$datadir$path"`"
+                            mkdir -p `dirname "$datadir$path"`
+                        fi
 
-                    pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path";
-                    pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path;
-                    echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist;
-                else
-                    pp_warn "file $f was marked as volatile, skipping"
-                fi;
+                        pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path"
+                        pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path
+                        echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist
+                        ;; 
+                esac
                 ;; 
             d) # Directories
                 pp_debug "install -D $datadir -o $o -g $g -m ${m} -d -v $datadir$path";
