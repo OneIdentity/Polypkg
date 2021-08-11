@@ -293,6 +293,12 @@ pp_bsd_make_data() {
     cat $pp_wrkdir/%files.${cmp} | while read t m o g f p st; do
         test x"$o" = x"-" && o="${pp_bsd_defattr_uid:-root}"
         test x"$g" = x"-" && g="${pp_bsd_defattr_gid:-wheel}"
+        if test x"$m" = x"-"; then
+            case "$t" in
+                d) m=755;;
+                f) m=644;;
+            esac
+        fi
         path=$p
         case "$t" in
             f) # Files
