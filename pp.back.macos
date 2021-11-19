@@ -151,6 +151,8 @@ pp_backend_macos_init () {
     pp_macos_bundle_version=
     pp_macos_bundle_info_string=
     pp_macos_pkg_type=bundle
+    pp_macos_pkg_background=
+    pp_macos_pkg_background_dark=
     pp_macos_pkg_license=
     pp_macos_pkg_readme=
     pp_macos_pkg_welcome=
@@ -760,6 +762,14 @@ pp_backend_macos_flat () {
     if test -n "$pp_macos_pkg_license"; then
 	cp -R "${pp_macos_pkg_license}" $Resources
 	echo "    <license file=\"${pp_macos_pkg_license##*/}\"/>" >>$pkgdir/Distribution
+    fi
+    if test -n "$pp_macos_pkg_background"; then
+	cp -R "${pp_macos_pkg_background}" $Resources
+	echo "    <background file=\"${pp_macos_pkg_background##*/}\" scaling=\"proportional\" alignment=\"left\"/>" >>$pkgdir/Distribution
+    fi
+    if test -n "$pp_macos_pkg_background_dark"; then
+	cp -R "${pp_macos_pkg_background_dark}" $Resources
+	echo "    <background-darkAqua file=\"${pp_macos_pkg_background_dark##*/}\" scaling=\"proportional\" alignment=\"left\"/>" >>$pkgdir/Distribution
     fi
     cat <<-. >>$pkgdir/Distribution
 	    <choices-outline>
