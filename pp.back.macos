@@ -744,9 +744,10 @@ pp_backend_macos_flat () {
     numfiles="${numfiles##* }"
 
     # Write Distribution file
+    # https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Introduction.html
     cat <<-. >$pkgdir/Distribution
 	<?xml version="1.0" encoding="UTF-8"?>
-	<installer-script minSpecVersion="1.000000" authoringTool="com.quest.rc.PolyPkg" authoringToolVersion="$pp_version" authoringToolBuild="$pp_revision">
+	<installer-gui-script minSpecVersion="1">
 	    <title>$name $version</title>
 	    <options customize="never" allow-external-scripts="no"/>
 	    <domains enable_localSystem="true"/>
@@ -779,7 +780,7 @@ pp_backend_macos_flat () {
 	        <pkg-ref id="${pp_macos_bundle_id}"/>
 	    </choice>
 	    <pkg-ref id="${pp_macos_bundle_id}" installKBytes="$size" version="$version" auth="Root">#$pkgfile</pkg-ref>
-	</installer-script>
+	</installer-gui-script>
 .
 
     # write scripts archive
