@@ -183,7 +183,7 @@ pp_rpm_detect_distro () {
 pp_rpm_detect_rpmbuild () {
     local cmd
     for cmd in rpmbuild rpm; do
-        if `which $cmd > /dev/null 2>&1`; then
+        if command -v $cmd > /dev/null 2>&1; then
             echo $cmd
             return 0
         fi

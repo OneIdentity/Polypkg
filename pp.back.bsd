@@ -91,7 +91,7 @@ pp_bsd_check_required_programs () {
     # list of programs FreeBSD needs in order to create a binary package
     for prog in ${pp_bsd_required_programs:-"pkg"}
     do
-        if which $prog 2>&1 > /dev/null; then
+        if command -v $prog 2>&1 > /dev/null; then
             pp_debug "$prog: found"
         else
             pp_debug "$prog: not found"
