@@ -322,8 +322,8 @@ pp_bsd_make_data() {
                             mkdir -p `dirname "$datadir$path"`
                         fi
 
-                        pp_debug "install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path"
-                        pp_bsd_fakeroot install -D $datadir -o $o -g $g -h sha256 -m ${m} -v $pp_destdir$p $datadir$path
+                        pp_debug "install -D $datadir -o $o -g $g -m ${m} -v $pp_destdir$p $datadir$path"
+                        pp_bsd_fakeroot install -D $datadir -o $o -g $g -m ${m} -v $pp_destdir$p $datadir$path
                         echo "  \"$path\": \"-\", \"$path\": {uname: $o, gname: $g, perm: ${m}}" >> $outfilelist
                         ;; 
                 esac
