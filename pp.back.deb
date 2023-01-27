@@ -54,7 +54,7 @@ pp_deb_check_required_programs () {
     needed= notfound=
     for prog in dpkg dpkg-deb install md5sum fakeroot
     do
-        if which $prog 2>/dev/null >/dev/null; then
+        if command -v $prog 2>/dev/null >/dev/null; then
 	    pp_debug "$prog: found"
 	else
 	    pp_debug "$prog: not found"
