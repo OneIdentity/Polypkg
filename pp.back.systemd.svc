@@ -164,11 +164,16 @@ pp_systemd_service_install_common () {
 
                 # Enable the $svc.service
                 $systemctl_cmd daemon-reload >/dev/null 2>&1
+
+                # We do not need the init.d script any more, and it causes problems on SLES
+                # where systemd sysv compatibility is enforced and broken on default installs
+                rm -f "/etc/init.d/$svc"
+
                 $systemctl_cmd enable $svc.service >/dev/null 2>&1
 
                 # Now that the service has been enabled, start it again if it was running before.
                 if [ $RUNNING -eq 0 ]; then
-                    /etc/init.d/$svc start > /dev/null 2>&1
+                    $systemctl_cmd start $svc.service >/dev/null 2>&1
                 fi
             fi
         }
