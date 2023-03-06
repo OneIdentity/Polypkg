@@ -240,6 +240,8 @@ pp_systemd_service_remove_common () {
                 _pp_systemd_init
             fi
 
+            $systemctl_cmd stop $svc.service > /dev/null 2>&1
+
             # Remove the systemd unit service file
             if [ "x$systemd_service_dir" != "x$systemd_system_unit_dir" ]; then
                 rm -f "$systemd_system_unit_dir/$svc.service"
