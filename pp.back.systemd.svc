@@ -158,8 +158,15 @@ pp_systemd_service_install_common () {
                                 ;;
                         esac
                     fi
-                else
-                    RUNNING=1
+                fi
+
+                # If the service is not running according to its sysv script (eg. systemd service
+                # is not using a pidfile the sysv script needs), or its sysv script is not present any more,
+                # check how systemd thinks.
+                # We also try to restart the service in case something went wrong with it.
+                if $systemctl_cmd is-active "$svc" >/dev/null 2>&1 || $systemctl_cmd is-failed "$svc" >/dev/null 2>&1; then
+                        $systemctl_cmd stop "$svc" >/dev/null 2>&1
+                        RUNNING=0
                 fi
 
                 # Enable the $svc.service
