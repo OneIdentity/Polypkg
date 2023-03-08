@@ -74,7 +74,7 @@ pp_load_service_vars () {
 #@ pp_files_expand(path [m] [[u]:[g]] [f] [t]): expand to a file path
 #    writes multiple lines of the form
 #       type path mode owner group flags [target]
-#    flags contains the letter v if the file is volatile
+#    flags contains the letter v if the file is volatile, letter m for missingok
 pp_files_expand () {
     typeset _p _mode _group _owner _flags _path _optional _has_target _tree
     typeset _target _file _tgt _m _o _g _f _type _lm _ll _lo _lg _ls _lx

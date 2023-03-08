@@ -307,7 +307,10 @@ The %files sections
 		s     mode owner group flags path target
 
 	Where d,f,s indicate directory, file or symbolic link.
-	The v field indicates volatility, or '-' for a placeholder.
+	The flags can be:
+		v flag indicates volatility,
+		m flag indicates missingok (do not warn if the file is missing during package removal)
+		or '-' for a placeholder.
 	The mode of symbolic links is ignored but written as 777.
 
 	The %fixup stage may be used to edit the %files components.
