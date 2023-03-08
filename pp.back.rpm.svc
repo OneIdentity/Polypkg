@@ -144,7 +144,7 @@ pp_rpm_service_group_make_init_script () {
     local script=/etc/init.d/$grp
     local out=$pp_destdir$script
 
-    pp_add_file_if_missing $script run 755 || return 0
+    pp_add_file_if_missing $script run 755 m || return 0
 
     cat <<-. >>$out
 	#!/bin/sh
@@ -240,7 +240,7 @@ pp_rpm_service_make_service_files () {
     local out=$pp_destdir$script
     local _process _cmd _rpmlevels
 
-    pp_add_file_if_missing $script run 755 || return 0
+    pp_add_file_if_missing $script run 755 m || return 0
 
     #-- start out as an empty shell script
     cat <<-'.' >$out

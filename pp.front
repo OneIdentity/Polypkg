@@ -51,6 +51,7 @@
 #
 # The flags is either - or a sequence of letters. The letters mean:
 #     v  - the file is volatile, and expected to change content during use
+#     m  - missingok (do not warn if the file is missing during package removal)
 #
 
 pp_if_true=0
