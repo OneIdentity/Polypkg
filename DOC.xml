@@ -344,6 +344,7 @@ description="Hello tool"
 
 	'Flags' is a comma-delimited list of flags. Valid flags are:
 		volatile	- uninstall will ignore changes in the file
+		missingok	- uninstall will ignore if the file is missing (rpm only for now)
 		optional	- ignore if the path-glob matches nothing
 		symlink		- a symlink target follows
 

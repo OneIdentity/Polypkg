@@ -282,6 +282,7 @@ The %files sections
 
 	'Flags' is a comma-delimited list of flags. Valid flags are:
 		volatile	- uninstall will ignore changes in the file
+		missingok	- uninstall will ignore if the file is missing (rpm only for now)
 		optional	- ignore if the path-glob matches nothing
 		symlink		- The file must be packaged as a symlink
                 ignore          - ignore this file (don't package it)

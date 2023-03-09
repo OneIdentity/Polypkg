@@ -114,6 +114,7 @@ pp_files_expand () {
     if test $# -gt 0; then
         _a=`eval echo \"$1\"`
 	case ",$_a," in *,volatile,*) _flags="${_flags}v";; esac
+	case ",$_a," in *,missingok,*) _flags="${_flags}m";; esac
 	case ",$_a," in *,optional,*) _optional=true;; esac
 	case ",$_a," in *,symlink,*) _has_target=true;; esac
 	case ",$_a," in *,ignore-others,*) _flags="${_flags}i";; esac
