@@ -42,8 +42,8 @@ pp_backend_bsd_init () {
     pp_bsd_desc=
     pp_bsd_message=
 
-    # FreeBSD uses package.txz, DragonFly uses package.pkg.
-    if [ "$pp_bsd_os" = "DragonFly" ]; then
+    # Newer "pkg" (>=1.17.0) generates package.pkg, before that package.txz.
+    if pp_is_version_greater 1.17.0 "$(pkg --version)"; then
         pp_bsd_pkg_sfx=pkg
     else
         pp_bsd_pkg_sfx=txz
