@@ -546,3 +546,8 @@ pp_strip_binaries () {
 	pp_package_stripped_binaries
     fi
 }
+
+pp_is_version_greater () {
+  smaller_version="$(echo -e "$1\n$2" | sort -V | head -1)"
+  test x"$smaller_version" = x"$1"
+}
