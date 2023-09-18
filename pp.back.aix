@@ -448,6 +448,10 @@ pp_backend_aix () {
                 cat $root_wrkdir/$pp_aix_bff_name.$ex.inventory
             fi >&2
 
+            for fileset in ${pp_aix_deprecated_filesets}; do
+                echo "$fileset"
+            done >$user_wrkdir/$pp_aix_bff_name.$ex.namelist
+
 	    if test x"" != x"${pp_aix_copyright:-$copyright}"; then
 	        echo "${pp_aix_copyright:-$copyright}" > $user_wrkdir/$pp_aix_bff_name.$ex.copyright
 	        echo "${pp_aix_copyright:-$copyright}" > $root_wrkdir/$pp_aix_bff_name.$ex.copyright
