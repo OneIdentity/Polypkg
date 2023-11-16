@@ -496,7 +496,6 @@ pp_backend_bsd_cleanup () {
 
 #@ pp_backend_bsd_probe(): print the local platform's short name
 pp_backend_bsd_probe () {
-        echo "${pp_bsd_os}-${pp_bsd_platform_std}"
         echo "${pp_bsd_os}${pp_bsd_os_rev}-${pp_bsd_platform_std}"
 }
 
