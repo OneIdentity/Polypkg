@@ -131,7 +131,7 @@ pp_systemd_service_install_common () {
 
         _pp_systemd_enable () {
             local svc="$1"
-            local RUNNING
+            local RUNNING=0
 
             # If $systemctl_cmd is not set, then call _pp_systemd_init. If still not
             # set, we do not know where the systemctl command is so do nothing;
