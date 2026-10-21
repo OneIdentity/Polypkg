@@ -408,10 +408,14 @@ pp_bsd_makebsd() {
 
     pp_debug "Processing pre/post uninstall scripts"
 
+    # pkg also runs the old package's deinstall hooks during an upgrade.
     if test -s $pp_wrkdir/%preun.$cmp; then
         pp_debug "Found %preun.$cmp"
         {   
             echo "# Pre uninstall script for ${pp_bsd_name:-$name}"
+            echo 'if [ -n "${PKG_UPGRADE:-}" ]; then'
+            echo '    exit 0'
+            echo 'fi'
             cat "$pp_wrkdir/%preun.$cmp"
         } > $preuninstall
         pp_debug "Created pkg $preuninstall"
@@ -421,6 +425,9 @@ pp_bsd_makebsd() {
         pp_debug "Found %postun.$cmp"
         {   
             echo "# Post uninstall script for ${pp_bsd_name:-$name}"
+            echo 'if [ -n "${PKG_UPGRADE:-}" ]; then'
+            echo '    exit 0'
+            echo 'fi'
             cat "$pp_wrkdir/%postun.$cmp"
         } > $postuninstall
         pp_debug "Created $postuninstall"
