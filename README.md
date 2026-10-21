@@ -27,6 +27,15 @@ A cross-platform packaging tool that attempts to automate package building for U
 * Redhat Package Manager (rpm)
 * Oracle Solaris (pkg)
 
+## FreeBSD upgrades
+
+Generated pre- and post-deinstall scripts skip removal-only actions when
+FreeBSD `pkg` sets `PKG_UPGRADE`. Explicit removal still runs those actions;
+install and upgrade hooks are unchanged. Because `pkg` runs the installed
+package's deinstall script during an upgrade, this protection applies when
+upgrading **from** a package generated with the fix. It cannot prevent an
+older installed script from deleting configuration.
+
 ## Synopsis
 ```
 usage: pp [options] [input.pp]

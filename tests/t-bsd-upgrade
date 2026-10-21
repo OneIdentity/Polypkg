@@ -1,0 +1,43 @@
+#! /bin/sh
+
+desc FreeBSD upgrades skip removal hooks but preserve install and upgrade hooks
+
+. ./pp.back.bsd
+pp_debug () { :; }
+pp_error () { fail "$@"; }
+pp_bsd_make_manifest () { : > "$2"; }
+pp_bsd_make_data () { :; }
+
+pp_wrkdir=$TMPDIR
+pp_bsd_platform=test
+pp_bsd_name=upgrade-test
+
+for pair in pre:PRE_INSTALL post:POST_INSTALL preun:PRE_DEINSTALL \
+    postun:POST_DEINSTALL preup:PRE_UPGRADE postup:POST_UPGRADE; do
+    section=${pair%:*}
+    phase=${pair#*:}
+    echo "echo $phase" > "$TMPDIR/%$section.run"
+done
+pp_bsd_makebsd run || fail "cannot generate scripts"
+
+for phase in PRE_DEINSTALL POST_DEINSTALL; do
+    script=$TMPDIR/upgrade-test/+$phase
+    output=`(unset PKG_UPGRADE; sh "$script")` ||
+        fail "$phase failed on removal"
+    test "$output" = "$phase" || fail "$phase skipped removal"
+    output=`PKG_UPGRADE= sh "$script"` ||
+        fail "$phase failed with an empty upgrade flag"
+    test "$output" = "$phase" || fail "$phase skipped an empty upgrade flag"
+    for flag in true yes 1; do
+        output=`PKG_UPGRADE=$flag sh "$script"` ||
+            fail "$phase failed during upgrade"
+        test -z "$output" || fail "$phase ran during upgrade ($flag)"
+    done
+done
+
+for phase in PRE_INSTALL POST_INSTALL PRE_UPGRADE POST_UPGRADE; do
+    output=`PKG_UPGRADE=true sh "$TMPDIR/upgrade-test/+$phase"` ||
+        fail "$phase failed during upgrade"
+    test "$output" = "$phase" || fail "$phase changed during upgrade"
+done
+pass
