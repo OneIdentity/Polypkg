@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  name: 'PASU'
+  name: 'PASU-new'
 
 steps:
 
